@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: Roboto;
+  src: url("../src/assets/fonts/Roboto-ExtraBold.ttf");
+}
+
+/* Font for a Title */
+@theme {
+  --font-title: Roboto, "sans-serif";
+}
