@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { supabase } from '../../Supabase/supabase';
+import { useNavigate } from 'react-router-dom';
 
 export default function OtpPage() {
   const [phone, setPhone] = useState('');
@@ -6,24 +8,21 @@ export default function OtpPage() {
   const [step, setStep] = useState<'enterPhone' | 'enterOtp'>('enterPhone');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   async function sendOtp() {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const { error } = await supabase.auth.signInWithOtp({ phone });
+
+      if (!error) {
         setStep('enterOtp');
         setMessage('OTP sent! Please check your SMS.');
       } else {
-        setMessage(data.error || 'Failed to send OTP');
+        setMessage(error.message || 'Failed to send OTP');
       }
-    } catch (error) {
+    } catch {
       setMessage('Network error');
     }
     setLoading(false);
@@ -33,88 +32,111 @@ export default function OtpPage() {
     setLoading(true);
     setMessage('');
     try {
-      const res = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
+      const { error } = await supabase.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: 'sms',
       });
-      const data = await res.json();
-      if (res.ok) {
+
+      if (!error) {
         setMessage('OTP verified! Redirecting...');
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          navigate('/dashboard'); // Adjust path if needed
         }, 1000);
       } else {
-        setMessage(data.error || 'Invalid OTP');
+        setMessage(error.message || 'Invalid OTP');
       }
-    } catch (error) {
+    } catch {
       setMessage('Network error');
     }
     setLoading(false);
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: 'auto', padding: 20}}>
-      <h2>Two-Factor Authentication</h2>
+    <div className="max-w-md mx-auto mt-24 p-8 bg-white rounded-xl shadow-lg font-sans">
+      <h2 className="text-2xl font-semibold text-center text-green-600 mb-6">
+        Two-Factor Authentication
+      </h2>
 
       {step === 'enterPhone' && (
-       <>
-  <label>Phone Number:</label>
-  <input
-    type="tel"
-    value={phone}
-    onChange={(e) => setPhone(e.target.value)}
-    placeholder="+1234567890"
-    style={{ 
-        width: '100%', 
-        padding: 8, 
-        marginBottom: 12,
-        border: '2px solid #000000',
-        marginTop: 10,
-    }}
-  />
-  <button
-    onClick={sendOtp}
-    disabled={loading || !phone}
-    style={{
-      backgroundColor: 'green',
-      color: 'white',
-      padding: '8px 16px',
-      border: 'none',
-      borderRadius: 4,
-      cursor: loading || !phone ? 'not-allowed' : 'pointer',
-    }}
-  >
-    {loading ? 'Sending...' : 'Send OTP'}
-  </button>
-</>
-
-      )}
-
-      {step === 'enterOtp' && (
         <>
-          <label>Enter OTP:</label>
+          <label htmlFor="phone" className="block mb-2 font-medium text-gray-700">
+            Phone Number:
+          </label>
           <input
-            type="text"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            placeholder="123456"
-            style={{ width: '100%', padding: 8, marginBottom: 12 }}
-          />
-          <button onClick={verifyOtp} disabled={loading || otp.length === 0}>
-            {loading ? 'Verifying...' : 'Verify OTP'}
-          </button>
-          <button
-            style={{ marginLeft: 10 }}
-            onClick={() => setStep('enterPhone')}
+            id="phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+1234567890"
             disabled={loading}
+            className="w-full px-4 py-3 mb-6 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 transition"
+            autoFocus
+          />
+          <button
+            onClick={sendOtp}
+            disabled={loading || !phone.trim()}
+            className={`w-full py-3 rounded-lg text-white font-bold transition ${
+              loading || !phone.trim()
+                ? 'bg-green-300 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            Back
+            {loading ? 'Sending...' : 'Send OTP'}
           </button>
         </>
       )}
 
-      {message && <p style={{ marginTop: 12 }}>{message}</p>}
+      {step === 'enterOtp' && (
+        <>
+          <label htmlFor="otp" className="block mb-2 font-medium text-gray-700">
+            Enter OTP:
+          </label>
+          <input
+            id="otp"
+            type="text"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            placeholder="123456"
+            disabled={loading}
+            className="w-full px-4 py-3 mb-6 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-500 transition"
+            autoFocus
+          />
+          <div className="flex space-x-4">
+            <button
+              onClick={verifyOtp}
+              disabled={loading || otp.length === 0}
+              className={`flex-1 py-3 rounded-lg text-white font-bold transition ${
+                loading || otp.length === 0
+                  ? 'bg-green-300 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {loading ? 'Verifying...' : 'Verify OTP'}
+            </button>
+            <button
+              onClick={() => setStep('enterPhone')}
+              disabled={loading}
+              className="flex-1 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+            >
+              Back
+            </button>
+          </div>
+        </>
+      )}
+
+      {message && (
+        <p
+          className={`mt-6 text-center font-semibold ${
+            message.toLowerCase().includes('sent') || message.toLowerCase().includes('verified')
+              ? 'text-green-600'
+              : 'text-red-600'
+          }`}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 }
+

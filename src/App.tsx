@@ -6,7 +6,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Login from "./components/Aut/Login";
+//import Login from "./components/Aut/Login";
 import ProtectedRoute from "./components/Aut/ProtectedRoute";
 import AddUser from "./components/Branch-Manager-SuperAdmin/AddUser";
 import UserManagement from "./components/Branch-Manager-SuperAdmin/UserManagement";
@@ -17,6 +17,7 @@ import Request_product from "./components/Branch/Request_product";
 import Pending_request from "./components/Branch_Request/Pending_request";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Sidebar from "./components/Sidebar/Sidebar";
+import OtpPage from "./components/OTP/otpPage";
 import {
   SidebarProvider,
   useSidebar,
@@ -27,6 +28,7 @@ import AllStock from "./components/Stock_Components/All_Stock";
 import ProductDetails from "./components/Stock_Components/ProductDetails";
 import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
+
 
 // Define props for Layout component
 interface LayoutProps {
@@ -80,17 +82,17 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           {/* Public Route: Login Page */}
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<OtpPage />} />
 
           {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
-              <ProtectedRoute allowedRoles={routeRoles.dashboard}>
+              // <ProtectedRoute allowedRoles={routeRoles.dashboard}>
                 <Layout>
                   <Dashboard />
                 </Layout>
-              </ProtectedRoute>
+             // </ProtectedRoute>
             }
           />
 
