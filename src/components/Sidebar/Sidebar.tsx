@@ -34,7 +34,7 @@ interface SubItem {
 interface User {
   email?: string;
   username?: string;
-  role?: string;
+  role?: { role_name: string };
 }
 
 function Sidebar() {
@@ -43,7 +43,7 @@ function Sidebar() {
   const user: User | null = userString ? JSON.parse(userString) : null;
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const userRole = user?.role || localStorage.getItem("userRole");
+  const userRole = user?.role?.role_name || localStorage.getItem("userRole");
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -312,7 +312,9 @@ function Sidebar() {
             <div className="px-3 py-2 text-sm font-medium text-gray-700 truncate">
               {user.email || user.username}
               {user.role && (
-                <span className="block text-xs text-gray-500">{user.role}</span>
+                <span className="block text-xs text-gray-500">
+                  {user.role.role_name}
+                </span>
               )}
             </div>
           )}

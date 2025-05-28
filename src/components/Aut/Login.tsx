@@ -1,56 +1,47 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../Supabase/supabase";
 
 function Login() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Simulate authentication
-    if (email === "admin@example.com" && password === "password") {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "admin");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: "admin@example.com",
-          username: "Admin",
-          role: "admin",
-        })
-      );
-      navigate("/dashboard");
-    } else if (
-      email === "BranchManager@example.com" &&
-      password === "password"
-    ) {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "branchManager");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: "BranchManager@example.com",
-          username: "Branch Manager",
-          role: "branchManager",
-        })
-      );
-      navigate("/dashboard");
-    } else if (email === "superAdmin@example.com" && password === "password") {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "superAdmin");
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: "superAdmin@example.com",
-          username: "Super Admin",
-          role: "superAdmin",
-        })
-      );
-      navigate("dashboard");
-    } else {
-      alert("Invalid credentials");
+    const { data, error } = await supabase
+      .from("user")
+      .select("*, role:role_id(role_name)")
+      .eq("email", email)
+      .eq("password", password)
+      .single();
+
+    if (error) {
+      console.error("Login error:", error.message);
+    } else if (data) {
+      console.log("User data:", data);
+    }
+
+    const role = data.role.role_name;
+
+    localStorage.setItem("isAuthenticated", "true");
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("user", JSON.stringify(data));
+
+    // Redirect based on role
+    switch (role) {
+      /* case "admin":
+        navigate("/dashboard");
+        break; */
+      case "branchManager":
+        navigate("/dashboard");
+        break;
+      case "superAdmin":
+        navigate("/dashboard");
+        break;
+      default:
+        navigate("/dashboard");
     }
   };
 

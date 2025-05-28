@@ -1,53 +1,53 @@
-import { useState } from 'react';
-import { supabase } from '../../Supabase/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { supabase } from "../../Supabase/supabase";
+import { useNavigate } from "react-router-dom";
 
 export default function OtpPage() {
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'enterPhone' | 'enterOtp'>('enterPhone');
-  const [message, setMessage] = useState('');
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState<"enterPhone" | "enterOtp">("enterPhone");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   async function sendOtp() {
     setLoading(true);
-    setMessage('');
+    setMessage("");
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone });
 
       if (!error) {
-        setStep('enterOtp');
-        setMessage('OTP sent! Please check your SMS.');
+        setStep("enterOtp");
+        setMessage("OTP sent! Please check your SMS.");
       } else {
-        setMessage(error.message || 'Failed to send OTP');
+        setMessage(error.message || "Failed to send OTP");
       }
     } catch {
-      setMessage('Network error');
+      setMessage("Network error");
     }
     setLoading(false);
   }
 
   async function verifyOtp() {
     setLoading(true);
-    setMessage('');
+    setMessage("");
     try {
       const { error } = await supabase.auth.verifyOtp({
         phone,
         token: otp,
-        type: 'sms',
+        type: "sms",
       });
 
       if (!error) {
-        setMessage('OTP verified! Redirecting...');
+        setMessage("OTP verified! Redirecting...");
         setTimeout(() => {
-          navigate('/dashboard'); // Adjust path if needed
+          navigate("/dashboard"); // Adjust path if needed
         }, 1000);
       } else {
-        setMessage(error.message || 'Invalid OTP');
+        setMessage(error.message || "Invalid OTP");
       }
     } catch {
-      setMessage('Network error');
+      setMessage("Network error");
     }
     setLoading(false);
   }
@@ -58,9 +58,12 @@ export default function OtpPage() {
         Two-Factor Authentication
       </h2>
 
-      {step === 'enterPhone' && (
+      {step === "enterPhone" && (
         <>
-          <label htmlFor="phone" className="block mb-2 font-medium text-gray-700">
+          <label
+            htmlFor="phone"
+            className="block mb-2 font-medium text-gray-700"
+          >
             Phone Number:
           </label>
           <input
@@ -78,16 +81,16 @@ export default function OtpPage() {
             disabled={loading || !phone.trim()}
             className={`w-full py-3 rounded-lg text-white font-bold transition ${
               loading || !phone.trim()
-                ? 'bg-green-300 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
+                ? "bg-green-300 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
             }`}
           >
-            {loading ? 'Sending...' : 'Send OTP'}
+            {loading ? "Sending..." : "Send OTP"}
           </button>
         </>
       )}
 
-      {step === 'enterOtp' && (
+      {step === "enterOtp" && (
         <>
           <label htmlFor="otp" className="block mb-2 font-medium text-gray-700">
             Enter OTP:
@@ -108,14 +111,14 @@ export default function OtpPage() {
               disabled={loading || otp.length === 0}
               className={`flex-1 py-3 rounded-lg text-white font-bold transition ${
                 loading || otp.length === 0
-                  ? 'bg-green-300 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'
+                  ? "bg-green-300 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
               }`}
             >
-              {loading ? 'Verifying...' : 'Verify OTP'}
+              {loading ? "Verifying..." : "Verify OTP"}
             </button>
             <button
-              onClick={() => setStep('enterPhone')}
+              onClick={() => setStep("enterPhone")}
               disabled={loading}
               className="flex-1 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
             >
@@ -128,9 +131,10 @@ export default function OtpPage() {
       {message && (
         <p
           className={`mt-6 text-center font-semibold ${
-            message.toLowerCase().includes('sent') || message.toLowerCase().includes('verified')
-              ? 'text-green-600'
-              : 'text-red-600'
+            message.toLowerCase().includes("sent") ||
+            message.toLowerCase().includes("verified")
+              ? "text-green-600"
+              : "text-red-600"
           }`}
         >
           {message}
@@ -139,4 +143,3 @@ export default function OtpPage() {
     </div>
   );
 }
-
