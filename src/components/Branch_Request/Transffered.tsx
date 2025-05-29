@@ -16,7 +16,7 @@ function Transferred() {
   const { isCollapsed } = useSidebar();
 
   // Sample product data with proper typing
-  const products: Product[] = [
+  const [products, setProducts] = useState<Product[]>([
     {
       id: "001",
       name: "LED Bulb",
@@ -26,22 +26,44 @@ function Transferred() {
       status: "Transferred",
       description: "Energy-efficient LED bulb with a lifespan of 25,000 hours.",
     },
-  ];
+    {
+      id: "002",
+      name: "LED Bulb",
+      category: "Bulbs",
+      price: "Php 655.99",
+      stock: 100,
+      status: "Transferred",
+      description: "Energy-efficient LED bulb with a lifespan of 25,000 hours.",
+    },
+    {
+      id: "003",
+      name: "LED Bulb",
+      category: "Bulbs",
+      price: "Php 655.99",
+      stock: 100,
+      status: "Transferred",
+      description: "Energy-efficient LED bulb with a lifespan of 25,000 hours.",
+    },
+  ]);
 
-  // State to manage modal visibility and selected product
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  // State to track selected products
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  // Handle row click to open modal
-  const handleRowClick = (product: Product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
+  // Toggle product selection
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
   };
 
-  // Close modal
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedProduct(null);
+  // Remove selected products
+  const removeSelectedProducts = () => {
+    setProducts((prev) =>
+      prev.filter((product) => !selectedProducts.includes(product.id))
+    );
+    setSelectedProducts([]);
   };
 
   return (
@@ -52,12 +74,25 @@ function Transferred() {
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden mt-5">
         <div className="p-6">
-          <h5 className="text-xl font-bold mb-4">Transferred Items</h5>
+          <div className="flex justify-between items-center mb-4">
+            <h5 className="text-xl font-bold">Transferred Items</h5>
+            {selectedProducts.length > 0 && (
+              <button
+                onClick={removeSelectedProducts}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+              >
+                Remove Selected ({selectedProducts.length})
+              </button>
+            )}
+          </div>
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white">
               <thead>
                 <tr className="bg-gray-100">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                    Select
+                  </th>
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
                     SKU/CODE
                   </th>
@@ -80,15 +115,17 @@ function Transferred() {
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleRowClick(product)}
-                  >
+                  <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-4 py-2">
-                      <button className="font-bold text-sm cursor-pointer text-white bg-green-500 hover:bg-green-600 px-3 rounded-lg border border-green-600  outline-1 outline-green-700 focus:outline-green-800">
-                        {product.id}
-                      </button>
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.includes(product.id)}
+                        onChange={() => toggleProductSelection(product.id)}
+                        className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      {product.id}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-700">
                       {product.name}
@@ -123,58 +160,6 @@ function Transferred() {
           <small className="text-gray-500">Last updated 3 mins ago</small>
         </div>
       </div>
-
-      {/* Modal */}
-      {isModalOpen && selectedProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 to-black/70 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">{selectedProduct.name}</h2>
-            <div className="space-y-2">
-              <p>
-                <span className="font-medium">ID:</span> {selectedProduct.id}
-              </p>
-              <p>
-                <span className="font-medium">Category:</span>{" "}
-                {selectedProduct.category}
-              </p>
-              <p>
-                <span className="font-medium">Price:</span>{" "}
-                {selectedProduct.price}
-              </p>
-              <p>
-                <span className="font-medium">Stock:</span>{" "}
-                {selectedProduct.stock}
-              </p>
-              <p>
-                <span className="font-medium">Status:</span>{" "}
-                <span
-                  className={
-                    selectedProduct.status === "Transferred"
-                      ? "text-green-600"
-                      : selectedProduct.status === "In-Transit"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }
-                >
-                  {selectedProduct.status}
-                </span>
-              </p>
-              <p>
-                <span className="font-medium">Description:</span>{" "}
-                {selectedProduct.description}
-              </p>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={closeModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

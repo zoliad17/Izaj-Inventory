@@ -17,7 +17,7 @@ function PendingRequest() {
   const { isCollapsed } = useSidebar();
 
   // State with typed products array
-  const [products] = useState<Product[]>([
+  const [products, setProducts] = useState<Product[]>([
     {
       id: "001",
       name: "LED Bulb",
@@ -34,10 +34,17 @@ function PendingRequest() {
   // State to manage modal visibility and selected product
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [actionType, setActionType] = useState<"accept" | "decline" | null>(
+    null
+  );
 
-  // Handle row click to open modal
-  const handleProductClick = (product: Product) => {
+  // Handle action button click
+  const handleActionClick = (
+    product: Product,
+    action: "accept" | "decline"
+  ) => {
     setSelectedProduct(product);
+    setActionType(action);
     setIsModalOpen(true);
   };
 
@@ -45,11 +52,28 @@ function PendingRequest() {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
+    setActionType(null);
   };
 
-  // Handle "Accept" button click
-  const handleAccept = () => {
-    alert("Request Accepted!");
+  // Confirm action
+  const confirmAction = () => {
+    if (selectedProduct && actionType) {
+      const updatedProducts = products.map((p) => {
+        if (p.id === selectedProduct.id) {
+          return {
+            ...p,
+            status:
+              actionType === "accept"
+                ? "Approved"
+                : ("Rejected" as Product["status"]),
+          };
+        }
+        return p;
+      });
+
+      setProducts(updatedProducts);
+      alert(`Request ${actionType === "accept" ? "Accepted" : "Declined"}!`);
+    }
     closeModal();
   };
 
@@ -86,19 +110,16 @@ function PendingRequest() {
                   <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
                     Status
                   </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleProductClick(product)}
-                  >
-                    <td className="px-4 py-2">
-                      <button className="font-bold text-sm cursor-pointer text-white bg-green-500 hover:bg-green-600 px-3 rounded-lg border border-green-600  outline-1 outline-green-700 focus:outline-green-800">
-                        {product.id}
-                      </button>
+                  <tr key={product.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      {product.id}
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-700">
                       {product.name}
@@ -115,6 +136,22 @@ function PendingRequest() {
                     <td className="px-4 py-2 text-sm text-red-600 font-medium">
                       {product.status}
                     </td>
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleActionClick(product, "accept")}
+                          className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleActionClick(product, "decline")}
+                          className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -126,58 +163,34 @@ function PendingRequest() {
         </div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && selectedProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 to-black/70 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">{selectedProduct.name}</h2>
-            <div className="space-y-2">
-              <p>
-                <span className="font-medium">ID:</span> {selectedProduct.id}
-              </p>
-              <p>
-                <span className="font-medium">Category:</span>{" "}
-                {selectedProduct.category}
-              </p>
-              <p>
-                <span className="font-medium">Price:</span>{" "}
-                {selectedProduct.price}
-              </p>
-              <p>
-                <span className="font-medium">Stock:</span>{" "}
-                {selectedProduct.stock}
-              </p>
-              <p>
-                <span className="font-medium">Status:</span>{" "}
-                <span
-                  className={
-                    selectedProduct.status === "In Stock"
-                      ? "text-green-600"
-                      : selectedProduct.status === "Low Stock"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }
-                >
-                  {selectedProduct.status}
-                </span>
-              </p>
-              <p>
-                <span className="font-medium">Description:</span>{" "}
-                {selectedProduct.description}
-              </p>
-            </div>
+      {/* Confirmation Modal */}
+      {isModalOpen && selectedProduct && actionType && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4">
+              Confirm {actionType === "accept" ? "Acceptance" : "Rejection"}
+            </h2>
+            <p className="mb-4">
+              Are you sure you want to {actionType} the product{" "}
+              <span className="font-semibold">{selectedProduct.name}</span> (ID:{" "}
+              {selectedProduct.id})?
+            </p>
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 onClick={closeModal}
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
-                Close
+                Cancel
               </button>
               <button
-                onClick={handleAccept}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                onClick={confirmAction}
+                className={`${
+                  actionType === "accept"
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-red-500 hover:bg-red-600"
+                } text-white px-4 py-2 rounded`}
               >
-                Accept
+                Confirm {actionType === "accept" ? "Accept" : "Decline"}
               </button>
             </div>
           </div>
