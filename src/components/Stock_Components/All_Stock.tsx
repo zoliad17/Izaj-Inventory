@@ -159,11 +159,13 @@ function AllStock() {
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
-                    <td
-                      className="px-4 py-2 text-sm text-gray-700 relative font-bold cursor-pointer"
-                      onClick={() => handleProductClick(product.id)}
-                    >
-                      {product.id}
+                    <td className="px-4 py-2">
+                      <button
+                        className="font-bold text-sm cursor-pointer text-white bg-green-500 hover:bg-green-600 px-3 rounded-lg border border-green-600  outline-1 outline-green-700 focus:outline-green-800"
+                        onClick={() => handleProductClick(product.id)}
+                      >
+                        {product.id}
+                      </button>
                     </td>
                     <td
                       className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer"

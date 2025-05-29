@@ -1,8 +1,19 @@
 import {
   LocationMarkerIcon,
   PhoneIcon,
+  MailIcon,
+  UserIcon,
   PlusIcon,
 } from "@heroicons/react/outline";
+import {
+  UserPlus,
+  User,
+  AtSign,
+  Mail,
+  // MapPin,
+  Phone,
+  // Image,
+} from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
@@ -11,15 +22,20 @@ import { useSidebar } from "../Sidebar/SidebarContext";
 interface User {
   id: number;
   name: string;
+  username: string;
+  email: string;
   location: string;
   contact: string;
   image: string;
+  isVerified: boolean;
   description?: string; // Optional property
 }
 
 // Define interface for New User data (without id)
 interface NewUser {
   name: string;
+  username: string;
+  email: string;
   location: string;
   contact: string;
   image: string;
@@ -31,10 +47,16 @@ function AddUser() {
 
   // State to manage modal visibility
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState<boolean>(false);
+  const [otp, setOtp] = useState<string>("");
+  const [generatedOtp, setGeneratedOtp] = useState<string>("");
+  const [tempUser, setTempUser] = useState<NewUser | null>(null);
 
   // State to manage new user data
   const [newUser, setNewUser] = useState<NewUser>({
     name: "",
+    username: "",
+    email: "",
     location: "",
     contact: "",
     image: "",
@@ -45,11 +67,19 @@ function AddUser() {
     {
       id: 1,
       name: "Killua Zoldick",
+      username: "killua_z",
+      email: "killua@hunter.com",
       image: "/src/assets/image/user.png",
       location: "123 Main Street, Lucena City",
       contact: "(042) 123-4567",
+      isVerified: true,
     },
   ]);
+
+  // Function to generate random OTP
+  const generateOTP = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
 
   // Function to open the modal
   const openModal = () => {
@@ -70,20 +100,49 @@ function AddUser() {
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Add the new user to the users array
-    const userToAdd: User = {
-      id: users.length + 1, // Generate a new ID
-      ...newUser,
-    };
-    setUsers((prev) => [...prev, userToAdd]);
+
+    // Generate OTP and save temporary user data
+    const otp = generateOTP();
+    setGeneratedOtp(otp);
+    setTempUser(newUser);
+
+    // In a real app, you would send this OTP to the user's email
+    console.log(`OTP for ${newUser.email}: ${otp}`);
+
+    // Show OTP verification modal
+    setIsOTPModalOpen(true);
     closeModal();
-    // Reset the form
-    setNewUser({
-      name: "",
-      location: "",
-      contact: "",
-      image: "",
-    });
+  };
+
+  // Function to verify OTP
+  const verifyOTP = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (otp === generatedOtp && tempUser) {
+      // Add the new user to the users array
+      const userToAdd: User = {
+        id: users.length + 1, // Generate a new ID
+        ...tempUser,
+        isVerified: true,
+      };
+
+      setUsers((prev) => [...prev, userToAdd]);
+      setIsOTPModalOpen(false);
+
+      // Reset the form
+      setNewUser({
+        name: "",
+        username: "",
+        email: "",
+        location: "",
+        contact: "",
+        image: "",
+      });
+      setOtp("");
+      setTempUser(null);
+    } else {
+      alert("Invalid OTP. Please try again.");
+    }
   };
 
   return (
@@ -92,14 +151,14 @@ function AddUser() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
-      {/* Add User Button */}
+      {/* Register Button */}
       <div className="flex justify-end mt-5">
         <button
           className="flex items-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
           onClick={openModal}
         >
           <PlusIcon className="h-5 w-5 mr-2" />
-          Add User
+          Register New User
         </button>
       </div>
 
@@ -119,6 +178,14 @@ function AddUser() {
               <div className="p-6 flex-grow">
                 <h5 className="text-xl font-bold mb-2">{user.name}</h5>
                 <div className="flex items-center text-gray-600 mb-2">
+                  <UserIcon className="h-5 w-5 mr-2" />
+                  <span>@{user.username}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-2">
+                  <MailIcon className="h-5 w-5 mr-2" />
+                  <span>{user.email}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-2">
                   <LocationMarkerIcon className="h-5 w-5 mr-2" />
                   <span>{user.location}</span>
                 </div>
@@ -129,6 +196,17 @@ function AddUser() {
                 {user.description && (
                   <p className="text-gray-700">{user.description}</p>
                 )}
+                <div className="mt-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      user.isVerified
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {user.isVerified ? "Verified" : "Pending Verification"}
+                  </span>
+                </div>
               </div>
 
               {/* View Button */}
@@ -147,76 +225,189 @@ function AddUser() {
 
       {/* Modal for Adding a New User */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-gradient-to-b from-black/30 to-black/70 z-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg w-11/12 md:w-1/2 lg:w-1/3">
-            <h2 className="text-xl font-bold mb-4">Add New User</h2>
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center p-4">
+          <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
+            <h2 className="text-xl font-bold mb-4 flex items-center">
+              <UserPlus className="h-5 w-5 mr-2" />
+              Register New User
+            </h2>
+
             <form onSubmit={handleSubmit}>
-              {/* Name Input */}
-              <div className="mb-4">
-                <label className="block text-gray-700">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={newUser.name}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-2.5 mb-8">
+                {/* Name Input */}
+                <div className="space-y-2">
+                  <label className=" text-sm font-medium text-gray-700 flex items-center">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="name"
+                      value={newUser.name}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+
+                {/* Username Input */}
+                <div className="space-y-2">
+                  <label className=" text-sm font-medium text-gray-700 flex items-center">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="username"
+                      value={newUser.username}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <AtSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+
+                {/* Email Input */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700  items-center">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      value={newUser.email}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <Mail className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+
+                {/* Location Input */}
+                {/* <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 flex items-center">
+                    Location
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="location"
+                      value={newUser.location}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div> */}
+
+                {/* Contact Input */}
+                <div className="space-y-2">
+                  <label className=" text-sm font-medium text-gray-700 flex items-center">
+                    Contact
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="contact"
+                      value={newUser.contact}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+
+                {/* Image URL Input */}
+                {/* <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 flex items-center">
+                    Image URL
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="image"
+                      value={newUser.image}
+                      onChange={handleInputChange}
+                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <Image className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  </div>
+                </div> */}
               </div>
 
-              {/* Location Input */}
-              <div className="mb-4">
-                <label className="block text-gray-700">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={newUser.location}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Contact Input */}
-              <div className="mb-4">
-                <label className="block text-gray-700">Contact</label>
-                <input
-                  type="text"
-                  name="contact"
-                  value={newUser.contact}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Image URL Input */}
-              <div className="mb-4">
-                <label className="block text-gray-700">Image URL</label>
-                <input
-                  type="text"
-                  name="image"
-                  value={newUser.image}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+              {/* Status Message */}
+              {/* You can add a status message here if needed */}
 
               {/* Form Buttons */}
-              <div className="flex justify-end space-x-4">
+              <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                  Register
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {isOTPModalOpen && (
+        <div className="fixed inset-0 bg-gradient-to-b from-black/30 to-black/70 z-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg w-11/12 md:w-1/2 lg:w-1/3">
+            <h2 className="text-xl font-bold mb-4">Verify Your Email</h2>
+            <p className="mb-4">
+              We've sent a 6-digit OTP to {tempUser?.email}. Please enter it
+              below to verify your account.
+            </p>
+
+            <form onSubmit={verifyOTP}>
+              <div className="mb-4">
+                <label className="block text-gray-700">OTP Code</label>
+                <input
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  maxLength={6}
+                  pattern="\d{6}"
+                  title="Please enter a 6-digit code"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOTPModalOpen(false);
+                    openModal();
+                  }}
+                  className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
                   className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
                 >
-                  Add User
+                  Verify
                 </button>
               </div>
             </form>

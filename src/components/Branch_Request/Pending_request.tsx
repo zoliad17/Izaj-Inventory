@@ -95,8 +95,10 @@ function PendingRequest() {
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => handleProductClick(product)}
                   >
-                    <td className="px-4 font-bold py-2 text-sm text-gray-700">
-                      {product.id}
+                    <td className="px-4 py-2">
+                      <button className="font-bold text-sm cursor-pointer text-white bg-green-500 hover:bg-green-600 px-3 rounded-lg border border-green-600  outline-1 outline-green-700 focus:outline-green-800">
+                        {product.id}
+                      </button>
                     </td>
                     <td className="px-4 py-2 text-sm text-gray-700">
                       {product.name}
