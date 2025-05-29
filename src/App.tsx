@@ -27,8 +27,6 @@ import AllStock from "./components/Stock_Components/All_Stock";
 import ProductDetails from "./components/Stock_Components/ProductDetails";
 import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
-import { LogIn } from "lucide-react";
-
 
 // Define props for Layout component
 interface LayoutProps {
@@ -92,7 +90,7 @@ const App: React.FC = () => {
                 <Layout>
                   <Dashboard />
                 </Layout>
-             </ProtectedRoute>
+              </ProtectedRoute>
             }
           />
 
