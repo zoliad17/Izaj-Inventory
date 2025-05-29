@@ -35,7 +35,7 @@ function ProductTable() {
 
   // Handle product click with proper typing
   const handleProductClick = (productId: string) => {
-    navigate(`/request_product/${productId}`);
+    navigate(`/view_product/${productId}`);
   };
 
   return (

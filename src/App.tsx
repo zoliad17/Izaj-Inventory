@@ -43,7 +43,7 @@ const routeRoles: Record<string, UserRole[]> = {
   branchLocation: ["admin", "branchManager", "superAdmin"],
   branchProducts: ["admin", "branchManager", "superAdmin"],
   branchCategory: ["admin", "branchManager", "superAdmin"],
-  requestProduct: ["admin", "branchManager", "superAdmin"],
+  view_product: ["admin", "branchManager", "superAdmin"],
   send_request: ["admin", "branchManager", "superAdmin"],
   sales: ["admin", "branchManager", "superAdmin"],
   pendingRequest: ["branchManager", "superAdmin"],
@@ -126,6 +126,17 @@ const App: React.FC = () => {
             }
           />
           <Route
+            path="/view_product/:productId"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.view_product}>
+                <Layout>
+                  <View_product />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Branch_Requesting */}
+          <Route
             path="/send_request"
             element={
               <ProtectedRoute allowedRoles={routeRoles.send_request}>
@@ -145,16 +156,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/request_product/:productId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.requestProduct}>
-                <Layout>
-                  <View_product />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/pending_request"
             element={
@@ -175,7 +177,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
+          {/* Sales */}
           <Route
             path="/sales"
             element={
@@ -186,6 +188,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          {/* Stock_Components */}
           <Route
             path="/all_stock"
             element={

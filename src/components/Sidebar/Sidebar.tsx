@@ -70,6 +70,7 @@ function Sidebar() {
       path: "/branch_location",
       allowedRoles: ["admin", "branchManager", "superAdmin"],
     },
+
     {
       icon: ClipboardListIcon,
       label: "Branch Request",
