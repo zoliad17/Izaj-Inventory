@@ -26,8 +26,8 @@ import ProductDetails from "./components/Stock_Components/ProductDetails";
 import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
 import Requested_Item from "./components/Branch_Request/Requested_Item";
-import Request_product from "./components/Branch/View_product";
 import ProductTable from "./components/Branch/ProductTable";
+import View_product from "./components/Branch/View_product";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -150,7 +150,7 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={routeRoles.requestProduct}>
                 <Layout>
-                  <Request_product />
+                  <View_product />
                 </Layout>
               </ProtectedRoute>
             }

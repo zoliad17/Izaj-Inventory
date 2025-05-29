@@ -15,7 +15,7 @@ interface Product {
   description: string;
 }
 
-function Request_product() {
+function View_product() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
 
@@ -86,4 +86,4 @@ function Request_product() {
   );
 }
 
-export default Request_product;
+export default View_product;
