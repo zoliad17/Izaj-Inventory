@@ -22,12 +22,13 @@ import {
 import Unauthorized from "./components/Unauthorized/Unauthorized";
 import Transferred from "./components/Branch_Request/Transffered";
 import AllStock from "./components/Stock_Components/All_Stock";
-import ProductDetails from "./components/Stock_Components/ProductDetails";
 import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
 import Requested_Item from "./components/Branch_Request/Requested_Item";
 import ProductTable from "./components/Branch/ProductTable";
 import View_product from "./components/Branch/View_product";
+import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
+import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -43,6 +44,8 @@ const routeRoles: Record<string, UserRole[]> = {
   branchLocation: ["admin", "branchManager", "superAdmin"],
   branchProducts: ["admin", "branchManager", "superAdmin"],
   branchCategory: ["admin", "branchManager", "superAdmin"],
+  add_category: ["admin", "branchManager", "superAdmin"],
+  add_branch: ["admin", "branchManager", "superAdmin"],
   view_product: ["admin", "branchManager", "superAdmin"],
   send_request: ["admin", "branchManager", "superAdmin"],
   sales: ["admin", "branchManager", "superAdmin"],
@@ -125,6 +128,28 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          {/* AddCategoryPage */}
+          <Route
+            path="/categories/add"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.add_category}>
+                <Layout>
+                  <AddCategoryPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Add Branch */}
+          <Route
+            path="/branches/add"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.add_branch}>
+                <Layout>
+                  <AddBranchPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/view_product/:productId"
             element={
@@ -199,16 +224,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/product/:productId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.productDetails}>
-                <Layout>
-                  <ProductDetails />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/add-user"
             element={
