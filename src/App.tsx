@@ -10,7 +10,6 @@ import Login from "./components/Aut/Login";
 import ProtectedRoute from "./components/Aut/ProtectedRoute";
 import AddUser from "./components/Branch-Manager-SuperAdmin/AddUser";
 import UserManagement from "./components/Branch-Manager-SuperAdmin/UserManagement";
-import Branch_category from "./components/Branch/Branch_category";
 import Branch_location from "./components/Branch/Branch_location";
 import Pending_request from "./components/Branch_Request/Pending_request";
 import Dashboard from "./components/Dashboard/Dashboard";
@@ -118,16 +117,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/branch_category"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.branchCategory}>
-                <Layout>
-                  <Branch_category />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           {/* AddCategoryPage */}
           <Route
             path="/categories/add"

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { ArrowLeft } from "lucide-react";
 
 // Define interface for User data
 interface User {
@@ -78,7 +79,13 @@ function UserManagement() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
-      <div className="p-6">
+      <div className="p-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center cursor-pointer  gap-2 text-gray-800 mb-6 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft size={16} />
+        </button>
         <h1 className="text-2xl font-bold mb-4">User Management</h1>
         <div className="bg-white rounded-lg shadow-md p-6 flex flex-col md:flex-row items-center md:items-start gap-8">
           {/* User Image on the left */}
@@ -193,13 +200,13 @@ function UserManagement() {
                 <>
                   <button
                     onClick={handleUpdate}
-                    className="bg-green-600 text-white py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300"
+                    className="bg-green-600 cursor-pointer text-white py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300"
                   >
                     Save
                   </button>
                   <button
                     onClick={() => setIsEditMode(false)}
-                    className="bg-gray-500 text-white py-2 px-6 rounded-lg hover:bg-gray-600 transition duration-300"
+                    className="bg-gray-500 cursor-pointer text-white py-2 px-6 rounded-lg hover:bg-gray-600 transition duration-300"
                   >
                     Cancel
                   </button>
@@ -209,13 +216,13 @@ function UserManagement() {
                 <>
                   <button
                     onClick={() => setIsEditMode(true)}
-                    className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300"
+                    className="bg-blue-600 cursor-pointer text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition duration-300"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setIsDeleteModalOpen(true)}
-                    className="bg-red-600 text-white py-2 px-6 rounded-lg hover:bg-red-700 transition duration-300"
+                    className="bg-red-600 cursor-pointer text-white py-2 px-6 rounded-lg hover:bg-red-700 transition duration-300"
                   >
                     Remove
                   </button>

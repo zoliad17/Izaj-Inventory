@@ -10,9 +10,10 @@ import {
   User,
   AtSign,
   Mail,
-  // MapPin,
   Phone,
   // Image,
+  Key,
+  Home,
 } from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +29,8 @@ interface User {
   contact: string;
   image: string;
   isVerified: boolean;
+  role: "SuperAdmin" | "BranchManager"; // Added role field
+  branch: "Lucena" | "San Pablo"; // Added branch field
   description?: string; // Optional property
 }
 
@@ -39,6 +42,8 @@ interface NewUser {
   location: string;
   contact: string;
   image: string;
+  role: "SuperAdmin" | "BranchManager"; // Added role field
+  branch: "Lucena" | "San Pablo"; // Added branch field
 }
 
 function AddUser() {
@@ -60,6 +65,8 @@ function AddUser() {
     location: "",
     contact: "",
     image: "",
+    role: "BranchManager", // Default role
+    branch: "Lucena", // Default branch
   });
 
   // State to manage users list
@@ -73,6 +80,8 @@ function AddUser() {
       location: "123 Main Street, Lucena City",
       contact: "(042) 123-4567",
       isVerified: true,
+      role: "SuperAdmin",
+      branch: "Lucena",
     },
   ]);
 
@@ -92,7 +101,9 @@ function AddUser() {
   };
 
   // Function to handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setNewUser((prev) => ({ ...prev, [name]: value }));
   };
@@ -137,6 +148,8 @@ function AddUser() {
         location: "",
         contact: "",
         image: "",
+        role: "BranchManager",
+        branch: "Lucena",
       });
       setOtp("");
       setTempUser(null);
@@ -151,10 +164,15 @@ function AddUser() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
-      {/* Register Button */}
-      <div className="flex justify-end mt-5">
+      {/* Top Section with Title and Button */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">User Management</h1>
+        </div>
+
+        {/* Register Button */}
         <button
-          className="flex items-center bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
+          className="flex items-center cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 w-full md:w-auto justify-center"
           onClick={openModal}
         >
           <PlusIcon className="h-5 w-5 mr-2" />
@@ -193,6 +211,14 @@ function AddUser() {
                   <PhoneIcon className="h-5 w-5 mr-2" />
                   <span>{user.contact}</span>
                 </div>
+                <div className="flex items-center text-gray-600 mb-2">
+                  <Key className="h-5 w-5 mr-2" />
+                  <span>{user.role}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-2">
+                  <Home className="h-5 w-5 mr-2" />
+                  <span>{user.branch}</span>
+                </div>
                 {user.description && (
                   <p className="text-gray-700">{user.description}</p>
                 )}
@@ -212,7 +238,7 @@ function AddUser() {
               {/* View Button */}
               <div className="p-4 bg-gray-100 w-full">
                 <button
-                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
+                  className="w-full cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
                   onClick={() => navigate(`/user-management/${user.id}`)}
                 >
                   View
@@ -288,23 +314,47 @@ function AddUser() {
                   </div>
                 </div>
 
-                {/* Location Input */}
-                {/* <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 flex items-center">
-                    Location
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <label className=" text-sm font-medium text-gray-700 flex items-center">
+                    Role
                   </label>
                   <div className="relative">
-                    <input
-                      type="text"
-                      name="location"
-                      value={newUser.location}
+                    <select
+                      name="role"
+                      value={newUser.role}
                       onChange={handleInputChange}
                       className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
-                    />
-                    <MapPin className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    >
+                      <option value="SuperAdmin">Super Admin</option>
+                      <option value="BranchManager">Branch Manager</option>
+                    </select>
+                    <Key className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   </div>
-                </div> */}
+                </div>
+
+                {/* Branch Selection - Only shown for Branch Managers */}
+                {newUser.role === "BranchManager" && (
+                  <div className="space-y-2">
+                    <label className=" text-sm font-medium text-gray-700 flex items-center">
+                      Branch
+                    </label>
+                    <div className="relative">
+                      <select
+                        name="branch"
+                        value={newUser.branch}
+                        onChange={handleInputChange}
+                        className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required={newUser.role === "BranchManager"}
+                      >
+                        <option value="Lucena">Lucena</option>
+                        <option value="San Pablo">San Pablo</option>
+                      </select>
+                      <Home className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                    </div>
+                  </div>
+                )}
 
                 {/* Contact Input */}
                 <div className="space-y-2">
@@ -323,41 +373,20 @@ function AddUser() {
                     <Phone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
-
-                {/* Image URL Input */}
-                {/* <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 flex items-center">
-                    Image URL
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="image"
-                      value={newUser.image}
-                      onChange={handleInputChange}
-                      className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                    <Image className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                  </div>
-                </div> */}
               </div>
-
-              {/* Status Message */}
-              {/* You can add a status message here if needed */}
 
               {/* Form Buttons */}
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="px-4 py-2 cursor-pointer text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="px-4 py-2 cursor-pointer text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
                   Register
                 </button>
@@ -399,13 +428,13 @@ function AddUser() {
                     setIsOTPModalOpen(false);
                     openModal();
                   }}
-                  className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
+                  className="bg-gray-500 cursor-pointer text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
+                  className="bg-blue-500 cursor-pointer text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
                 >
                   Verify
                 </button>

@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 
-// Define interface for Product data
 interface Product {
   id: string;
   name: string;
@@ -16,7 +15,6 @@ interface Product {
 function PendingRequest() {
   const { isCollapsed } = useSidebar();
 
-  // State with typed products array
   const [products, setProducts] = useState<Product[]>([
     {
       id: "001",
@@ -28,17 +26,112 @@ function PendingRequest() {
       imageUrl: "light1.jpg",
       description: "Energy-efficient LED bulb with a lifespan of 25,000 hours.",
     },
-    // Add more products as needed
+    {
+      id: "002",
+      name: "Smart Plug",
+      category: "Accessories",
+      price: "Php 599.99",
+      stock: 50,
+      status: "Approved",
+      imageUrl: "plug1.jpg",
+      description: "WiFi enabled smart plug with energy monitoring.",
+    },
+    {
+      id: "003",
+      name: "Solar Panel",
+      category: "Renewable",
+      price: "Php 12,499.99",
+      stock: 15,
+      status: "Rejected",
+      imageUrl: "solar1.jpg",
+      description: "300W monocrystalline solar panel with high efficiency.",
+    },
+    {
+      id: "004",
+      name: "Battery Pack",
+      category: "Storage",
+      price: "Php 8,999.99",
+      stock: 20,
+      status: "Pending",
+      imageUrl: "battery1.jpg",
+      description: "10kWh lithium-ion home battery storage system.",
+    },
+    {
+      id: "005",
+      name: "LED Strip",
+      category: "Lighting",
+      price: "Php 1,299.99",
+      stock: 75,
+      status: "Approved",
+      imageUrl: "strip1.jpg",
+      description: "RGB LED strip with remote control and adhesive backing.",
+    },
+    {
+      id: "006",
+      name: "Motion Sensor",
+      category: "Sensors",
+      price: "Php 899.99",
+      stock: 40,
+      status: "Pending",
+      imageUrl: "sensor1.jpg",
+      description: "Wireless motion sensor for home automation systems.",
+    },
   ]);
 
-  // State to manage modal visibility and selected product
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // Modal state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [actionType, setActionType] = useState<"accept" | "decline" | null>(
     null
   );
 
-  // Handle action button click
+  // Get unique categories for filter dropdown
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set(products.map((p) => p.category));
+    return ["All", ...Array.from(uniqueCategories)];
+  }, [products]);
+
+  // Filter products based on all criteria
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.price.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === "All" || product.category === selectedCategory;
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        (statusFilter === "Approved" && product.status === "Approved") ||
+        (statusFilter === "Rejected" && product.status === "Rejected") ||
+        (statusFilter === "Pending" && product.status === "Pending");
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [products, searchTerm, selectedCategory, statusFilter]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+
   const handleActionClick = (
     product: Product,
     action: "accept" | "decline"
@@ -48,24 +141,21 @@ function PendingRequest() {
     setIsModalOpen(true);
   };
 
-  // Close modal
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
     setActionType(null);
   };
 
-  // Confirm action
   const confirmAction = () => {
     if (selectedProduct && actionType) {
       const updatedProducts = products.map((p) => {
         if (p.id === selectedProduct.id) {
           return {
             ...p,
-            status:
-              actionType === "accept"
-                ? "Approved"
-                : ("Rejected" as Product["status"]),
+            status: (actionType === "accept"
+              ? "Approved"
+              : "Rejected") as Product["status"],
           };
         }
         return p;
@@ -77,15 +167,118 @@ function PendingRequest() {
     closeModal();
   };
 
+  const mockExport = () => {
+    alert(
+      "Export to Excel functionality would be implemented here in a real application"
+    );
+    console.log("Data that would be exported:", filteredProducts);
+  };
+
   return (
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mt-5">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden ">
         <div className="p-6">
-          <h5 className="text-xl font-bold mb-4">Pending Request</h5>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h5 className="text-xl font-bold">Pending Request</h5>
+          </div>
+
+          {/* Compact Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-grow max-w-xs">
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+
+            <select
+              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category === "All" ? "All Categories" : category}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="All">All Status</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+
+            <select
+              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              <option value="5">5 per page</option>
+              <option value="10">10 per page</option>
+              <option value="20">20 per page</option>
+              <option value="50">50 per page</option>
+            </select>
+
+            <button
+              onClick={mockExport}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                ></path>
+              </svg>
+              Export
+            </button>
+          </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
@@ -116,46 +309,129 @@ function PendingRequest() {
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      {product.id}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      {product.name}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      {product.category}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      {product.price}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      {product.stock}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-red-600 font-medium">
-                      {product.status}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-gray-700">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleActionClick(product, "accept")}
-                          className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+                {currentItems.length > 0 ? (
+                  currentItems.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        {product.id}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        {product.name}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        {product.category}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        {product.price}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        {product.stock}
+                      </td>
+                      <td className="px-4 py-2 text-sm font-medium">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.status === "Approved"
+                              ? "bg-green-100 text-green-800"
+                              : product.status === "Rejected"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
                         >
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleActionClick(product, "decline")}
-                          className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
-                        >
-                          Decline
-                        </button>
-                      </div>
+                          {product.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleActionClick(product, "accept")}
+                            disabled={product.status !== "Pending"}
+                            className={`px-3 py-1 rounded-md text-sm font-medium ${
+                              product.status !== "Pending"
+                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                            }`}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleActionClick(product, "decline")
+                            }
+                            disabled={product.status !== "Pending"}
+                            className={`px-3 py-1 rounded-md text-sm font-medium ${
+                              product.status !== "Pending"
+                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                : "bg-red-50 text-red-600 hover:bg-red-100"
+                            }`}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-6 text-center text-gray-500"
+                    >
+                      No products found matching your filter criteria
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
+            <div className="text-sm text-gray-600">
+              Showing {indexOfFirstItem + 1} to{" "}
+              {Math.min(indexOfLastItem, filteredProducts.length)} of{" "}
+              {filteredProducts.length} entries
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1
+                    ? "bg-gray-200 cursor-not-allowed"
+                    : "bg-gray-200 hover:bg-gray-300"
+                }`}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === page
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 hover:bg-gray-300"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
+              <button
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages
+                    ? "bg-gray-200 cursor-not-allowed"
+                    : "bg-gray-200 hover:bg-gray-300"
+                }`}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
         <div className="p-4 bg-gray-100">
