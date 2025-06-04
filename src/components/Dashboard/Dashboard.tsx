@@ -7,8 +7,10 @@ import {
   Lightbulb,
   //   AlertCircle,
   Clock,
+  Plus,
 } from "lucide-react";
 import SearchBar from "../Search_Bar/SearchBar";
+import { useNavigate } from "react-router-dom";
 
 // Define types for the product data
 interface Product {
@@ -102,7 +104,7 @@ interface LineChartOptions {
 
 function Dashboard() {
   const { isCollapsed } = useSidebar();
-
+  const navigate = useNavigate();
   // Options for the Pie Chart
   const pieChartOptions: PieChartOptions = {
     tooltip: {
@@ -250,13 +252,12 @@ function Dashboard() {
       } p-2 sm:p-4 `}
     >
       {/* Search Bar */}
+
       <SearchBar
         onSearch={handleSearch}
         className="p-1.5"
         placeholder="Search products..."
       />
-
-      {/* Cards Grid */}
       <div className="grid mt-1.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Stock Card */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -268,6 +269,7 @@ function Dashboard() {
           </div>
           <h6 className="text-2xl font-bold text-gray-800 mt-2">450</h6>
         </div>
+
         {/* Products Card */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center gap-3">
@@ -280,7 +282,7 @@ function Dashboard() {
         </div>
 
         {/* Categories Card */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 relative">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-full">
               <Lightbulb className="text-green-600" size={20} />
@@ -288,10 +290,17 @@ function Dashboard() {
             <h5 className="text-lg font-medium">Categories</h5>
           </div>
           <h6 className="text-2xl font-bold text-gray-800 mt-2">12</h6>
+          <button
+            onClick={() => navigate("/categories/add")}
+            className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 rounded-full hover:bg-green-200 transition-colors"
+            title="Add Category"
+          >
+            <Plus className="text-green-600" size={16} />
+          </button>
         </div>
 
         {/* Branches Card */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6 relative">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-full">
               <Lightbulb className="text-purple-600" size={20} />
@@ -299,9 +308,15 @@ function Dashboard() {
             <h5 className="text-lg font-medium">Branches</h5>
           </div>
           <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
+          <button
+            onClick={() => navigate("/branches/add")}
+            className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
+            title="Add Branch"
+          >
+            <Plus className="text-purple-600" size={16} />
+          </button>
         </div>
       </div>
-
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Pie Chart Card */}
@@ -344,7 +359,6 @@ function Dashboard() {
           </div>
         </div>
       </div>
-
       {/* Products Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6">

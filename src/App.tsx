@@ -10,10 +10,7 @@ import Login from "./components/Aut/Login";
 import ProtectedRoute from "./components/Aut/ProtectedRoute";
 import AddUser from "./components/Branch-Manager-SuperAdmin/AddUser";
 import UserManagement from "./components/Branch-Manager-SuperAdmin/UserManagement";
-import Branch_category from "./components/Branch/Branch_category";
 import Branch_location from "./components/Branch/Branch_location";
-import ProductTable from "./components/Branch/ProductTable";
-import Request_product from "./components/Branch/Request_product";
 import Pending_request from "./components/Branch_Request/Pending_request";
 import Dashboard from "./components/Dashboard/Dashboard";
 import Sidebar from "./components/Sidebar/Sidebar";
@@ -24,11 +21,13 @@ import {
 import Unauthorized from "./components/Unauthorized/Unauthorized";
 import Transferred from "./components/Branch_Request/Transffered";
 import AllStock from "./components/Stock_Components/All_Stock";
-import ProductDetails from "./components/Stock_Components/ProductDetails";
 import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
-import { LogIn } from "lucide-react";
-
+import Requested_Item from "./components/Branch_Request/Requested_Item";
+import ProductTable from "./components/Branch/ProductTable";
+import View_product from "./components/Branch/View_product";
+import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
+import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -44,7 +43,9 @@ const routeRoles: Record<string, UserRole[]> = {
   branchLocation: ["admin", "branchManager", "superAdmin"],
   branchProducts: ["admin", "branchManager", "superAdmin"],
   branchCategory: ["admin", "branchManager", "superAdmin"],
-  requestProduct: ["admin", "branchManager", "superAdmin"],
+  add_category: ["admin", "branchManager", "superAdmin"],
+  add_branch: ["admin", "branchManager", "superAdmin"],
+  view_product: ["admin", "branchManager", "superAdmin"],
   send_request: ["admin", "branchManager", "superAdmin"],
   sales: ["admin", "branchManager", "superAdmin"],
   pendingRequest: ["branchManager", "superAdmin"],
@@ -92,7 +93,7 @@ const App: React.FC = () => {
                 <Layout>
                   <Dashboard />
                 </Layout>
-             </ProtectedRoute>
+              </ProtectedRoute>
             }
           />
 
@@ -116,16 +117,40 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* AddCategoryPage */}
           <Route
-            path="/branch_category"
+            path="/categories/add"
             element={
-              <ProtectedRoute allowedRoles={routeRoles.branchCategory}>
+              <ProtectedRoute allowedRoles={routeRoles.add_category}>
                 <Layout>
-                  <Branch_category />
+                  <AddCategoryPage />
                 </Layout>
               </ProtectedRoute>
             }
           />
+          {/* Add Branch */}
+          <Route
+            path="/branches/add"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.add_branch}>
+                <Layout>
+                  <AddBranchPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/view_product/:productId"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.view_product}>
+                <Layout>
+                  <View_product />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          {/* Branch_Requesting */}
           <Route
             path="/send_request"
             element={
@@ -137,15 +162,16 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/request_product/:productId"
+            path="/requested_item"
             element={
-              <ProtectedRoute allowedRoles={routeRoles.requestProduct}>
+              <ProtectedRoute allowedRoles={routeRoles.send_request}>
                 <Layout>
-                  <Request_product />
+                  <Requested_Item />
                 </Layout>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/pending_request"
             element={
@@ -166,7 +192,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-
+          {/* Sales */}
           <Route
             path="/sales"
             element={
@@ -177,6 +203,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          {/* Stock_Components */}
           <Route
             path="/all_stock"
             element={
@@ -187,16 +214,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/product/:productId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.productDetails}>
-                <Layout>
-                  <ProductDetails />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/add-user"
             element={

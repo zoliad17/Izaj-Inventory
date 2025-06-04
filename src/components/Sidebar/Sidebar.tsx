@@ -70,6 +70,7 @@ function Sidebar() {
       path: "/branch_location",
       allowedRoles: ["admin", "branchManager", "superAdmin"],
     },
+
     {
       icon: ClipboardListIcon,
       label: "Branch Request",
@@ -92,7 +93,13 @@ function Sidebar() {
           icon: SwitchHorizontalIcon,
           label: "Send Request",
           path: "/send_request",
-          allowedRoles: ["admin"],
+          allowedRoles: ["admin", "branchManager"],
+        },
+        {
+          icon: SwitchHorizontalIcon,
+          label: "Requested_Item",
+          path: "/requested_item",
+          allowedRoles: ["admin", "branchManager"],
         },
       ],
     },

@@ -40,7 +40,7 @@ function BranchLocation() {
   ];
 
   const handleViewClick = () => {
-    navigate("/branch_category");
+    navigate("/branch_products");
   };
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
