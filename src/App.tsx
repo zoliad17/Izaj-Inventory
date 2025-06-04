@@ -35,26 +35,26 @@ interface LayoutProps {
 }
 
 // Define user roles type
-type UserRole = "admin" | "branchManager" | "superAdmin";
+type UserRole = "Admin" | "Branch Manager" | "Super Admin";
 
 // Define allowed roles for each route
 const routeRoles: Record<string, UserRole[]> = {
-  dashboard: ["admin", "branchManager", "superAdmin"],
-  branchLocation: ["admin", "branchManager", "superAdmin"],
-  branchProducts: ["admin", "branchManager", "superAdmin"],
-  branchCategory: ["admin", "branchManager", "superAdmin"],
-  add_category: ["admin", "branchManager", "superAdmin"],
-  add_branch: ["admin", "branchManager", "superAdmin"],
-  view_product: ["admin", "branchManager", "superAdmin"],
-  send_request: ["admin", "branchManager", "superAdmin"],
-  sales: ["admin", "branchManager", "superAdmin"],
-  pendingRequest: ["branchManager", "superAdmin"],
-  transferred: ["admin", "branchManager", "superAdmin"],
-  awaitingApproval: ["branchManager", "superAdmin"],
-  allStock: ["admin", "branchManager", "superAdmin"],
-  productDetails: ["admin", "branchManager", "superAdmin"],
-  addUser: ["superAdmin", "branchManager"],
-  userManagement: ["superAdmin", "branchManager"],
+  dashboard: ["Admin", "Branch Manager", "Super Admin"],
+  branchLocation: ["Admin", "Branch Manager", "Super Admin"],
+  branchProducts: ["Admin", "Branch Manager", "Super Admin"],
+  branchCategory: ["Admin", "Branch Manager", "Super Admin"],
+  add_category: ["Admin", "Branch Manager", "Super Admin"],
+  add_branch: ["Admin", "Branch Manager", "Super Admin"],
+  view_product: ["Admin", "Branch Manager", "Super Admin"],
+  send_request: ["Admin", "Branch Manager", "Super Admin"],
+  sales: ["Admin", "Branch Manager", "Super Admin"],
+  pendingRequest: ["Branch Manager", "Super Admin"],
+  transferred: ["Admin", "Branch Manager", "Super Admin"],
+  awaitingApproval: ["Branch Manager", "Super Admin"],
+  allStock: ["Admin", "Branch Manager", "Super Admin"],
+  productDetails: ["Admin", "Branch Manager", "Super Admin"],
+  addUser: ["Super Admin", "Branch Manager"],
+  userManagement: ["Super Admin", "Branch Manager"],
 };
 
 // Layout component that includes the Sidebar
