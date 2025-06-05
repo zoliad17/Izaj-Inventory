@@ -178,8 +178,9 @@ function Login() {
 
       // Redirect based on role
       switch (role) {
-        case "branchManager":
-        case "superAdmin":
+        case "Branch Manager":
+        case "Super Admin":
+
         default:
           navigate("/dashboard");
           break;
