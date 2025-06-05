@@ -21,13 +21,12 @@ import {
 import Unauthorized from "./components/Unauthorized/Unauthorized";
 import Transferred from "./components/Branch_Request/Transffered";
 import AllStock from "./components/Stock_Components/All_Stock";
-import Send_Request from "./components/Branch_Request/Send_Request";
 import Sales from "./components/Sales/Sales";
 import Requested_Item from "./components/Branch_Request/Requested_Item";
 import ProductTable from "./components/Branch/ProductTable";
-import View_product from "./components/Branch/View_product";
 import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
 import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
+import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -55,6 +54,7 @@ const routeRoles: Record<string, UserRole[]> = {
   productDetails: ["Admin", "Branch Manager", "Super Admin"],
   addUser: ["Super Admin", "Branch Manager"],
   userManagement: ["Super Admin", "Branch Manager"],
+  auditlogs: ["Super Admin", "Branch Manager"],
 };
 
 // Layout component that includes the Sidebar
@@ -140,18 +140,9 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/view_product/:productId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.view_product}>
-                <Layout>
-                  <View_product />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           {/* Branch_Requesting */}
-          <Route
+          {/* <Route
             path="/send_request"
             element={
               <ProtectedRoute allowedRoles={routeRoles.send_request}>
@@ -160,7 +151,7 @@ const App: React.FC = () => {
                 </Layout>
               </ProtectedRoute>
             }
-          />
+          /> */}
           <Route
             path="/requested_item"
             element={
@@ -226,11 +217,22 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/user-management/:userId"
+            path="/user-management"
             element={
               <ProtectedRoute allowedRoles={routeRoles.userManagement}>
                 <Layout>
                   <UserManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/auditlogs"
+            element={
+              <ProtectedRoute allowedRoles={routeRoles.auditlogs}>
+                <Layout>
+                  <AuditLogsPage />
                 </Layout>
               </ProtectedRoute>
             }

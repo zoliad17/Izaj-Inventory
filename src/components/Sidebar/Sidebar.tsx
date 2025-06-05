@@ -6,13 +6,14 @@ import {
   CubeIcon,
   ClipboardListIcon,
   SwitchHorizontalIcon,
-  CogIcon,
+  // CogIcon,
   UserCircleIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
   SearchIcon,
 } from "@heroicons/react/outline";
 import { useSidebar } from "./SidebarContext";
+import { LogOutIcon } from "lucide-react";
 
 // Define types for the navigation items
 interface NavItem {
@@ -68,33 +69,33 @@ function Sidebar() {
       icon: LocationMarkerIcon,
       label: "Branch",
       path: "/branch_location",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+      allowedRoles: ["Admin", "Branch Manager"],
     },
 
     {
       icon: ClipboardListIcon,
       label: "Branch Request",
       path: null,
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+      allowedRoles: ["Admin", "Branch Manager"],
       subItems: [
         {
           icon: ClipboardListIcon,
           label: "Pending Request",
           path: "/pending_request",
-          allowedRoles: ["Branch Manager", "Super Admin"],
+          allowedRoles: ["Branch Manager"],
         },
         {
           icon: SwitchHorizontalIcon,
           label: "Transferred",
           path: "/transferred",
-          allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
-        },
-        {
-          icon: SwitchHorizontalIcon,
-          label: "Send Request",
-          path: "/send_request",
           allowedRoles: ["Admin", "Branch Manager"],
         },
+        // {
+        //   icon: SwitchHorizontalIcon,
+        //   label: "Send Request",
+        //   path: "/send_request",
+        //   allowedRoles: ["Admin", "Branch Manager"],
+        // },
         {
           icon: SwitchHorizontalIcon,
           label: "Requested_Item",
@@ -113,19 +114,25 @@ function Sidebar() {
       icon: CubeIcon,
       label: "Stock",
       path: "/all_stock",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+      allowedRoles: ["Admin", "Branch Manager"],
     },
-    {
-      icon: CogIcon,
-      label: "Setting",
-      path: "#",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
-    },
+    // {
+    //   icon: CogIcon,
+    //   label: "Setting",
+    //   path: "#",
+    //   allowedRoles: [ "Super Admin"],
+    // },
     {
       icon: UserCircleIcon,
       label: "User",
-      path: "/add-user",
-      allowedRoles: ["Super Admin", "Branch Manager"],
+      path: "/user-management",
+      allowedRoles: ["Super Admin"],
+    },
+    {
+      icon: UserCircleIcon,
+      label: "AuditLogs",
+      path: "/auditlogs",
+      allowedRoles: ["Super Admin"],
     },
   ];
 
@@ -162,6 +169,10 @@ function Sidebar() {
       };
     })
     .filter(Boolean) as NavItem[];
+
+  const userBranch = {
+    name: "Laguna",
+  };
 
   return (
     <div
@@ -319,9 +330,14 @@ function Sidebar() {
             <div className="px-3 py-2 text-sm font-medium text-gray-700 truncate">
               {user.email || user.username}
               {user.role && (
-                <span className="block text-xs text-gray-500">
-                  {user.role.role_name}
-                </span>
+                <>
+                  <span className="block text-xs text-gray-500">
+                    {user.role.role_name}
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    {userBranch.name}
+                  </span>
+                </>
               )}
             </div>
           )}
@@ -332,24 +348,7 @@ function Sidebar() {
             }`}
             title="Logout"
           >
-            {isCollapsed ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-            ) : (
-              "Logout"
-            )}
+            {isCollapsed ? <LogOutIcon className="h-6 w-6" /> : "Logout"}
           </button>
         </div>
       </div>
