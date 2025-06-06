@@ -21,6 +21,13 @@ function ProductTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [requestQuantity, setRequestQuantity] = useState<{
+    [key: string]: number;
+  }>({});
+  const [currentRequestProduct, setCurrentRequestProduct] =
+    useState<Product | null>(null);
   const productsPerPage = 5;
 
   // State with typed products array
@@ -79,10 +86,10 @@ function ProductTable() {
 
   // Get unique categories for filter dropdown
   const categories = [
-    "All ",
+    "All",
     ...new Set(products.map((product) => product.category)),
   ];
-  const statuses = ["All ", "In Stock", "Out of Stock", "Low Stock"];
+  const statuses = ["All", "In Stock", "Out of Stock", "Low Stock"];
 
   // Filter products based on search term and filters
   const filteredProducts = products.filter((product) => {
@@ -92,9 +99,9 @@ function ProductTable() {
       product.id.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory =
-      categoryFilter === "All " || product.category === categoryFilter;
+      categoryFilter === "All" || product.category === categoryFilter;
     const matchesStatus =
-      statusFilter === "All " || product.status === statusFilter;
+      statusFilter === "All" || product.status === statusFilter;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -112,6 +119,76 @@ function ProductTable() {
     setCurrentPage(page);
   };
 
+  // Handle product selection
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  // Handle select all products on current page
+  const handleSelectAll = () => {
+    if (selectedProducts.length === currentProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(currentProducts.map((product) => product.id));
+    }
+  };
+
+  // Handle individual product request
+  const handleRequestProduct = (product: Product) => {
+    setCurrentRequestProduct(product);
+    setRequestQuantity((prev) => ({
+      ...prev,
+      [product.id]: prev[product.id] || 1,
+    }));
+    setIsModalOpen(true);
+  };
+
+  // Handle bulk request
+  const handleBulkRequest = () => {
+    if (selectedProducts.length === 0) return;
+
+    // Initialize quantities for all selected products if not already set
+    const newQuantities = { ...requestQuantity };
+    selectedProducts.forEach((id) => {
+      if (!newQuantities[id]) {
+        const product = products.find((p) => p.id === id);
+        if (product) {
+          newQuantities[id] = 1;
+        }
+      }
+    });
+    setRequestQuantity(newQuantities);
+    setIsModalOpen(true);
+  };
+
+  // Handle request submission
+  const handleSubmitRequest = () => {
+    // Here you would typically send the request to your backend
+    console.log("Request submitted:", {
+      products: currentRequestProduct
+        ? [
+            {
+              productId: currentRequestProduct.id,
+              quantity: requestQuantity[currentRequestProduct.id] || 1,
+            },
+          ]
+        : selectedProducts.map((id) => ({
+            productId: id,
+            quantity: requestQuantity[id] || 1,
+          })),
+    });
+
+    // Reset and close modal
+    setSelectedProducts([]);
+    setIsModalOpen(false);
+    setCurrentRequestProduct(null);
+    alert("Request submitted successfully!");
+  };
+
   //mock export function
   const mockExport = () => {
     alert(
@@ -126,6 +203,91 @@ function ProductTable() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
+      {/* Request Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50  flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">
+              {currentRequestProduct
+                ? `Request ${currentRequestProduct.name}`
+                : "Request Multiple Products"}
+            </h2>
+
+            {currentRequestProduct ? (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={currentRequestProduct.stock}
+                  value={requestQuantity[currentRequestProduct.id] || 1}
+                  onChange={(e) =>
+                    setRequestQuantity((prev) => ({
+                      ...prev,
+                      [currentRequestProduct.id]: parseInt(e.target.value) || 1,
+                    }))
+                  }
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Available: {currentRequestProduct.stock}
+                </p>
+              </div>
+            ) : (
+              <div className="mb-4">
+                {selectedProducts.map((productId) => {
+                  const product = products.find((p) => p.id === productId);
+                  if (!product) return null;
+
+                  return (
+                    <div key={productId} className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700">
+                        {product.name}
+                      </label>
+                      <div className="flex items-center mt-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max={product.stock}
+                          value={requestQuantity[productId] || 1}
+                          onChange={(e) =>
+                            setRequestQuantity((prev) => ({
+                              ...prev,
+                              [productId]: parseInt(e.target.value) || 1,
+                            }))
+                          }
+                          className="w-full p-2 border border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-500">
+                          / {product.stock} available
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitRequest}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Submit Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
         <div className="p-6">
           {/* Header with search and actions */}
@@ -184,7 +346,15 @@ function ProductTable() {
                     ))}
                   </select>
                 </div>
-                {/*  Export button*/}
+
+                {selectedProducts.length > 0 && (
+                  <button
+                    onClick={handleBulkRequest}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                  >
+                    Request Selected ({selectedProducts.length})
+                  </button>
+                )}
 
                 <button
                   onClick={mockExport}
@@ -217,6 +387,17 @@ function ProductTable() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedProducts.length === currentProducts.length &&
+                          currentProducts.length > 0
+                        }
+                        onChange={handleSelectAll}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Product ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -234,12 +415,23 @@ function ProductTable() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {currentProducts.length > 0 ? (
                     currentProducts.map((product: Product) => (
                       <tr key={product.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product.id)}
+                            onChange={() => handleSelectProduct(product.id)}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {product.id}
                         </td>
@@ -268,12 +460,21 @@ function ProductTable() {
                             {product.status}
                           </span>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleRequestProduct(product)}
+                            className="text-blue-600 hover:text-blue-900"
+                            disabled={product.status === "Out of Stock"}
+                          >
+                            Request
+                          </button>
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={8}
                         className="px-6 py-4 text-center text-sm text-gray-500"
                       >
                         No products found

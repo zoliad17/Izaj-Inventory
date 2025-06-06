@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../../backend/Supabase/supabase";
+import { supabase } from "../../Supabase/supabase";
 import { useNavigate } from "react-router-dom";
 
 export default function OtpPage() {
