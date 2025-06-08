@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import light1 from "/src/assets/image/light1.jpg";
+// import { useNavigate } from "react-router-dom";
+import logo from "/src/assets/image/logo.jpg";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Upload, Plus, Edit, Trash2, X, Search } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
+import ProductDetailsModal from "./ProductDetailsModal";
 
 interface Product {
   id: string;
@@ -27,7 +28,6 @@ const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
 
 function AllStock() {
   const { isCollapsed } = useSidebar();
-  const navigate = useNavigate();
 
   const [products, setProducts] = useState<Product[]>([
     {
@@ -37,7 +37,7 @@ function AllStock() {
       price: "345.99",
       stock: 100,
       status: "In Stock",
-      imageUrl: light1,
+      imageUrl: logo,
       description: "High-efficiency LED bulb with a long lifespan.",
       detailsPage: "/product/001",
     },
@@ -48,7 +48,7 @@ function AllStock() {
       price: "899.99",
       stock: 50,
       status: "In Stock",
-      imageUrl: light1,
+      imageUrl: logo,
       description: "WiFi enabled smart light with color changing features.",
       detailsPage: "/product/002",
     },
@@ -59,7 +59,7 @@ function AllStock() {
       price: "1299.99",
       stock: 15,
       status: "Low Stock",
-      imageUrl: light1,
+      imageUrl: logo,
       description: "Modern ceiling light fixture with dimmer control.",
       detailsPage: "/product/003",
     },
@@ -70,7 +70,7 @@ function AllStock() {
       price: "749.99",
       stock: 0,
       status: "Out of Stock",
-      imageUrl: light1,
+      imageUrl: logo,
       description: "Elegant wall mounted sconce for ambient lighting.",
       detailsPage: "/product/004",
     },
@@ -81,7 +81,7 @@ function AllStock() {
       price: "499.99",
       stock: 200,
       status: "In Stock",
-      imageUrl: light1,
+      imageUrl: logo,
       description: "Flexible RGB LED strip with remote control.",
       detailsPage: "/product/005",
     },
@@ -137,6 +137,10 @@ function AllStock() {
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
+  // Add mo to von for Product details
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState<boolean>(false);
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+
   // Product selection handlers
   const toggleProductSelection = (productId: string) => {
     setSelectedProducts((prev) =>
@@ -168,7 +172,7 @@ function AllStock() {
       ...productData,
       id: newId,
       stock: Number(productData.stock),
-      imageUrl: light1,
+      imageUrl: logo,
       detailsPage: `/product/${newId}`,
     };
     setProducts((prev) => [...prev, productToAdd]);
@@ -228,11 +232,14 @@ function AllStock() {
     setIsBulkDeleteModalOpen(false);
   };
 
-  // Navigation handlers
+  // add mo den to Von Navigation handlers for view product
   const handleProductClick = (productId: string) => {
-    navigate(`/product/${productId}`);
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      setViewingProduct(product);
+      setIsDetailsModalOpen(true);
+    }
   };
-
   const handleImportExcel = () => {
     alert("Import Excel functionality will be implemented here");
   };
@@ -569,6 +576,23 @@ function AllStock() {
         }
         categories={CATEGORIES}
         statusOptions={STATUS_OPTIONS}
+      />
+      {/* Modal for Product Details */}
+      <ProductDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        product={
+          viewingProduct || {
+            id: "",
+            name: "",
+            category: "",
+            price: "",
+            stock: 0,
+            status: "In Stock",
+            imageUrl: "",
+            description: "",
+          }
+        }
       />
 
       {/* Delete Confirmation Modal */}
