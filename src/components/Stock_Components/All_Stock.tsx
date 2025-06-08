@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import light1 from "/src/assets/image/light1.jpg";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Upload, Plus, Edit, Trash2, X, Search } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
+import { supabase } from "../../backend/Supabase/supabase";
 
 interface Product {
   id: string;
@@ -13,12 +13,9 @@ interface Product {
   price: string;
   stock: number;
   status: "In Stock" | "Out of Stock" | "Low Stock";
-  imageUrl: string;
-  description?: string;
   detailsPage?: string;
 }
 
-const CATEGORIES = ["Bulbs", "Lights", "Fixtures", "Accessories"] as const;
 const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
   "In Stock",
   "Low Stock",
@@ -27,125 +24,147 @@ const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
 
 function AllStock() {
   const { isCollapsed } = useSidebar();
-  const navigate = useNavigate();
 
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "001",
-      name: "LED Bulb",
-      category: "Bulbs",
-      price: "345.99",
-      stock: 100,
-      status: "In Stock",
-      imageUrl: light1,
-      description: "High-efficiency LED bulb with a long lifespan.",
-      detailsPage: "/product/001",
-    },
-    {
-      id: "002",
-      name: "Smart Light",
-      category: "Lights",
-      price: "899.99",
-      stock: 50,
-      status: "In Stock",
-      imageUrl: light1,
-      description: "WiFi enabled smart light with color changing features.",
-      detailsPage: "/product/002",
-    },
-    {
-      id: "003",
-      name: "Ceiling Fixture",
-      category: "Fixtures",
-      price: "1299.99",
-      stock: 15,
-      status: "Low Stock",
-      imageUrl: light1,
-      description: "Modern ceiling light fixture with dimmer control.",
-      detailsPage: "/product/003",
-    },
-    {
-      id: "004",
-      name: "Wall Sconce",
-      category: "Fixtures",
-      price: "749.99",
-      stock: 0,
-      status: "Out of Stock",
-      imageUrl: light1,
-      description: "Elegant wall mounted sconce for ambient lighting.",
-      detailsPage: "/product/004",
-    },
-    {
-      id: "005",
-      name: "LED Strip",
-      category: "Accessories",
-      price: "499.99",
-      stock: 200,
-      status: "In Stock",
-      imageUrl: light1,
-      description: "Flexible RGB LED strip with remote control.",
-      detailsPage: "/product/005",
-    },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [branchId, setBranchId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState<boolean>(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // State for search and filters
+  // Add missing state for filters, pagination, and handlers
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(4);
+  const itemsPerPage = 10;
 
-  // Filter products based on search term and filters
+  useEffect(() => {
+    const storedBranchId = localStorage.getItem("branchId");
+    if (storedBranchId) {
+      setBranchId(storedBranchId);
+    }
+  }, []);
+
+  // Move fetchProducts to top-level so it can be reused
+  const fetchProducts = async () => {
+    if (!branchId) return;
+    const response = await fetch(`/api/products?branch_id=${branchId}`);
+    if (!response.ok) {
+      console.error("Error fetching products from backend");
+      return;
+    }
+    const data = await response.json();
+    const mapped = data.map((product: any) => ({
+      id: product.id,
+      name: product.product_name,
+      category: product.category || "Unknown",
+      price: Number(product.price).toFixed(2),
+      stock: product.quantity,
+      status: getStatus(product.quantity) as "In Stock" | "Low Stock" | "Out of Stock",
+      imageUrl: light1,
+      detailsPage: `/product/${product.id}`,
+    }));
+    setProducts(mapped);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [branchId]);
+
+  // Accept branchId as an optional second argument
+  const handleAddProduct = async (
+    productData: {
+      name: string;
+      category: string; // category id
+      price: string;
+      stock: string;
+      status: "In Stock" | "Out of Stock" | "Low Stock";
+    },
+    branchIdOverride?: string
+  ) => {
+    const branchToUse = branchIdOverride || branchId;
+    if (!branchToUse) return;
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...productData,
+          category: productData.category, // this is the category id
+          branch_id: branchToUse,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to add product");
+      await fetchProducts();
+      setIsAddModalOpen(false);
+    } catch (err) {
+      console.error("Error adding product:", err);
+    }
+  };
+
+  const handleEditProduct = async (productData: {
+    id: string;
+    name: string;
+    category: string;
+    price: string;
+    stock: string;
+    status: "In Stock" | "Out of Stock" | "Low Stock";
+  }) => {
+    const { error } = await supabase
+      .from("lucena_product")
+      .update({
+        product_name: productData.name,
+        quantity: Number(productData.stock),
+        price: Number(productData.price),
+      })
+      .eq("id", productData.id);
+
+    if (error) {
+      console.error("Error updating product:", error.message);
+    } else {
+      await fetchProducts();
+      setIsEditModalOpen(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (productToDelete) {
+      await supabase.from("lucena_product").delete().eq("id", productToDelete);
+      await fetchProducts();
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    await supabase.from("lucena_product").delete().in("id", selectedProducts);
+    await fetchProducts();
+    setIsBulkDeleteModalOpen(false);
+  };
+
+  // Filtered products based on search, category, and status
   const filteredProducts = products.filter((product) => {
-    // Search term filter
-    const matchesSearch = Object.values(product).some(
-      (value) =>
-        typeof value === "string" &&
-        value.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Category filter
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       selectedCategory === "All" || product.category === selectedCategory;
-
-    // Status filter
     const matchesStatus =
       selectedStatus === "All" || product.status === selectedStatus;
-
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
+  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory, selectedStatus]);
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
-    useState<boolean>(false);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
-  // Product selection handlers
-  const toggleProductSelection = (productId: string) => {
-    setSelectedProducts((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
+  // Selection logic
   const toggleSelectAll = () => {
     if (selectedProducts.length === currentItems.length) {
       setSelectedProducts([]);
@@ -153,94 +172,58 @@ function AllStock() {
       setSelectedProducts(currentItems.map((product) => product.id));
     }
   };
-
-  // Product CRUD operations
-  const handleAddProduct = (productData: {
-    name: string;
-    category: string;
-    price: string;
-    stock: string;
-    status: "In Stock" | "Out of Stock" | "Low Stock";
-    description: string;
-  }) => {
-    const newId = String(products.length + 1).padStart(3, "0");
-    const productToAdd: Product = {
-      ...productData,
-      id: newId,
-      stock: Number(productData.stock),
-      imageUrl: light1,
-      detailsPage: `/product/${newId}`,
-    };
-    setProducts((prev) => [...prev, productToAdd]);
-  };
-
-  const handleEditProduct = (productData: {
-    id: string;
-    name: string;
-    category: string;
-    price: string;
-    stock: string;
-    status: "In Stock" | "Out of Stock" | "Low Stock";
-    description: string;
-  }) => {
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.id === productData.id
-          ? {
-              ...product,
-              name: productData.name,
-              category: productData.category,
-              price: productData.price,
-              stock: Number(productData.stock),
-              status: productData.status,
-              description: productData.description,
-            }
-          : product
-      )
+  const toggleProductSelection = (id: string) => {
+    setSelectedProducts((prev) =>
+      prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     );
   };
 
-  // Delete handlers
-  const confirmDelete = (productId: string) => {
-    setProductToDelete(productId);
-    setIsDeleteModalOpen(true);
-  };
 
-  const confirmBulkDelete = () => {
-    if (selectedProducts.length > 0) {
-      setIsBulkDeleteModalOpen(true);
-    }
-  };
 
-  const handleDelete = () => {
-    if (productToDelete) {
-      setProducts(products.filter((product) => product.id !== productToDelete));
-      setProductToDelete(null);
-      setIsDeleteModalOpen(false);
-    }
-  };
-
-  const handleBulkDelete = () => {
-    setProducts(
-      products.filter((product) => !selectedProducts.includes(product.id))
-    );
-    setSelectedProducts([]);
-    setIsBulkDeleteModalOpen(false);
-  };
-
-  // Navigation handlers
-  const handleProductClick = (productId: string) => {
-    navigate(`/product/${productId}`);
-  };
-
-  const handleImportExcel = () => {
-    alert("Import Excel functionality will be implemented here");
-  };
 
   // Edit product setup
   const setupEditProduct = (product: Product) => {
     setEditingProduct(product);
     setIsEditModalOpen(true);
+  };
+
+  // Delete confirmation
+  const confirmDelete = (id: string) => {
+    setProductToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+  const confirmBulkDelete = () => {
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // Import Excel stub
+  const handleImportExcel = () => {
+    alert("Import Excel functionality not implemented yet.");
+  };
+
+  // Fix status type in all product mapping
+  function getStatus(quantity: number): "In Stock" | "Low Stock" | "Out of Stock" {
+    if (quantity === 0) return "Out of Stock";
+    if (quantity < 20) return "Low Stock";
+    return "In Stock";
+  }
+
+  const [categories, setCategories] = useState<{ id: string; category_name: string }[]>([]);
+
+  // Fetch categories from backend on mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      setCategories(data.map((cat: any) => ({ id: cat.id, category_name: cat.category_name })));
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    }
   };
 
   return (
@@ -286,9 +269,9 @@ function AllStock() {
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
                 <option value="All">All Categories</option>
-                {CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                {categories.map((category) => (
+                  <option key={category.id} value={category.category_name}>
+                    {category.category_name}
                   </option>
                 ))}
               </select>
@@ -400,7 +383,6 @@ function AllStock() {
                       </td>
                       <td
                         className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer"
-                        onClick={() => handleProductClick(product.id)}
                       >
                         {product.name}
                       </td>
@@ -549,7 +531,7 @@ function AllStock() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAddProduct={handleAddProduct}
-        categories={CATEGORIES}
+        categories={categories}
         statusOptions={STATUS_OPTIONS}
       />
 
@@ -567,7 +549,7 @@ function AllStock() {
             status: "In Stock",
           }
         }
-        categories={CATEGORIES}
+        categories={categories}
         statusOptions={STATUS_OPTIONS}
       />
 
@@ -645,3 +627,4 @@ function AllStock() {
 }
 
 export default AllStock;
+

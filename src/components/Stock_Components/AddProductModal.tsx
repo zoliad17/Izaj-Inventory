@@ -6,13 +6,12 @@ interface AddProductModalProps {
   onClose: () => void;
   onAddProduct: (product: {
     name: string;
-    category: string;
+    category: string; // category id
     price: string;
     stock: string;
     status: "In Stock" | "Out of Stock" | "Low Stock";
-    description: string;
-  }) => void;
-  categories: readonly string[];
+  }, branchId?: string) => void;
+  categories: { id: string; category_name: string }[];
   statusOptions: ("In Stock" | "Out of Stock" | "Low Stock")[];
 }
 
@@ -29,7 +28,6 @@ const AddProductModal = ({
     price: "",
     stock: "",
     status: "In Stock" as const,
-    description: "",
   });
 
   const handleInputChange = (
@@ -43,7 +41,13 @@ const AddProductModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAddProduct(newProduct);
+    // Pass branch_id as a second argument if available
+    const branchId = localStorage.getItem("branchId");
+    if (branchId) {
+      onAddProduct({ ...newProduct }, branchId);
+    } else {
+      onAddProduct(newProduct);
+    }
     onClose();
     // Reset form
     setNewProduct({
@@ -52,7 +56,6 @@ const AddProductModal = ({
       price: "",
       stock: "",
       status: "In Stock",
-      description: "",
     });
   };
 
@@ -99,9 +102,9 @@ const AddProductModal = ({
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.category_name}
                   </option>
                 ))}
               </select>
@@ -155,20 +158,6 @@ const AddProductModal = ({
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={newProduct.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
             </div>
           </div>
 

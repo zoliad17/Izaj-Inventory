@@ -11,7 +11,6 @@ interface EditProductModalProps {
     price: string;
     stock: string;
     status: "In Stock" | "Out of Stock" | "Low Stock";
-    description: string;
   }) => void;
   product: {
     id: string;
@@ -20,9 +19,8 @@ interface EditProductModalProps {
     price: string;
     stock: number;
     status: "In Stock" | "Out of Stock" | "Low Stock";
-    description?: string;
   };
-  categories: readonly string[];
+  categories: { id: string; category_name: string }[];
   statusOptions: ("In Stock" | "Out of Stock" | "Low Stock")[];
 }
 
@@ -41,7 +39,6 @@ const EditProductModal = ({
     price: product.price,
     stock: product.stock.toString(),
     status: product.status,
-    description: product.description || "",
   });
 
   useEffect(() => {
@@ -52,7 +49,6 @@ const EditProductModal = ({
       price: product.price,
       stock: product.stock.toString(),
       status: product.status,
-      description: product.description || "",
     });
   }, [product]);
 
@@ -114,9 +110,9 @@ const EditProductModal = ({
                 required
               >
                 <option value="">Select a category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.category_name}
                   </option>
                 ))}
               </select>
@@ -170,20 +166,6 @@ const EditProductModal = ({
                   </option>
                 ))}
               </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={editedProduct.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
             </div>
           </div>
 

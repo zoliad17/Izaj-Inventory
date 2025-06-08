@@ -1,5 +1,5 @@
 - [x] Connected to supabase
-- [ ] CRUD features
+- [x] CRUD features (single branch for now)
 - [ ] Register
 - [ ] Picture or Excel extractor to pass to supabase
 - [ ] Add a delay like a pending where it deducts unless not approved it will revert to the original value to avoid collision
