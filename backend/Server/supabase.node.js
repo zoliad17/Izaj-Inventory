@@ -1,4 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
+// backend/Server/Supabase/supabase.js
+const { createClient } = require("@supabase/supabase-js");
 
 const supabaseUrl = "https://phhbjvlrwrtiokfbjorb.supabase.co";
 const supabaseAnonKey =

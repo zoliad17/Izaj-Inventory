@@ -11,18 +11,24 @@ import {
   Edit,
   Trash2Icon,
 } from "lucide-react";
-import { supabase } from "../../backend/Supabase/supabase";
+import { supabase } from "../../../backend/Server/Supabase/supabase";
 import { use } from "echarts/types/src/extension.js";
 
 // Define interface for User data
 interface User {
-  id: number;
+  user_id: number;
   name: string;
   contact: string;
   email: string;
-  description: string;
   status: "Active" | "Inactive";
-  branch: string; // this is branch ID (UUID)
+  branch_id: string;
+  role_id: number;
+  password?: string;
+  role?: {
+    role_name: string;
+  };
+  branch_name?: string;
+  role_name?: string;
 }
 
 function UserManagement() {
@@ -44,25 +50,80 @@ function UserManagement() {
   const [otpVerified, setOtpVerified] = useState<boolean>(false);
   const itemsPerPage = 5;
 
-  //Interface for branch location
-  interface newUser {
-    branch: string;
-    location: string;
-  }
-
-  const [newUser, setNewUser] = useState<Omit<User, "id">>({
+  const [newUser, setNewUser] = useState<Omit<User, "user_id">>({
     name: "",
     contact: "",
     email: "",
-    description: "",
     status: "Active",
-    branch: "",
+    role_id: 1, // Default role ID
+    branch_id: "",
   });
 
   //Fetch branches from supabase
-  const [branches, setBranches] = useState<{ id: string; location: string }[]>(
-    []
-  );
+  const [branches, setBranches] = useState<{ id: string; location: string }[]>([]);
+  const [roles, setRoles] = useState<{ id: number; role_name: string }[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
+  // Fetch users from API
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/get_users');
+      if (!response.ok) throw new Error('Failed to fetch users');
+      const data = await response.json();
+
+      // Join user data with branch and role information
+      const usersWithInfo = await Promise.all(data.map(async (user: User) => {
+        // Get branch information
+        const { data: branchData, error: branchError } = await supabase
+          .from('branch')
+          .select('location')
+          .eq('id', user.branch_id)
+          .single();
+
+        // Get role information
+        const { data: roleData, error: roleError } = await supabase
+          .from('role')
+          .select('role_name')
+          .eq('id', user.role_id)
+          .single();
+
+        if (branchError) {
+          console.error('Error fetching branch:', branchError);
+        }
+        if (roleError) {
+          console.error('Error fetching role:', roleError);
+        }
+
+        return {
+          ...user,
+          branch_name: branchData?.location || 'N/A',
+          role_name: roleData?.role_name || 'N/A'
+        };
+      }));
+
+      setUsers(usersWithInfo);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users');
+    }
+  };
+
+  // Fetch roles from Supabase
+  useEffect(() => {
+    async function fetchRoles() {
+      const { data, error } = await supabase
+        .from("role")
+        .select("id, role_name");
+      if (error) console.error("Failed to fetch roles:", error);
+      else {
+        setRoles(data || []);
+        if (data && data.length > 0) {
+          setNewUser((prev) => ({ ...prev, role_id: data[0].id }));
+        }
+      }
+    }
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     async function fetchBranches() {
@@ -71,28 +132,15 @@ function UserManagement() {
         .select("id, location");
       if (error) console.error("Failed to fetch branches:", error);
       else {
-        console.log("Branches fetched:", data);
         setBranches(data || []);
         if (data && data.length > 0) {
-          setNewUser((prev) => ({ ...prev, branch: data[0].id })); // set default selected branch
+          setNewUser((prev) => ({ ...prev, branch_id: data[0].id }));
         }
       }
     }
     fetchBranches();
+    fetchUsers(); // Fetch users when component mounts
   }, []);
-
-  // Mock user data
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 1,
-      name: "Killua Zoldick",
-      contact: "(042) 123-4567",
-      email: "killua@hunter.com",
-      description: "A skilled assassin from the Zoldick family.",
-      status: "Active",
-      branch: "Lucena",
-    },
-  ]);
 
   // Filter users based on search term and branch
   const filteredUsers = useMemo(() => {
@@ -104,7 +152,7 @@ function UserManagement() {
       );
 
       const matchesBranch =
-        branchFilter === "All" || user.branch === branchFilter;
+        branchFilter === "All" || user.branch_id === branchFilter;
 
       return matchesSearch && matchesBranch;
     });
@@ -131,7 +179,7 @@ function UserManagement() {
       setEditedUser((prev) => ({ ...prev, [name]: value }));
       setUsers(
         users.map((user) =>
-          user.id === userId ? { ...user, [name]: value } : user
+          user.user_id === userId ? { ...user, [name]: value } : user
         )
       );
     } else {
@@ -141,22 +189,63 @@ function UserManagement() {
   };
 
   // Handle updating the user
-  const handleUpdate = (userId: number) => {
-    const updatedUsers = users.map((u) =>
-      u.id === userId ? { ...u, ...editedUser } : u
-    );
-    setUsers(updatedUsers);
-    setIsEditMode(false);
-    toast.success("User updated successfully!");
+  const handleUpdate = async (userId: number) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...editedUser,
+          user_id: userId // Include user_id in the update payload
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update user');
+      }
+
+      // Refresh the user list
+      await fetchUsers();
+      setIsEditMode(false);
+      setEditedUser({});
+      toast.success("User updated successfully!");
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update user');
+    }
   };
 
   // Handle deleting the user
-  const handleDelete = () => {
-    if (userIdToDelete) {
-      const updatedUsers = users.filter((u) => u.id !== userIdToDelete);
-      setUsers(updatedUsers);
+  const handleDelete = async () => {
+    if (!userIdToDelete) return;
+
+    try {
+      console.log('Deleting user with ID:', userIdToDelete); // Debug log
+      const response = await fetch(`http://localhost:5000/api/users/${userIdToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete user');
+      }
+
+      // Refresh the user list
+      await fetchUsers();
       setIsDeleteModalOpen(false);
+      setUserIdToDelete(null);
       toast.success("User deleted successfully!");
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+      setIsDeleteModalOpen(false);
+      setUserIdToDelete(null);
     }
   };
 
@@ -180,39 +269,89 @@ function UserManagement() {
   };
 
   // Add new user
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!otpVerified) {
       toast.error("Please verify OTP first");
       return;
     }
 
-    const newId = Math.max(...users.map((u) => u.id)) + 1;
-    const userToAdd: User = {
-      id: newId,
-      ...newUser,
-    };
+    // Validate required fields
+    if (!newUser.name || !newUser.email || !newUser.contact || !newUser.role_id || !newUser.password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
 
-    setUsers([...users, userToAdd]);
-    setIsAddModalOpen(false);
-    setOtpSent(false);
-    setOtpVerified(false);
-    setOtp("");
-    setNewUser({
-      name: "",
-      contact: "",
-      email: "",
-      description: "",
-      status: "Active",
-      branch: "Lucena",
-    });
-    toast.success("User added successfully!");
+    // Validate contact number format
+    const cleanContact = newUser.contact.replace(/\D/g, '').slice(0, 11);
+    if (cleanContact.length !== 11) {
+      toast.error("Contact number must be exactly 11 digits");
+      return;
+    }
+
+    try {
+      const userData = {
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        contact: cleanContact,
+        role_id: newUser.role_id,
+        branch_id: newUser.branch_id,
+        status: newUser.status || 'Active'
+      };
+
+      console.log('Creating user with data:', userData);
+
+      const response = await fetch('http://localhost:5000/api/create_users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Server error response:', data);
+        throw new Error(data.error || data.message || 'Failed to create user');
+      }
+
+      // Refresh the user list
+      await fetchUsers();
+
+      setIsAddModalOpen(false);
+      setOtpSent(false);
+      setOtpVerified(false);
+      setOtp("");
+      setNewUser({
+        name: "",
+        contact: "",
+        email: "",
+        status: "Active",
+        role_id: roles[0]?.id || 1,
+        branch_id: branches[0]?.id || "",
+      });
+      toast.success("User added successfully!");
+    } catch (error) {
+      console.error('Error creating user:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
+      toast.error(errorMessage);
+    }
+  };
+
+  // Add input validation for contact number
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+    setNewUser(prev => ({
+      ...prev,
+      contact: value
+    }));
   };
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="p-2">
         <button
@@ -268,16 +407,16 @@ function UserManagement() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
+                    Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
+                    Role
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Branch
@@ -293,137 +432,144 @@ function UserManagement() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentUsers.length > 0 ? (
                   currentUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.id}
+                    <tr key={user.user_id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <input
+                            type="text"
+                            name="name"
+                            defaultValue={user.name}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          />
+                        ) : (
+                          user.name
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {isEditMode && editedUser.id === user.id ? (
-                            <input
-                              type="text"
-                              name="name"
-                              defaultValue={user.name}
-                              onChange={(e) => handleInputChange(e, user.id)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
-                            />
-                          ) : (
-                            user.name
-                          )}
-                        </div>
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <input
+                            type="text"
+                            name="contact"
+                            defaultValue={user.contact}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          />
+                        ) : (
+                          user.contact
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {isEditMode && editedUser.id === user.id ? (
-                            <input
-                              type="email"
-                              name="email"
-                              defaultValue={user.email}
-                              onChange={(e) => handleInputChange(e, user.id)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
-                            />
-                          ) : (
-                            user.email
-                          )}
-                        </div>
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <input
+                            type="email"
+                            name="email"
+                            defaultValue={user.email}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          />
+                        ) : (
+                          user.email
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {isEditMode && editedUser.id === user.id ? (
-                            <input
-                              type="text"
-                              name="contact"
-                              defaultValue={user.contact}
-                              onChange={(e) => handleInputChange(e, user.id)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
-                            />
-                          ) : (
-                            user.contact
-                          )}
-                        </div>
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <select
+                            name="role_id"
+                            defaultValue={user.role_id}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          >
+                            {roles.map((role) => (
+                              <option key={role.id} value={role.id}>
+                                {role.role_name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          user.role_name || 'N/A'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {isEditMode && editedUser.id === user.id ? (
-                            <select
-                              name="branch"
-                              defaultValue={user.branch}
-                              onChange={(e) => handleInputChange(e, user.id)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
-                            >
-                              {branches.map((branch) => (
-                                <option key={branch.id} value={branch.location}>
-                                  {branch.location}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            user.branch
-                          )}
-                        </div>
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <select
+                            name="branch_id"
+                            defaultValue={user.branch_id}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          >
+                            {branches.map((branch) => (
+                              <option key={branch.id} value={branch.id}>
+                                {branch.location}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          user.branch_name || 'N/A'
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {isEditMode && editedUser.id === user.id ? (
-                            <select
-                              name="status"
-                              defaultValue={user.status}
-                              onChange={(e) => handleInputChange(e, user.id)}
-                              className="w-full px-2 py-1 border border-gray-300 rounded"
-                            >
-                              <option value="Active">Active</option>
-                              <option value="Inactive">Inactive</option>
-                            </select>
-                          ) : (
-                            <span
-                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                user.status === "Active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <select
+                            name="status"
+                            defaultValue={user.status}
+                            onChange={(e) => handleInputChange(e, user.user_id)}
+                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                          >
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
                               }`}
-                            >
-                              {user.status}
-                            </span>
-                          )}
-                        </div>
+                          >
+                            {user.status || 'Active'}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {isEditMode && editedUser.id === user.id ? (
-                          <>
+                        {isEditMode && editedUser.user_id === user.user_id ? (
+                          <div className="flex space-x-2">
                             <button
-                              onClick={() => handleUpdate(user.id)}
-                              className="text-green-600 hover:text-green-900 mr-3"
+                              onClick={() => handleUpdate(user.user_id)}
+                              className="text-green-600 hover:text-green-900"
                             >
                               Save
                             </button>
                             <button
-                              onClick={() => setIsEditMode(false)}
+                              onClick={() => {
+                                setIsEditMode(false);
+                                setEditedUser({});
+                              }}
                               className="text-gray-600 hover:text-gray-900"
                             >
                               Cancel
                             </button>
-                          </>
+                          </div>
                         ) : (
-                          <>
+                          <div className="flex space-x-2">
                             <button
                               onClick={() => {
+                                setEditedUser(user);
                                 setIsEditMode(true);
-                                setEditedUser({ id: user.id });
                               }}
-                              className="text-blue-600 hover:text-blue-900 mr-3"
+                              className="text-indigo-600 hover:text-indigo-900"
                             >
                               <Edit size={16} />
                             </button>
                             <button
                               onClick={() => {
+                                setUserIdToDelete(user.user_id);
                                 setIsDeleteModalOpen(true);
-                                setUserIdToDelete(user.id);
                               }}
                               className="text-red-600 hover:text-red-900"
                             >
                               <Trash2Icon size={16} />
                             </button>
-                          </>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -471,11 +617,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       Previous
                     </button>
@@ -484,11 +629,10 @@ function UserManagement() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -499,11 +643,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       Next
                     </button>
@@ -517,20 +660,21 @@ function UserManagement() {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0  bg-black/50 z-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-            <p className="mb-4">Are you sure you want to delete this user?</p>
-            <div className="flex justify-end space-x-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsDeleteModalOpen(false)}></div>
+          <div className="relative bg-white rounded-lg p-6 w-96 shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+            <p className="mb-6">Are you sure you want to delete this user? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300"
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Delete
               </button>
@@ -553,9 +697,11 @@ function UserManagement() {
                 <input
                   type="text"
                   name="name"
+                  placeholder="Name *"
                   value={newUser.name}
                   onChange={(e) => handleInputChange(e)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 />
               </div>
 
@@ -566,23 +712,27 @@ function UserManagement() {
                 <input
                   type="email"
                   name="email"
+                  placeholder="Email *"
                   value={newUser.email}
                   onChange={(e) => handleInputChange(e)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 />
               </div>
 
-              <div>
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact
+                  Contact Number <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  name="contact"
+                  type="tel"
                   value={newUser.contact}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  onChange={handleContactChange}
+                  placeholder="Enter 11-digit contact number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
+                <p className="text-sm text-gray-500 mt-1">Enter 11 digits (e.g., 09123456789)</p>
               </div>
 
               <div>
@@ -590,17 +740,40 @@ function UserManagement() {
                   Branch
                 </label>
                 <select
-                  name="branch"
-                  value={newUser.branch}
-                  onChange={handleInputChange}
+                  name="branch_id"
+                  value={newUser.branch_id}
+                  onChange={(e) => handleInputChange(e)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 >
                   <option value="" disabled>
-                    Select Branch
+                    Select Branch *
                   </option>
                   {branches.map((branch) => (
                     <option key={branch.id} value={branch.id}>
                       {branch.location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  name="role_id"
+                  value={newUser.role_id}
+                  onChange={(e) => handleInputChange(e)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Role *
+                  </option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.role_name}
                     </option>
                   ))}
                 </select>
@@ -623,14 +796,15 @@ function UserManagement() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  Password
                 </label>
-                <textarea
-                  name="description"
-                  value={newUser.description}
-                  onChange={(e) => handleInputChange(e)}
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password *"
+                  onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={3}
+                  required
                 />
               </div>
 
@@ -641,11 +815,10 @@ function UserManagement() {
                     <button
                       onClick={sendOtp}
                       disabled={!newUser.email || otpSent}
-                      className={`px-3 py-2 rounded-md text-sm ${
-                        !newUser.email || otpSent
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
+                      className={`px-3 py-2 rounded-md text-sm ${!newUser.email || otpSent
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}
                     >
                       {otpSent ? "OTP Sent" : "Send OTP"}
                     </button>
@@ -692,11 +865,10 @@ function UserManagement() {
               <button
                 onClick={handleAddUser}
                 disabled={!otpVerified}
-                className={`py-2 px-4 rounded-lg transition duration-300 ${
-                  otpVerified
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                className={`py-2 px-4 rounded-lg transition duration-300 ${otpVerified
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
               >
                 Add User
               </button>

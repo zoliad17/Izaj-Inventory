@@ -4,7 +4,7 @@ import { useSidebar } from "../Sidebar/SidebarContext";
 import { Upload, Plus, Edit, Trash2, X, Search } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
-import { supabase } from "../../backend/Supabase/supabase";
+import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 interface Product {
   id: string;
@@ -30,7 +30,8 @@ function AllStock() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState<boolean>(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
+    useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -64,7 +65,10 @@ function AllStock() {
       category: product.category || "Unknown",
       price: Number(product.price).toFixed(2),
       stock: product.quantity,
-      status: getStatus(product.quantity) as "In Stock" | "Low Stock" | "Out of Stock",
+      status: getStatus(product.quantity) as
+        | "In Stock"
+        | "Low Stock"
+        | "Out of Stock",
       imageUrl: light1,
       detailsPage: `/product/${product.id}`,
     }));
@@ -161,7 +165,10 @@ function AllStock() {
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   // Selection logic
@@ -177,9 +184,6 @@ function AllStock() {
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     );
   };
-
-
-
 
   // Edit product setup
   const setupEditProduct = (product: Product) => {
@@ -202,13 +206,17 @@ function AllStock() {
   };
 
   // Fix status type in all product mapping
-  function getStatus(quantity: number): "In Stock" | "Low Stock" | "Out of Stock" {
+  function getStatus(
+    quantity: number
+  ): "In Stock" | "Low Stock" | "Out of Stock" {
     if (quantity === 0) return "Out of Stock";
     if (quantity < 20) return "Low Stock";
     return "In Stock";
   }
 
-  const [categories, setCategories] = useState<{ id: string; category_name: string }[]>([]);
+  const [categories, setCategories] = useState<
+    { id: string; category_name: string }[]
+  >([]);
 
   // Fetch categories from backend on mount
   useEffect(() => {
@@ -217,12 +225,17 @@ function AllStock() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
-      if (!response.ok) throw new Error('Failed to fetch categories');
+      const response = await fetch("/api/categories");
+      if (!response.ok) throw new Error("Failed to fetch categories");
       const data = await response.json();
-      setCategories(data.map((cat: any) => ({ id: cat.id, category_name: cat.category_name })));
+      setCategories(
+        data.map((cat: any) => ({
+          id: cat.id,
+          category_name: cat.category_name,
+        }))
+      );
     } catch (err) {
-      console.error('Error fetching categories:', err);
+      console.error("Error fetching categories:", err);
     }
   };
 
@@ -381,9 +394,7 @@ function AllStock() {
                       <td className="px-4 py-2 text-sm text-gray-700 font-mono">
                         {product.id}
                       </td>
-                      <td
-                        className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer"
-                      >
+                      <td className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer">
                         {product.name}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700">
@@ -627,4 +638,3 @@ function AllStock() {
 }
 
 export default AllStock;
-

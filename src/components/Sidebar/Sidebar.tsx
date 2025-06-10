@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/outline";
 import { useSidebar } from "./SidebarContext";
 import { LogOutIcon } from "lucide-react";
-import { supabase } from "../../backend/Supabase/supabase";
+import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 // Define types for the navigation items
 interface NavItem {
