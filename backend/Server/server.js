@@ -19,16 +19,21 @@ app.get("/api/products", async (req, res) => {
   if (!branchId) {
     return res.status(400).json({ error: "branch_id is required" });
   }
-  // Join lucena_product with category to get category name
+  // Join centralized_product with category to get category name
   const { data, error } = await supabase
-    .from("lucena_product")
-    .select("*, category:category_id(category_name)")
+    .from("centralized_product")
+    .select(`
+      *,
+      category:category_id (
+        category_name
+      )
+    `)
     .eq("branch_id", branchId);
   if (error) return res.status(500).json({ error: error.message });
   // Map category name to top-level for frontend
   const mapped = data.map((product) => ({
     ...product,
-    category: product.category?.category_name || "",
+    category_name: product.category?.category_name || "",
   }));
   res.json(mapped);
 });
@@ -52,7 +57,7 @@ app.post("/api/products", async (req, res) => {
   };
   console.log("Insert payload:", insertPayload);
   const { data, error } = await supabase
-    .from("lucena_product")
+    .from("centralized_product")
     .insert([insertPayload])
     .select();
   if (error) {
@@ -68,7 +73,7 @@ app.put("/api/products/:id", async (req, res) => {
   const { id } = req.params;
   const product = req.body;
   const { data, error } = await supabase
-    .from("lucena_product")
+    .from("centralized_product")
     .update({
       product_name: product.name,
       category_id: product.category, // use category_id
@@ -89,7 +94,7 @@ app.put("/api/products/:id", async (req, res) => {
 // DELETE product from Supabase
 app.delete("/api/products/:id", async (req, res) => {
   const { id } = req.params;
-  const { error } = await supabase.from("lucena_product").delete().eq("id", id);
+  const { error } = await supabase.from("centralized_product").delete().eq("id", id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
 });

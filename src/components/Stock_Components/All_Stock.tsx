@@ -53,26 +53,31 @@ function AllStock() {
   // Move fetchProducts to top-level so it can be reused
   const fetchProducts = async () => {
     if (!branchId) return;
-    const response = await fetch(`/api/products?branch_id=${branchId}`);
-    if (!response.ok) {
-      console.error("Error fetching products from backend");
-      return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/products?branch_id=${branchId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch products');
+      }
+      const data = await response.json();
+      const mapped = data.map((product: any) => ({
+        id: product.id,
+        name: product.product_name,
+        category: product.category_name || "Unknown",
+        price: Number(product.price).toFixed(2),
+        stock: product.quantity,
+        status: getStatus(product.quantity) as
+          | "In Stock"
+          | "Low Stock"
+          | "Out of Stock",
+        imageUrl: light1,
+        detailsPage: `/product/${product.id}`,
+      }));
+      setProducts(mapped);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      // You might want to show an error message to the user here
     }
-    const data = await response.json();
-    const mapped = data.map((product: any) => ({
-      id: product.id,
-      name: product.product_name,
-      category: product.category || "Unknown",
-      price: Number(product.price).toFixed(2),
-      stock: product.quantity,
-      status: getStatus(product.quantity) as
-        | "In Stock"
-        | "Low Stock"
-        | "Out of Stock",
-      imageUrl: light1,
-      detailsPage: `/product/${product.id}`,
-    }));
-    setProducts(mapped);
   };
 
   useEffect(() => {
@@ -84,7 +89,7 @@ function AllStock() {
   const handleAddProduct = async (
     productData: {
       name: string;
-      category: string; // category id
+      category: string;
       price: string;
       stock: string;
       status: "In Stock" | "Out of Stock" | "Low Stock";
@@ -94,20 +99,24 @@ function AllStock() {
     const branchToUse = branchIdOverride || branchId;
     if (!branchToUse) return;
     try {
-      const response = await fetch("/api/products", {
+      const response = await fetch("http://localhost:5000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...productData,
-          category: productData.category, // this is the category id
+          category: productData.category,
           branch_id: branchToUse,
         }),
       });
-      if (!response.ok) throw new Error("Failed to add product");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add product');
+      }
       await fetchProducts();
       setIsAddModalOpen(false);
     } catch (err) {
       console.error("Error adding product:", err);
+      // You might want to show an error message to the user here
     }
   };
 
@@ -120,7 +129,7 @@ function AllStock() {
     status: "In Stock" | "Out of Stock" | "Low Stock";
   }) => {
     const { error } = await supabase
-      .from("lucena_product")
+      .from("centralized_product")
       .update({
         product_name: productData.name,
         quantity: Number(productData.stock),
@@ -138,14 +147,14 @@ function AllStock() {
 
   const handleDelete = async () => {
     if (productToDelete) {
-      await supabase.from("lucena_product").delete().eq("id", productToDelete);
+      await supabase.from("centralized_product").delete().eq("id", productToDelete);
       await fetchProducts();
       setIsDeleteModalOpen(false);
     }
   };
 
   const handleBulkDelete = async () => {
-    await supabase.from("lucena_product").delete().in("id", selectedProducts);
+    await supabase.from("centralized_product").delete().in("id", selectedProducts);
     await fetchProducts();
     setIsBulkDeleteModalOpen(false);
   };
@@ -241,9 +250,8 @@ function AllStock() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
         <div className="p-6">
@@ -408,13 +416,12 @@ function AllStock() {
                       </td>
                       <td className="px-4 py-2 text-sm font-medium">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            product.status === "In Stock"
-                              ? "bg-green-100 text-green-800"
-                              : product.status === "Low Stock"
+                          className={`px-2 py-1 rounded-full text-xs ${product.status === "In Stock"
+                            ? "bg-green-100 text-green-800"
+                            : product.status === "Low Stock"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-red-100 text-red-800"
-                          }`}
+                            }`}
                         >
                           {product.status}
                         </span>
@@ -488,11 +495,10 @@ function AllStock() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       <span className="sr-only"></span>
                       &larr;
@@ -502,11 +508,10 @@ function AllStock() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {page}
                         </button>
@@ -517,11 +522,10 @@ function AllStock() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       <span className="sr-only"></span>
                       &rarr;
