@@ -37,11 +37,11 @@ interface User {
   email?: string;
   username?: string;
   role?: { role_name: string };
-  branch_id?: string; // Add this line
+  branch_id?: number; // Add this line
 }
 
 interface Branch {
-  id: string;
+  id: number;
   location: string;
 }
 

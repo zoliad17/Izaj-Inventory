@@ -7,9 +7,10 @@ import EditProductModal from "./EditProductModal";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 interface Product {
-  id: string;
+  id: number;
+  branch_id: number; // Added branch_id property
   name: string;
-  category: string;
+  category: number;
   price: string;
   stock: number;
   status: "In Stock" | "Out of Stock" | "Low Stock";
@@ -26,19 +27,19 @@ function AllStock() {
   const { isCollapsed } = useSidebar();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [branchId, setBranchId] = useState<string | null>(null);
+  const [branchId, setBranchId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] =
     useState<boolean>(false);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [productToDelete, setProductToDelete] = useState<number | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Add missing state for filters, pagination, and handlers
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedCategory, setSelectedCategory] = useState(0); // 0 means 'All'
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -46,7 +47,7 @@ function AllStock() {
   useEffect(() => {
     const storedBranchId = localStorage.getItem("branchId");
     if (storedBranchId) {
-      setBranchId(storedBranchId);
+      setBranchId(Number(storedBranchId));
     }
   }, []);
 
@@ -61,15 +62,14 @@ function AllStock() {
       }
       const data = await response.json();
       const mapped = data.map((product: any) => ({
-        id: product.id,
+        id: product.id, // already a number
+        branch_id: product.branch_id, // add branch_id for display
         name: product.product_name,
-        category: product.category_name || "Unknown",
+        category: product.category_id,
+        category_name: product.category_name,
         price: Number(product.price).toFixed(2),
         stock: product.quantity,
-        status: getStatus(product.quantity) as
-          | "In Stock"
-          | "Low Stock"
-          | "Out of Stock",
+        status: getStatus(product.quantity), // use getStatus here
         imageUrl: light1,
         detailsPage: `/product/${product.id}`,
       }));
@@ -89,12 +89,12 @@ function AllStock() {
   const handleAddProduct = async (
     productData: {
       name: string;
-      category: string;
+      category: number;
       price: string;
       stock: string;
       status: "In Stock" | "Out of Stock" | "Low Stock";
     },
-    branchIdOverride?: string
+    branchIdOverride?: number
   ) => {
     const branchToUse = branchIdOverride || branchId;
     if (!branchToUse) return;
@@ -104,8 +104,8 @@ function AllStock() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...productData,
-          category: productData.category,
-          branch_id: branchToUse,
+          category: productData.category, // already int
+          branch_id: branchToUse, // already int
         }),
       });
       if (!response.ok) {
@@ -121,9 +121,9 @@ function AllStock() {
   };
 
   const handleEditProduct = async (productData: {
-    id: string;
+    id: number;
     name: string;
-    category: string;
+    category: number;
     price: string;
     stock: string;
     status: "In Stock" | "Out of Stock" | "Low Stock";
@@ -134,6 +134,8 @@ function AllStock() {
         product_name: productData.name,
         quantity: Number(productData.stock),
         price: Number(productData.price),
+        category_id: productData.category,
+        status: productData.status,
       })
       .eq("id", productData.id);
 
@@ -163,9 +165,9 @@ function AllStock() {
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.id.toLowerCase().includes(searchTerm.toLowerCase());
+      String(product.id).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "All" || product.category === selectedCategory;
+      selectedCategory === 0 || product.category === selectedCategory;
     const matchesStatus =
       selectedStatus === "All" || product.status === selectedStatus;
     return matchesSearch && matchesCategory && matchesStatus;
@@ -188,7 +190,7 @@ function AllStock() {
       setSelectedProducts(currentItems.map((product) => product.id));
     }
   };
-  const toggleProductSelection = (id: string) => {
+  const toggleProductSelection = (id: number) => {
     setSelectedProducts((prev) =>
       prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]
     );
@@ -201,7 +203,7 @@ function AllStock() {
   };
 
   // Delete confirmation
-  const confirmDelete = (id: string) => {
+  const confirmDelete = (id: number) => {
     setProductToDelete(id);
     setIsDeleteModalOpen(true);
   };
@@ -224,7 +226,7 @@ function AllStock() {
   }
 
   const [categories, setCategories] = useState<
-    { id: string; category_name: string }[]
+    { id: number; category_name: string }[]
   >([]);
 
   // Fetch categories from backend on mount
@@ -239,7 +241,7 @@ function AllStock() {
       const data = await response.json();
       setCategories(
         data.map((cat: any) => ({
-          id: cat.id,
+          id: cat.id, // already int
           category_name: cat.category_name,
         }))
       );
@@ -287,13 +289,11 @@ function AllStock() {
                 id="category-filter"
                 className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={e => setSelectedCategory(Number(e.target.value))}
               >
-                <option value="All">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.category_name}>
-                    {category.category_name}
-                  </option>
+                <option value={0}>All</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
                 ))}
               </select>
             </div>
@@ -400,13 +400,13 @@ function AllStock() {
                         />
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700 font-mono">
-                        {product.id}
+                        {`${product.branch_id}-${String(product.id).padStart(4, '0')}`}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer">
                         {product.name}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.category}
+                        {categories.find((cat) => Number(cat.id) === product.category)?.category_name || "Unknown"}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700">
                         Php {product.price}
@@ -556,9 +556,9 @@ function AllStock() {
         onSave={handleEditProduct}
         product={
           editingProduct || {
-            id: "",
+            id: 0, // default to 0, not ""
             name: "",
-            category: "",
+            category: 0,
             price: "",
             stock: 0,
             status: "In Stock",

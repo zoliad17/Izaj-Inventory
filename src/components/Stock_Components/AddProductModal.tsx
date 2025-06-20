@@ -6,12 +6,12 @@ interface AddProductModalProps {
   onClose: () => void;
   onAddProduct: (product: {
     name: string;
-    category: string; // category id
+    category: number; // category id as number
     price: string;
     stock: string;
     status: "In Stock" | "Out of Stock" | "Low Stock";
-  }, branchId?: string) => void;
-  categories: { id: string; category_name: string }[];
+  }, branchId?: number) => void;
+  categories: { id: number; category_name: string }[];
   statusOptions: ("In Stock" | "Out of Stock" | "Low Stock")[];
 }
 
@@ -24,7 +24,7 @@ const AddProductModal = ({
 }: AddProductModalProps) => {
   const [newProduct, setNewProduct] = useState({
     name: "",
-    category: "",
+    category: 0, // default to 0 (no selection)
     price: "",
     stock: "",
     status: "In Stock" as const,
@@ -36,15 +36,20 @@ const AddProductModal = ({
     >
   ) => {
     const { name, value } = e.target;
-    setNewProduct((prev) => ({ ...prev, [name]: value }));
+    setNewProduct((prev) => ({
+      ...prev,
+      [name]: name === "category" ? Number(value) : value,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Pass branch_id as a second argument if available
-    const branchId = localStorage.getItem("branchId");
+    let branchId = localStorage.getItem("branchId");
     if (branchId) {
-      onAddProduct({ ...newProduct }, branchId);
+      branchId = String(Number(branchId)); // Always save as number string
+      localStorage.setItem("branchId", branchId); // Overwrite with number string
+      onAddProduct({ ...newProduct }, Number(branchId));
     } else {
       onAddProduct(newProduct);
     }
@@ -52,7 +57,7 @@ const AddProductModal = ({
     // Reset form
     setNewProduct({
       name: "",
-      category: "",
+      category: 0,
       price: "",
       stock: "",
       status: "In Stock",
@@ -100,8 +105,11 @@ const AddProductModal = ({
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
+                disabled={categories.length === 0}
               >
-                <option value="">Select a category</option>
+                <option value={0}>
+                  {categories.length === 0 ? "Loading categories..." : "Select a category"}
+                </option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.category_name}

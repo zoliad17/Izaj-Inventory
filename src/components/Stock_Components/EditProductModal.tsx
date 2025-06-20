@@ -5,22 +5,22 @@ interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (product: {
-    id: string;
+    id: number;
     name: string;
-    category: string;
+    category: number;
     price: string;
     stock: string;
     status: "In Stock" | "Out of Stock" | "Low Stock";
   }) => void;
   product: {
-    id: string;
+    id: number;
     name: string;
-    category: string;
+    category: number;
     price: string;
     stock: number;
     status: "In Stock" | "Out of Stock" | "Low Stock";
   };
-  categories: { id: string; category_name: string }[];
+  categories: { id: number; category_name: string }[];
   statusOptions: ("In Stock" | "Out of Stock" | "Low Stock")[];
 }
 
@@ -58,7 +58,10 @@ const EditProductModal = ({
     >
   ) => {
     const { name, value } = e.target;
-    setEditedProduct((prev) => ({ ...prev, [name]: value }));
+    setEditedProduct((prev) => ({
+      ...prev,
+      [name]: name === "category" ? Number(value) : value,
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,7 +112,7 @@ const EditProductModal = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Select a category</option>
+                <option value={0}>Select a category</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.category_name}

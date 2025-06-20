@@ -15,16 +15,23 @@ app.use(bodyParser.json());
 
 // GET all products from Supabase (filtered by branch_id)
 app.get("/api/products", async (req, res) => {
-  const branchId = req.query.branch_id;
+  let branchId = req.query.branch_id;
   if (!branchId) {
     return res.status(400).json({ error: "branch_id is required" });
   }
-  // Join centralized_product with category to get category name
+  branchId = Number(branchId); // ensure branchId is a number
   const { data, error } = await supabase
     .from("centralized_product")
     .select(`
-      *,
+      id,
+      product_name,
+      quantity,
+      price,
+      status,
+      branch_id,
+      category_id,
       category:category_id (
+        id,
         category_name
       )
     `)
@@ -48,12 +55,14 @@ app.post("/api/products", async (req, res) => {
     return res.status(400).json({ error: "branch_id is required" });
   }
   const insertPayload = {
+    // Generate a random 4-digit product id
+    id: Math.floor(1000 + Math.random() * 9000),
     product_name: product.name,
-    category_id: product.category, // store as id
+    category_id: product.category, // already int
     price: Number(product.price),
     quantity: Number(product.stock),
     status: product.status,
-    branch_id: product.branch_id,
+    branch_id: product.branch_id, // already int
   };
   console.log("Insert payload:", insertPayload);
   const { data, error } = await supabase
@@ -76,14 +85,14 @@ app.put("/api/products/:id", async (req, res) => {
     .from("centralized_product")
     .update({
       product_name: product.name,
-      category_id: product.category, // use category_id
+      category_id: product.category, // already int
       price: Number(product.price),
       quantity: Number(product.stock),
       status: product.status,
-      branch_id: product.branch_id, // ensure branch_id is updated if needed
+      branch_id: product.branch_id, // already int
       // Add other fields as needed
     })
-    .eq("id", id)
+    .eq("id", id) // id is int from params
     .select();
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0)
@@ -94,7 +103,7 @@ app.put("/api/products/:id", async (req, res) => {
 // DELETE product from Supabase
 app.delete("/api/products/:id", async (req, res) => {
   const { id } = req.params;
-  const { error } = await supabase.from("centralized_product").delete().eq("id", id);
+  const { error } = await supabase.from("centralized_product").delete().eq("id", parseInt(id, 10));
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
 });
@@ -122,10 +131,11 @@ app.post("/api/login", async (req, res) => {
 
 // GET all users from Supabase (filtered by branch_id)
 app.get("/api/users", async (req, res) => {
-  const branchId = req.query.branch_id;
+  let branchId = req.query.branch_id;
   if (!branchId) {
     return res.status(400).json({ error: "branch_id is required" });
   }
+  branchId = Number(branchId); // ensure branchId is a number
   const { data, error } = await supabase
     .from("user")
     .select("*, role:role_id(role_name)")
@@ -182,8 +192,8 @@ app.post("/api/create_users", async (req, res) => {
     contact: cleanContact, // Use cleaned contact number
     email: user.email,
     password: user.password,
-    role_id: user.role_id,
-    branch_id: user.branch_id, // optional
+    role_id: user.role_id, // already int
+    branch_id: user.branch_id ? user.branch_id : null, // already int or null
     status: user.status || 'Active'
   };
   console.log("Insert payload:", insertPayload);
@@ -251,11 +261,11 @@ app.put("/api/users/:user_id", async (req, res) => {
       contact: user.contact,
       email: user.email,
       password: user.password,
-      role_id: user.role_id,
-      branch_id: user.branch_id,
+      role_id: user.role_id, // already int
+      branch_id: user.branch_id ? user.branch_id : null, // already int or null
       status: user.status
     })
-    .eq("user_id", user_id)
+    .eq("user_id", Number(user_id))
     .select();
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0)
@@ -269,7 +279,7 @@ app.delete("/api/users/:user_id", async (req, res) => {
   const { error } = await supabase
     .from("user")
     .delete()
-    .eq("user_id", user_id);
+    .eq("user_id", Number(user_id));
 
   if (error) {
     console.error("Error deleting user:", error);
