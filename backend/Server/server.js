@@ -153,14 +153,14 @@ app.get("/api/categories", async (req, res) => {
   res.json(data);
 });
 
-// // Simple test endpoint to verify server is running
-// app.get("/api/test", (req, res) => {
-//   res.json({ message: "API is working!" });
-// });
+// Simple test endpoint to verify server is running
+app.get("/api/test", (req, res) => {
+  res.json({ message: "API is working!" });
+});
 
-// app.listen(PORT, () => {
-//   console.log(`Express server running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Express server running on http://localhost:${PORT}`);
+});
 
 // Create New User
 app.post("/api/create_users", async (req, res) => {
