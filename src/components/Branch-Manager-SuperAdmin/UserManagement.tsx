@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+
 import "react-toastify/dist/ReactToastify.css";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import {
@@ -12,7 +12,8 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
-import { use } from "echarts/types/src/extension.js";
+// import { use } from "echarts/types/src/extension.js";
+import toast, { Toaster } from "react-hot-toast";
 
 // Define interface for User data
 interface User {
@@ -60,51 +61,55 @@ function UserManagement() {
   });
 
   //Fetch branches from supabase
-  const [branches, setBranches] = useState<{ id: string; location: string }[]>([]);
+  const [branches, setBranches] = useState<{ id: string; location: string }[]>(
+    []
+  );
   const [roles, setRoles] = useState<{ id: number; role_name: string }[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
   // Fetch users from API
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/get_users');
-      if (!response.ok) throw new Error('Failed to fetch users');
+      const response = await fetch("http://localhost:5000/api/get_users");
+      if (!response.ok) throw new Error("Failed to fetch users");
       const data = await response.json();
 
       // Join user data with branch and role information
-      const usersWithInfo = await Promise.all(data.map(async (user: User) => {
-        // Get branch information
-        const { data: branchData, error: branchError } = await supabase
-          .from('branch')
-          .select('location')
-          .eq('id', user.branch_id)
-          .single();
+      const usersWithInfo = await Promise.all(
+        data.map(async (user: User) => {
+          // Get branch information
+          const { data: branchData, error: branchError } = await supabase
+            .from("branch")
+            .select("location")
+            .eq("id", user.branch_id)
+            .single();
 
-        // Get role information
-        const { data: roleData, error: roleError } = await supabase
-          .from('role')
-          .select('role_name')
-          .eq('id', user.role_id)
-          .single();
+          // Get role information
+          const { data: roleData, error: roleError } = await supabase
+            .from("role")
+            .select("role_name")
+            .eq("id", user.role_id)
+            .single();
 
-        if (branchError) {
-          console.error('Error fetching branch:', branchError);
-        }
-        if (roleError) {
-          console.error('Error fetching role:', roleError);
-        }
+          if (branchError) {
+            console.error("Error fetching branch:", branchError);
+          }
+          if (roleError) {
+            console.error("Error fetching role:", roleError);
+          }
 
-        return {
-          ...user,
-          branch_name: branchData?.location || 'N/A',
-          role_name: roleData?.role_name || 'N/A'
-        };
-      }));
+          return {
+            ...user,
+            branch_name: branchData?.location || "N/A",
+            role_name: roleData?.role_name || "N/A",
+          };
+        })
+      );
 
       setUsers(usersWithInfo);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to fetch users');
+      console.error("Error fetching users:", error);
+      toast.error("Failed to fetch users");
     }
   };
 
@@ -191,20 +196,23 @@ function UserManagement() {
   // Handle updating the user
   const handleUpdate = async (userId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...editedUser,
-          user_id: userId // Include user_id in the update payload
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/users/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...editedUser,
+            user_id: userId, // Include user_id in the update payload
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to update user');
+        throw new Error(error.error || "Failed to update user");
       }
 
       // Refresh the user list
@@ -213,8 +221,10 @@ function UserManagement() {
       setEditedUser({});
       toast.success("User updated successfully!");
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update user');
+      console.error("Error updating user:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update user"
+      );
     }
   };
 
@@ -223,17 +233,20 @@ function UserManagement() {
     if (!userIdToDelete) return;
 
     try {
-      console.log('Deleting user with ID:', userIdToDelete); // Debug log
-      const response = await fetch(`http://localhost:5000/api/users/${userIdToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log("Deleting user with ID:", userIdToDelete); // Debug log
+      const response = await fetch(
+        `http://localhost:5000/api/users/${userIdToDelete}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to delete user');
+        throw new Error(error.error || "Failed to delete user");
       }
 
       // Refresh the user list
@@ -242,8 +255,10 @@ function UserManagement() {
       setUserIdToDelete(null);
       toast.success("User deleted successfully!");
     } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+      console.error("Error deleting user:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete user"
+      );
       setIsDeleteModalOpen(false);
       setUserIdToDelete(null);
     }
@@ -255,7 +270,7 @@ function UserManagement() {
     const generated = Math.floor(1000 + Math.random() * 9000).toString();
     setGeneratedOtp(generated);
     setOtpSent(true);
-    toast.info(`OTP sent to ${newUser.email} (Mock OTP: ${generated})`);
+    toast(`OTP sent to ${newUser.email} (Mock OTP: ${generated})`);
   };
 
   // Verify OTP
@@ -276,13 +291,19 @@ function UserManagement() {
     }
 
     // Validate required fields
-    if (!newUser.name || !newUser.email || !newUser.contact || !newUser.role_id || !newUser.password) {
+    if (
+      !newUser.name ||
+      !newUser.email ||
+      !newUser.contact ||
+      !newUser.role_id ||
+      !newUser.password
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     // Validate contact number format
-    const cleanContact = newUser.contact.replace(/\D/g, '').slice(0, 11);
+    const cleanContact = newUser.contact.replace(/\D/g, "").slice(0, 11);
     if (cleanContact.length !== 11) {
       toast.error("Contact number must be exactly 11 digits");
       return;
@@ -296,15 +317,15 @@ function UserManagement() {
         contact: cleanContact,
         role_id: newUser.role_id,
         branch_id: newUser.branch_id,
-        status: newUser.status || 'Active'
+        status: newUser.status || "Active",
       };
 
-      console.log('Creating user with data:', userData);
+      console.log("Creating user with data:", userData);
 
-      const response = await fetch('http://localhost:5000/api/create_users', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/api/create_users", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(userData),
       });
@@ -312,8 +333,8 @@ function UserManagement() {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Server error response:', data);
-        throw new Error(data.error || data.message || 'Failed to create user');
+        console.error("Server error response:", data);
+        throw new Error(data.error || data.message || "Failed to create user");
       }
 
       // Refresh the user list
@@ -333,27 +354,40 @@ function UserManagement() {
       });
       toast.success("User added successfully!");
     } catch (error) {
-      console.error('Error creating user:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create user';
+      console.error("Error creating user:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create user";
       toast.error(errorMessage);
     }
   };
 
   // Add input validation for contact number
   const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
-    setNewUser(prev => ({
+    const value = e.target.value.replace(/\D/g, "").slice(0, 11);
+    setNewUser((prev) => ({
       ...prev,
-      contact: value
+      contact: value,
     }));
   };
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="p-2">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 5000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <button
           onClick={() => navigate(-1)}
           className="flex items-center cursor-pointer gap-2 text-gray-800 mb-6 hover:text-gray-900 transition-colors"
@@ -487,7 +521,7 @@ function UserManagement() {
                             ))}
                           </select>
                         ) : (
-                          user.role_name || 'N/A'
+                          user.role_name || "N/A"
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -505,7 +539,7 @@ function UserManagement() {
                             ))}
                           </select>
                         ) : (
-                          user.branch_name || 'N/A'
+                          user.branch_name || "N/A"
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -521,12 +555,13 @@ function UserManagement() {
                           </select>
                         ) : (
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                              }`}
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.status === "Active"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
                           >
-                            {user.status || 'Active'}
+                            {user.status || "Active"}
                           </span>
                         )}
                       </td>
@@ -617,10 +652,11 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       Previous
                     </button>
@@ -629,10 +665,11 @@ function UserManagement() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === pageNum
+                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
                         >
                           {pageNum}
                         </button>
@@ -643,10 +680,11 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       Next
                     </button>
@@ -661,10 +699,16 @@ function UserManagement() {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsDeleteModalOpen(false)}></div>
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => setIsDeleteModalOpen(false)}
+          ></div>
           <div className="relative bg-white rounded-lg p-6 w-96 shadow-xl">
             <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p className="mb-6">Are you sure you want to delete this user? This action cannot be undone.</p>
+            <p className="mb-6">
+              Are you sure you want to delete this user? This action cannot be
+              undone.
+            </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
@@ -685,140 +729,156 @@ function UserManagement() {
 
       {/* Add User Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0  bg-black/50 z-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Add New User</h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Name *"
-                  value={newUser.name}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                />
+            <div className="grid grid-cols-2 gap-4">
+              {/* Column 1 */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Name *"
+                    value={newUser.name}
+                    onChange={(e) => handleInputChange(e)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email *"
+                    value={newUser.email}
+                    onChange={(e) => handleInputChange(e)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Password *"
+                    onChange={(e) =>
+                      setNewUser((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email *"
-                  value={newUser.email}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                />
-              </div>
+              {/* Column 2 */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={newUser.contact}
+                    onChange={handleContactChange}
+                    placeholder="Enter 11-digit contact number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Enter 11 digits (e.g., 09123456789)
+                  </p>
+                </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={newUser.contact}
-                  onChange={handleContactChange}
-                  placeholder="Enter 11-digit contact number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">Enter 11 digits (e.g., 09123456789)</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Branch
-                </label>
-                <select
-                  name="branch_id"
-                  value={newUser.branch_id}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Branch *
-                  </option>
-                  {branches.map((branch) => (
-                    <option key={branch.id} value={branch.id}>
-                      {branch.location}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Branch
+                  </label>
+                  <select
+                    name="branch_id"
+                    value={newUser.branch_id}
+                    onChange={(e) => handleInputChange(e)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select Branch *
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {branches.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.location}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
-                </label>
-                <select
-                  name="role_id"
-                  value={newUser.role_id}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                >
-                  <option value="" disabled>
-                    Select Role *
-                  </option>
-                  {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.role_name}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role
+                  </label>
+                  <select
+                    name="role_id"
+                    value={newUser.role_id}
+                    onChange={(e) => handleInputChange(e)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select Role *
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.role_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={newUser.status}
-                  onChange={(e) => handleInputChange(e)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={newUser.status}
+                    onChange={(e) => handleInputChange(e)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password *"
-                  onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                />
-              </div>
-
-              {/* OTP Verification Section */}
+            {/* OTP Verification Section - Full width below columns */}
+            <div className="mt-4">
               {!otpVerified && (
                 <div className="pt-2">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={sendOtp}
                       disabled={!newUser.email || otpSent}
-                      className={`px-3 py-2 rounded-md text-sm ${!newUser.email || otpSent
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
+                      className={`px-3 py-2 rounded-md text-sm ${
+                        !newUser.email || otpSent
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-blue-600 text-white hover:bg-blue-700"
+                      }`}
                     >
                       {otpSent ? "OTP Sent" : "Send OTP"}
                     </button>
@@ -844,7 +904,7 @@ function UserManagement() {
               )}
 
               {otpVerified && (
-                <div className="p-2 bg-green-100 text-green-800 rounded-md text-sm">
+                <div className="p-2 bg-green-100 text-green-800 rounded-md text-sm mt-2">
                   OTP verified successfully!
                 </div>
               )}
@@ -865,10 +925,11 @@ function UserManagement() {
               <button
                 onClick={handleAddUser}
                 disabled={!otpVerified}
-                className={`py-2 px-4 rounded-lg transition duration-300 ${otpVerified
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                className={`py-2 px-4 rounded-lg transition duration-300 ${
+                  otpVerified
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 Add User
               </button>
@@ -876,19 +937,6 @@ function UserManagement() {
           </div>
         </div>
       )}
-
-      {/* Toast Container */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </div>
   );
 }

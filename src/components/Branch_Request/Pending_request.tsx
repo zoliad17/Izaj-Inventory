@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -163,6 +165,9 @@ function PendingRequest() {
 
       setProducts(updatedProducts);
       alert(`Request ${actionType === "accept" ? "Accepted" : "Declined"}!`);
+      toast.info(
+        `Request ${actionType === "accept" ? "Accepted" : "Declined"}!`
+      );
     }
     closeModal();
   };
@@ -181,6 +186,17 @@ function PendingRequest() {
       } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <div className="p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h5 className="text-xl font-bold">Pending Request</h5>

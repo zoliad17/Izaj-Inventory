@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { Toaster } from "react-hot-toast";
 
 function AddBranchPage() {
   const navigate = useNavigate();
@@ -20,6 +21,16 @@ function AddBranchPage() {
       } p-2 sm:p-4`}
     >
       <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-600 mb-6 hover:text-purple-700 transition-colors"

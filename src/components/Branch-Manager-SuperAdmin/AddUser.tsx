@@ -18,6 +18,7 @@ import {
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { Toaster } from "react-hot-toast";
 
 // Define interface for User data
 interface User {
@@ -166,6 +167,17 @@ function AddUser() {
     >
       {/* Top Section with Title and Button */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <div>
           <h1 className="text-2xl font-bold">User Management</h1>
         </div>

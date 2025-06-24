@@ -5,7 +5,8 @@ import { Upload, Plus, Edit, Trash2, X, Search } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
-
+// Import toast for notifications
+import toast, { Toaster } from "react-hot-toast";
 interface Product {
   id: number;
   branch_id: number; // Added branch_id property
@@ -78,6 +79,10 @@ function AllStock() {
       setProducts(mapped);
     } catch (error) {
       console.error("Error fetching products:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error fetching products"
+      );
+
       // You might want to show an error message to the user here
     }
   };
@@ -88,6 +93,43 @@ function AllStock() {
   }, [branchId]);
 
   // Accept branchId as an optional second argument
+  // const handleAddProduct = async (
+  //   productData: {
+  //     name: string;
+  //     category: number;
+  //     price: string;
+  //     stock: string;
+  //     status: "In Stock" | "Out of Stock" | "Low Stock";
+  //   },
+  //   branchIdOverride?: number
+  // ) => {
+  //   const branchToUse = branchIdOverride || branchId;
+  //   if (!branchToUse) return;
+  //   try {
+  //     const response = await fetch("http://localhost:5000/api/products", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         name: productData.name,
+  //         category: productData.category, // already int
+  //         price: productData.price,
+  //         stock: productData.stock,
+  //         status: productData.status,
+  //         branch_id: branchToUse, // already int
+  //       }),
+  //     });
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.error || "Failed to add product");
+  //     }
+  //     await fetchProducts();
+  //     setIsAddModalOpen(false);
+  //   } catch (err) {
+  //     console.error("Error adding product:", err);
+  //     // You might want to show an error message to the user here
+  //   }
+  // };
+
   const handleAddProduct = async (
     productData: {
       name: string;
@@ -99,29 +141,38 @@ function AllStock() {
     branchIdOverride?: number
   ) => {
     const branchToUse = branchIdOverride || branchId;
-    if (!branchToUse) return;
+    if (!branchToUse) {
+      toast.error("Please select a branch first");
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:5000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: productData.name,
-          category: productData.category, // already int
+          category: productData.category,
           price: productData.price,
           stock: productData.stock,
           status: productData.status,
-          branch_id: branchToUse, // already int
+          branch_id: branchToUse,
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add product");
       }
+
+      // Toast Success case
+      toast.success("Product added successfully!");
       await fetchProducts();
       setIsAddModalOpen(false);
     } catch (err) {
       console.error("Error adding product:", err);
-      // You might want to show an error message to the user here
+      // Error case
+      toast.error(err instanceof Error ? err.message : "Failed to add product");
     }
   };
 
@@ -146,7 +197,12 @@ function AllStock() {
 
     if (error) {
       console.error("Error updating product:", error.message);
+      // Error case
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update product"
+      );
     } else {
+      toast.success("Update Successfully!");
       await fetchProducts();
       setIsEditModalOpen(false);
     }
@@ -160,6 +216,7 @@ function AllStock() {
         .eq("id", productToDelete);
       await fetchProducts();
       setIsDeleteModalOpen(false);
+      toast.success("Deleted Successfully!");
     }
   };
 
@@ -170,6 +227,7 @@ function AllStock() {
       .in("id", selectedProducts);
     await fetchProducts();
     setIsBulkDeleteModalOpen(false);
+    toast.success("Deleted Successfully!");
   };
 
   // Filtered products based on search, category, and status
@@ -258,6 +316,10 @@ function AllStock() {
       );
     } catch (err) {
       console.error("Error fetching categories:", err);
+      // Error case
+      toast.error(
+        err instanceof Error ? err.message : "Error fetching categories:"
+      );
     }
   };
 
@@ -268,6 +330,17 @@ function AllStock() {
       } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <div className="p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <h5 className="text-xl font-bold">All Stock</h5>

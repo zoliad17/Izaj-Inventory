@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { Toaster } from "react-hot-toast";
 
 interface Product {
   id: string;
@@ -187,6 +188,17 @@ function Requested_Item() {
       } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <div className="p-6">
           <h5 className="text-xl font-bold mb-4">Requested Items</h5>
 

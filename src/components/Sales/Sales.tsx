@@ -1,6 +1,7 @@
 import ReactECharts from "echarts-for-react";
 import { Clock, Lightbulb, PieChartIcon, Zap } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { Toaster } from "react-hot-toast";
 
 const Sales: React.FC = () => {
   // Bar chart options
@@ -293,6 +294,17 @@ const Sales: React.FC = () => {
       } p-2 sm:p-4 `}
     >
       <div className="p-4 md:p-6">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <h1 className="text-2xl md:text-3xl font-bold mb-6">Sales Dashboard</h1>
 
         {/* Top Row - Pie and Radar Charts */}

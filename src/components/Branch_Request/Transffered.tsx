@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { FileSearch } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
 // Define interface for Product data
 interface Product {
@@ -163,6 +164,16 @@ function Transferred() {
       } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h5 className="text-xl font-bold">Transferred Items</h5>

@@ -13,6 +13,7 @@ import {
   XCircleIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 
 // Product data constant
 const PRODUCTS = [
@@ -168,6 +169,17 @@ export default function Send_Request() {
 
   return (
     <div className="max-w-7xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      {/* Toaster for success and error */}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 2000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+        }}
+      />
       <div className="relative mb-8">
         <h1 className="text-2xl ml-2.5 font-bold text-gray-800">
           Request Form
