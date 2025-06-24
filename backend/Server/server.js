@@ -154,6 +154,7 @@ app.get("/api/categories", async (req, res) => {
 });
 
 // // Simple test endpoint to verify server is running
+// Simple test endpoint to verify server is running
 app.get("/api/test", (req, res) => {
   res.json({ message: "API is working!" });
 });
