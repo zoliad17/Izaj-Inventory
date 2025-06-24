@@ -55,10 +55,12 @@ function AllStock() {
   const fetchProducts = async () => {
     if (!branchId) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/products?branch_id=${branchId}`);
+      const response = await fetch(
+        `http://localhost:5000/api/products?branch_id=${branchId}`
+      );
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch products');
+        throw new Error(errorData.error || "Failed to fetch products");
       }
       const data = await response.json();
       const mapped = data.map((product: any) => ({
@@ -103,14 +105,17 @@ function AllStock() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...productData,
+          name: productData.name,
           category: productData.category, // already int
+          price: productData.price,
+          stock: productData.stock,
+          status: productData.status,
           branch_id: branchToUse, // already int
         }),
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add product');
+        throw new Error(errorData.error || "Failed to add product");
       }
       await fetchProducts();
       setIsAddModalOpen(false);
@@ -149,14 +154,20 @@ function AllStock() {
 
   const handleDelete = async () => {
     if (productToDelete) {
-      await supabase.from("centralized_product").delete().eq("id", productToDelete);
+      await supabase
+        .from("centralized_product")
+        .delete()
+        .eq("id", productToDelete);
       await fetchProducts();
       setIsDeleteModalOpen(false);
     }
   };
 
   const handleBulkDelete = async () => {
-    await supabase.from("centralized_product").delete().in("id", selectedProducts);
+    await supabase
+      .from("centralized_product")
+      .delete()
+      .in("id", selectedProducts);
     await fetchProducts();
     setIsBulkDeleteModalOpen(false);
   };
@@ -252,8 +263,9 @@ function AllStock() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
         <div className="p-6">
@@ -289,11 +301,13 @@ function AllStock() {
                 id="category-filter"
                 className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 value={selectedCategory}
-                onChange={e => setSelectedCategory(Number(e.target.value))}
+                onChange={(e) => setSelectedCategory(Number(e.target.value))}
               >
                 <option value={0}>All</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.category_name}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.category_name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -400,13 +414,18 @@ function AllStock() {
                         />
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700 font-mono">
-                        {`${product.branch_id}-${String(product.id).padStart(4, '0')}`}
+                        {`${product.branch_id}-${String(product.id).padStart(
+                          4,
+                          "0"
+                        )}`}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700 relative cursor-pointer">
                         {product.name}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700">
-                        {categories.find((cat) => Number(cat.id) === product.category)?.category_name || "Unknown"}
+                        {categories.find(
+                          (cat) => Number(cat.id) === product.category
+                        )?.category_name || "Unknown"}
                       </td>
                       <td className="px-4 py-2 text-sm text-gray-700">
                         Php {product.price}
@@ -416,12 +435,13 @@ function AllStock() {
                       </td>
                       <td className="px-4 py-2 text-sm font-medium">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs ${product.status === "In Stock"
-                            ? "bg-green-100 text-green-800"
-                            : product.status === "Low Stock"
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            product.status === "In Stock"
+                              ? "bg-green-100 text-green-800"
+                              : product.status === "Low Stock"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-red-100 text-red-800"
-                            }`}
+                          }`}
                         >
                           {product.status}
                         </span>
@@ -495,10 +515,11 @@ function AllStock() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only"></span>
                       &larr;
@@ -508,10 +529,11 @@ function AllStock() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === page
+                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
                         >
                           {page}
                         </button>
@@ -522,10 +544,11 @@ function AllStock() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only"></span>
                       &rarr;

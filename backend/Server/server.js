@@ -22,7 +22,8 @@ app.get("/api/products", async (req, res) => {
   branchId = Number(branchId); // ensure branchId is a number
   const { data, error } = await supabase
     .from("centralized_product")
-    .select(`
+    .select(
+      `
       id,
       product_name,
       quantity,
@@ -34,7 +35,8 @@ app.get("/api/products", async (req, res) => {
         id,
         category_name
       )
-    `)
+    `
+    )
     .eq("branch_id", branchId);
   if (error) return res.status(500).json({ error: error.message });
   // Map category name to top-level for frontend
@@ -48,32 +50,29 @@ app.get("/api/products", async (req, res) => {
 // POST add new product to Supabase (with branch_id from request)
 app.post("/api/products", async (req, res) => {
   const product = req.body;
-  // Debug: log incoming product data
-  console.log("Add Product Request:", product);
-  // Require branchId in the request body
-  if (!product.branch_id) {
-    return res.status(400).json({ error: "branch_id is required" });
-  }
+
+  // Build a clean insert payload explicitly
   const insertPayload = {
-    // Generate a random 4-digit product id
-    id: Math.floor(1000 + Math.random() * 9000),
     product_name: product.name,
-    category_id: product.category, // already int
+    category_id: product.category,
     price: Number(product.price),
     quantity: Number(product.stock),
     status: product.status,
-    branch_id: product.branch_id, // already int
+    branch_id: product.branch_id,
   };
+
   console.log("Insert payload:", insertPayload);
+
   const { data, error } = await supabase
     .from("centralized_product")
     .insert([insertPayload])
     .select();
+
   if (error) {
-    // Debug: log error details
     console.error("Error inserting product:", error);
-    return res.status(500).json({ error: error.message, details: error });
+    return res.status(500).json({ error: error.message });
   }
+
   res.status(201).json(data[0]);
 });
 
@@ -103,7 +102,10 @@ app.put("/api/products/:id", async (req, res) => {
 // DELETE product from Supabase
 app.delete("/api/products/:id", async (req, res) => {
   const { id } = req.params;
-  const { error } = await supabase.from("centralized_product").delete().eq("id", parseInt(id, 10));
+  const { error } = await supabase
+    .from("centralized_product")
+    .delete()
+    .eq("id", parseInt(id, 10));
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).send();
 });
@@ -151,14 +153,14 @@ app.get("/api/categories", async (req, res) => {
   res.json(data);
 });
 
-// Simple test endpoint to verify server is running
-app.get("/api/test", (req, res) => {
-  res.json({ message: "API is working!" });
-});
+// // Simple test endpoint to verify server is running
+// app.get("/api/test", (req, res) => {
+//   res.json({ message: "API is working!" });
+// });
 
-app.listen(PORT, () => {
-  console.log(`Express server running on http://localhost:${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Express server running on http://localhost:${PORT}`);
+// });
 
 // Create New User
 app.post("/api/create_users", async (req, res) => {
@@ -178,12 +180,12 @@ app.post("/api/create_users", async (req, res) => {
   }
 
   // Clean contact number by removing non-numeric characters
-  const cleanContact = user.contact.replace(/\D/g, '');
+  const cleanContact = user.contact.replace(/\D/g, "");
 
   // Validate contact number length
   if (cleanContact.length !== 11) {
     return res.status(400).json({
-      error: "Contact number must be exactly 11 digits"
+      error: "Contact number must be exactly 11 digits",
     });
   }
 
@@ -194,7 +196,7 @@ app.post("/api/create_users", async (req, res) => {
     password: user.password,
     role_id: user.role_id, // already int
     branch_id: user.branch_id ? user.branch_id : null, // already int or null
-    status: user.status || 'Active'
+    status: user.status || "Active",
   };
   console.log("Insert payload:", insertPayload);
 
@@ -206,13 +208,19 @@ app.post("/api/create_users", async (req, res) => {
       .eq("email", user.email)
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 is "no rows returned" error
       console.error("Error checking existing user:", checkError);
-      return res.status(500).json({ error: "Error checking for existing user", details: checkError });
+      return res.status(500).json({
+        error: "Error checking for existing user",
+        details: checkError,
+      });
     }
 
     if (existingUser) {
-      return res.status(400).json({ error: "User with this email already exists" });
+      return res
+        .status(400)
+        .json({ error: "User with this email already exists" });
     }
 
     // Insert the new user
@@ -228,7 +236,7 @@ app.post("/api/create_users", async (req, res) => {
         details: error,
         message: error.message,
         code: error.code,
-        hint: error.hint
+        hint: error.hint,
       });
     }
 
@@ -238,7 +246,7 @@ app.post("/api/create_users", async (req, res) => {
     res.status(500).json({
       error: "Failed to create user",
       details: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 });
@@ -263,7 +271,7 @@ app.put("/api/users/:user_id", async (req, res) => {
       password: user.password,
       role_id: user.role_id, // already int
       branch_id: user.branch_id ? user.branch_id : null, // already int or null
-      status: user.status
+      status: user.status,
     })
     .eq("user_id", Number(user_id))
     .select();
