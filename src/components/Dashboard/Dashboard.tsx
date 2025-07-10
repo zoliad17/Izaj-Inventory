@@ -105,6 +105,10 @@ interface LineChartOptions {
 function Dashboard() {
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
+
+  // Get user role from localStorage
+  const userRole = localStorage.getItem("userRole");
+  const isSuperAdmin = userRole === "Super Admin";
   // Options for the Pie Chart
   const pieChartOptions: PieChartOptions = {
     tooltip: {
@@ -247,9 +251,8 @@ function Dashboard() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 `}
     >
       {/* Search Bar */}
 
@@ -299,23 +302,25 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* Branches Card */}
-        <div className="bg-white rounded-lg shadow p-6 relative">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-full">
-              <Lightbulb className="text-purple-600" size={20} />
+        {/* Branches Card - Only visible to Super Admin */}
+        {isSuperAdmin && (
+          <div className="bg-white rounded-lg shadow p-6 relative">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-full">
+                <Lightbulb className="text-purple-600" size={20} />
+              </div>
+              <h5 className="text-lg font-medium">Branches</h5>
             </div>
-            <h5 className="text-lg font-medium">Branches</h5>
+            <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
+            <button
+              onClick={() => navigate("/branches/add")}
+              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
+              title="Add Branch"
+            >
+              <Plus className="text-purple-600" size={16} />
+            </button>
           </div>
-          <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
-          <button
-            onClick={() => navigate("/branches/add")}
-            className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
-            title="Add Branch"
-          >
-            <Plus className="text-purple-600" size={16} />
-          </button>
-        </div>
+        )}
       </div>
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -422,8 +427,8 @@ function Dashboard() {
                         {product.status === "in-stock"
                           ? "In Stock"
                           : product.status === "low-stock"
-                          ? "Low Stock"
-                          : "Out of Stock"}
+                            ? "Low Stock"
+                            : "Out of Stock"}
                       </span>
                     </td>
                   </tr>

@@ -200,9 +200,8 @@ function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${
-        isCollapsed ? "w-25" : "w-64"
-      }`}
+      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${isCollapsed ? "w-25" : "w-64"
+        }`}
     >
       {/* Header Section */}
       <div>
@@ -265,9 +264,8 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
-                      isCollapsed ? "p-3 justify-center" : "p-3"
-                    }`}
+                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
+                      }`}
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6" />
@@ -284,9 +282,8 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
-                          isCollapsed ? "p-3 justify-center" : "p-3"
-                        }`}
+                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
+                          }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
@@ -297,9 +294,8 @@ function Sidebar() {
                               {item.label}
                             </span>
                             <svg
-                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${
-                                isDropdownOpen ? "rotate-180" : ""
-                              }`}
+                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                                }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -319,9 +315,8 @@ function Sidebar() {
                       {/* Dropdown content */}
                       {!isCollapsed && item.subItems && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ${
-                            isDropdownOpen ? "max-h-40" : "max-h-0"
-                          }`}
+                          className={`overflow-hidden transition-all duration-300 ${isDropdownOpen ? "max-h-40" : "max-h-0"
+                            }`}
                         >
                           <ul className="ml-2 pl-6 border-l-2 border-gray-200">
                             {item.subItems.map((subItem, subIndex) => (
@@ -367,9 +362,8 @@ function Sidebar() {
           )}
           <button
             onClick={handleLogout}
-            className={`flex items-center justify-center font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 ${
-              isCollapsed ? "p-3" : "px-3 py-2"
-            }`}
+            className={`flex items-center justify-center font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3" : "px-3 py-2"
+              }`}
             title="Logout"
           >
             {isCollapsed ? <LogOutIcon className="h-6 w-6" /> : "Logout"}
