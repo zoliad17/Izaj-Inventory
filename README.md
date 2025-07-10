@@ -1,4 +1,4 @@
-# Tauri + React + Typescript
+# Tauri + React + Typescript + NodeJs
 
 ## Recommended IDE Setup
 
