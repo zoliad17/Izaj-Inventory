@@ -254,13 +254,6 @@ function Dashboard() {
       className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
         } p-2 sm:p-4 `}
     >
-      {/* Search Bar */}
-
-      <SearchBar
-        onSearch={handleSearch}
-        className="p-1.5"
-        placeholder="Search products..."
-      />
       <div className="grid mt-1.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Stock Card */}
         <div className="bg-white rounded-lg shadow p-6">

@@ -16,9 +16,8 @@ function AddBranchPage() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
         <Toaster
@@ -110,25 +109,7 @@ function AddBranchPage() {
                   placeholder="Full name"
                 />
               </div>
-
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Contact Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="+1 (___) ___-____"
-                />
-              </div>
             </div>
-
             <div>
               <label
                 htmlFor="email"
@@ -143,68 +124,6 @@ function AddBranchPage() {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="contact@branch.example.com"
-              />
-            </div>
-          </div>
-
-          {/* Lighting-Specific Details */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
-              Lighting Company Details
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="specialization"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Lighting Specialization
-                </label>
-                <select
-                  id="specialization"
-                  name="specialization"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="residential">Residential Lighting</option>
-                  <option value="commercial">Commercial Lighting</option>
-                  <option value="industrial">Industrial Lighting</option>
-                  <option value="landscape">Landscape Lighting</option>
-                  <option value="all">All Types</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="installationServices"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Installation Services
-                </label>
-                <select
-                  id="installationServices"
-                  name="installationServices"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="yes">Available</option>
-                  <option value="no">Not Available</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="inventoryCapacity"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Inventory Capacity (units)
-              </label>
-              <input
-                type="number"
-                id="inventoryCapacity"
-                name="inventoryCapacity"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Estimated capacity for lighting products"
               />
             </div>
           </div>
