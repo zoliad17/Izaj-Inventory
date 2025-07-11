@@ -1,16 +1,144 @@
-import ReactECharts from "echarts-for-react";
+"use client";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import {
-  Package,
-  LineChart as LineChartIcon,
-  PieChart as PieChartIcon,
-  Lightbulb,
-  //   AlertCircle,
-  Clock,
-  Plus,
-} from "lucide-react";
-import SearchBar from "../Search_Bar/SearchBar";
 import { useNavigate } from "react-router-dom";
+
+import * as React from "react";
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+
+// shadcn
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Clock, Lightbulb, Package, Plus } from "lucide-react";
+
+export const description = "An interactive area chart";
+
+const chartData = [
+  { date: "2024-04-01", desktop: 222, mobile: 150 },
+  { date: "2024-04-02", desktop: 97, mobile: 180 },
+  { date: "2024-04-03", desktop: 167, mobile: 120 },
+  { date: "2024-04-04", desktop: 242, mobile: 260 },
+  { date: "2024-04-05", desktop: 373, mobile: 290 },
+  { date: "2024-04-06", desktop: 301, mobile: 340 },
+  { date: "2024-04-07", desktop: 245, mobile: 180 },
+  { date: "2024-04-08", desktop: 409, mobile: 320 },
+  { date: "2024-04-09", desktop: 59, mobile: 110 },
+  { date: "2024-04-10", desktop: 261, mobile: 190 },
+  { date: "2024-04-11", desktop: 327, mobile: 350 },
+  { date: "2024-04-12", desktop: 292, mobile: 210 },
+  { date: "2024-04-13", desktop: 342, mobile: 380 },
+  { date: "2024-04-14", desktop: 137, mobile: 220 },
+  { date: "2024-04-15", desktop: 120, mobile: 170 },
+  { date: "2024-04-16", desktop: 138, mobile: 190 },
+  { date: "2024-04-17", desktop: 446, mobile: 360 },
+  { date: "2024-04-18", desktop: 364, mobile: 410 },
+  { date: "2024-04-19", desktop: 243, mobile: 180 },
+  { date: "2024-04-20", desktop: 89, mobile: 150 },
+  { date: "2024-04-21", desktop: 137, mobile: 200 },
+  { date: "2024-04-22", desktop: 224, mobile: 170 },
+  { date: "2024-04-23", desktop: 138, mobile: 230 },
+  { date: "2024-04-24", desktop: 387, mobile: 290 },
+  { date: "2024-04-25", desktop: 215, mobile: 250 },
+  { date: "2024-04-26", desktop: 75, mobile: 130 },
+  { date: "2024-04-27", desktop: 383, mobile: 420 },
+  { date: "2024-04-28", desktop: 122, mobile: 180 },
+  { date: "2024-04-29", desktop: 315, mobile: 240 },
+  { date: "2024-04-30", desktop: 454, mobile: 380 },
+  { date: "2024-05-01", desktop: 165, mobile: 220 },
+  { date: "2024-05-02", desktop: 293, mobile: 310 },
+  { date: "2024-05-03", desktop: 247, mobile: 190 },
+  { date: "2024-05-04", desktop: 385, mobile: 420 },
+  { date: "2024-05-05", desktop: 481, mobile: 390 },
+  { date: "2024-05-06", desktop: 498, mobile: 520 },
+  { date: "2024-05-07", desktop: 388, mobile: 300 },
+  { date: "2024-05-08", desktop: 149, mobile: 210 },
+  { date: "2024-05-09", desktop: 227, mobile: 180 },
+  { date: "2024-05-10", desktop: 293, mobile: 330 },
+  { date: "2024-05-11", desktop: 335, mobile: 270 },
+  { date: "2024-05-12", desktop: 197, mobile: 240 },
+  { date: "2024-05-13", desktop: 197, mobile: 160 },
+  { date: "2024-05-14", desktop: 448, mobile: 490 },
+  { date: "2024-05-15", desktop: 473, mobile: 380 },
+  { date: "2024-05-16", desktop: 338, mobile: 400 },
+  { date: "2024-05-17", desktop: 499, mobile: 420 },
+  { date: "2024-05-18", desktop: 315, mobile: 350 },
+  { date: "2024-05-19", desktop: 235, mobile: 180 },
+  { date: "2024-05-20", desktop: 177, mobile: 230 },
+  { date: "2024-05-21", desktop: 82, mobile: 140 },
+  { date: "2024-05-22", desktop: 81, mobile: 120 },
+  { date: "2024-05-23", desktop: 252, mobile: 290 },
+  { date: "2024-05-24", desktop: 294, mobile: 220 },
+  { date: "2024-05-25", desktop: 201, mobile: 250 },
+  { date: "2024-05-26", desktop: 213, mobile: 170 },
+  { date: "2024-05-27", desktop: 420, mobile: 460 },
+  { date: "2024-05-28", desktop: 233, mobile: 190 },
+  { date: "2024-05-29", desktop: 78, mobile: 130 },
+  { date: "2024-05-30", desktop: 340, mobile: 280 },
+  { date: "2024-05-31", desktop: 178, mobile: 230 },
+  { date: "2024-06-01", desktop: 178, mobile: 200 },
+  { date: "2024-06-02", desktop: 470, mobile: 410 },
+  { date: "2024-06-03", desktop: 103, mobile: 160 },
+  { date: "2024-06-04", desktop: 439, mobile: 380 },
+  { date: "2024-06-05", desktop: 88, mobile: 140 },
+  { date: "2024-06-06", desktop: 294, mobile: 250 },
+  { date: "2024-06-07", desktop: 323, mobile: 370 },
+  { date: "2024-06-08", desktop: 385, mobile: 320 },
+  { date: "2024-06-09", desktop: 438, mobile: 480 },
+  { date: "2024-06-10", desktop: 155, mobile: 200 },
+  { date: "2024-06-11", desktop: 92, mobile: 150 },
+  { date: "2024-06-12", desktop: 492, mobile: 420 },
+  { date: "2024-06-13", desktop: 81, mobile: 130 },
+  { date: "2024-06-14", desktop: 426, mobile: 380 },
+  { date: "2024-06-15", desktop: 307, mobile: 350 },
+  { date: "2024-06-16", desktop: 371, mobile: 310 },
+  { date: "2024-06-17", desktop: 475, mobile: 520 },
+  { date: "2024-06-18", desktop: 107, mobile: 170 },
+  { date: "2024-06-19", desktop: 341, mobile: 290 },
+  { date: "2024-06-20", desktop: 408, mobile: 450 },
+  { date: "2024-06-21", desktop: 169, mobile: 210 },
+  { date: "2024-06-22", desktop: 317, mobile: 270 },
+  { date: "2024-06-23", desktop: 480, mobile: 530 },
+  { date: "2024-06-24", desktop: 132, mobile: 180 },
+  { date: "2024-06-25", desktop: 141, mobile: 190 },
+  { date: "2024-06-26", desktop: 434, mobile: 380 },
+  { date: "2024-06-27", desktop: 448, mobile: 490 },
+  { date: "2024-06-28", desktop: 149, mobile: 200 },
+  { date: "2024-06-29", desktop: 103, mobile: 160 },
+  { date: "2024-06-30", desktop: 446, mobile: 400 },
+];
+
+const chartConfig = {
+  visitors: {
+    label: "Visitors",
+  },
+  desktop: {
+    label: "Desktop",
+    color: "var(--chart-1)",
+  },
+  mobile: {
+    label: "Mobile",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig;
 
 // Define types for the product data
 interface Product {
@@ -22,184 +150,9 @@ interface Product {
   status: "in-stock" | "low-stock" | "out-of-stock";
 }
 
-// Define types for the ECharts options
-interface PieChartOptions {
-  tooltip: {
-    trigger: string;
-  };
-  legend: {
-    top: string;
-    left: string;
-  };
-  series: Array<{
-    name: string;
-    type: string;
-    radius: string[];
-    avoidLabelOverlap: boolean;
-    itemStyle: {
-      borderRadius: number;
-      borderColor: string;
-      borderWidth: number;
-    };
-    label: {
-      show: boolean;
-      position: string;
-    };
-    emphasis: {
-      label: {
-        show: boolean;
-        fontSize: string;
-        fontWeight: string;
-      };
-    };
-    labelLine: {
-      show: boolean;
-    };
-    data: Array<{
-      value: number;
-      name: string;
-      itemStyle: { color: string };
-    }>;
-  }>;
-}
-
-interface LineChartOptions {
-  tooltip: {
-    trigger: string;
-    axisPointer: {
-      type: string;
-    };
-  };
-  xAxis: {
-    type: string;
-    data: string[];
-  };
-  yAxis: {
-    type: string;
-  };
-  series: Array<{
-    name: string;
-    data: number[];
-    type: string;
-    smooth: boolean;
-    lineStyle: {
-      color: string;
-      width: number;
-    };
-    areaStyle: {
-      color: {
-        type: string;
-        x: number;
-        y: number;
-        x2: number;
-        y2: number;
-        colorStops: Array<{
-          offset: number;
-          color: string;
-        }>;
-      };
-    };
-  }>;
-}
-
 function Dashboard() {
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
-  // Options for the Pie Chart
-  const pieChartOptions: PieChartOptions = {
-    tooltip: {
-      trigger: "item",
-    },
-    legend: {
-      top: "5%",
-      left: "center",
-    },
-    series: [
-      {
-        name: "Stock Distribution",
-        type: "pie",
-        radius: ["40%", "70%"],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: "#fff",
-          borderWidth: 2,
-        },
-        label: {
-          show: false,
-          position: "center",
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: "18",
-            fontWeight: "bold",
-          },
-        },
-        labelLine: {
-          show: false,
-        },
-        data: [
-          { value: 300, name: "LED Bulbs", itemStyle: { color: "#FF6384" } },
-          { value: 50, name: "Smart Lights", itemStyle: { color: "#36A2EB" } },
-          { value: 100, name: "Chandeliers", itemStyle: { color: "#FFCE56" } },
-        ],
-      },
-    ],
-  };
-
-  // Options for the Line Chart
-  const lineChartOptions: LineChartOptions = {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: {
-        type: "shadow",
-      },
-    },
-    xAxis: {
-      type: "category",
-      data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-    },
-    yAxis: {
-      type: "value",
-    },
-    series: [
-      {
-        name: "Monthly Stock Movement",
-        data: [65, 59, 80, 81, 56, 55, 40],
-        type: "line",
-        smooth: true,
-        lineStyle: {
-          color: "rgba(75,192,192,1)",
-          width: 3,
-        },
-        areaStyle: {
-          color: {
-            type: "linear",
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [
-              {
-                offset: 0,
-                color: "rgba(75,192,192,0.4)",
-              },
-              {
-                offset: 1,
-                color: "rgba(75,192,192,0.1)",
-              },
-            ],
-          },
-        },
-      },
-    ],
-  };
-
-  const handleSearch = (query: string) => {
-    console.log("Searching for:", query);
-    // custom search logic here
-  };
 
   // Product data
   const products: Product[] = [
@@ -245,22 +198,32 @@ function Dashboard() {
     },
   ];
 
+  // shadcn
+  const [timeRange, setTimeRange] = React.useState("90d");
+
+  const filteredData = chartData.filter((item) => {
+    const date = new Date(item.date);
+    const referenceDate = new Date("2024-06-30");
+    let daysToSubtract = 90;
+    if (timeRange === "30d") {
+      daysToSubtract = 30;
+    } else if (timeRange === "7d") {
+      daysToSubtract = 7;
+    }
+    const startDate = new Date(referenceDate);
+    startDate.setDate(startDate.getDate() - daysToSubtract);
+    return date >= startDate;
+  });
+
   return (
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 `}
     >
-      {/* Search Bar */}
-
-      <SearchBar
-        onSearch={handleSearch}
-        className="p-1.5"
-        placeholder="Search products..."
-      />
       <div className="grid mt-1.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Stock Card */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-lg outline-1 p-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-full">
               <Package className="text-amber-600" size={20} />
@@ -271,7 +234,7 @@ function Dashboard() {
         </div>
 
         {/* Products Card */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-lg outline-1 p-6">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-full">
               <Lightbulb className="text-blue-600" size={20} />
@@ -282,7 +245,7 @@ function Dashboard() {
         </div>
 
         {/* Categories Card */}
-        <div className="bg-white rounded-lg shadow p-6 relative">
+        <div className="bg-white rounded-lg shadow-lg p-6 outline-1 relative">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-full">
               <Lightbulb className="text-green-600" size={20} />
@@ -300,7 +263,7 @@ function Dashboard() {
         </div>
 
         {/* Branches Card */}
-        <div className="bg-white rounded-lg shadow p-6 relative">
+        <div className="bg-white rounded-lg shadow-lg p-6 outline-1 relative">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-full">
               <Lightbulb className="text-purple-600" size={20} />
@@ -317,48 +280,117 @@ function Dashboard() {
           </button>
         </div>
       </div>
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Pie Chart Card */}
-        <div className="bg-white rounded-lg shadow overflow-hidden lg:col-span-1">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <PieChartIcon className="text-gray-500" size={20} />
-              <h5 className="text-lg font-medium">Stock Distribution</h5>
-            </div>
-            <div className="h-80  ">
-              <ReactECharts
-                option={pieChartOptions}
-                style={{ height: "100%", width: "100%" }}
-              />
-            </div>
-          </div>
-          <div className="p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-            <Clock size={16} />
-            <span>Last updated 3 mins ago</span>
-          </div>
-        </div>
 
-        {/* Line Chart Card */}
-        <div className="bg-white rounded-lg shadow overflow-hidden lg:col-span-2">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <LineChartIcon className="text-gray-500" size={20} />
-              <h5 className="text-lg font-medium">Monthly Stock Movement</h5>
-            </div>
-            <div className="h-80">
-              <ReactECharts
-                option={lineChartOptions}
-                style={{ height: "100%", width: "100%" }}
+      {/* Line Chart Card */}
+      <Card className="pt-0 mb-5">
+        <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+          <div className="grid flex-1 gap-1">
+            <CardTitle>Area Chart - Interactive</CardTitle>
+            <CardDescription>
+              Showing total visitors for the last 3 months
+            </CardDescription>
+          </div>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger
+              className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+              aria-label="Select a value"
+            >
+              <SelectValue placeholder="Last 3 months" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="90d" className="rounded-lg">
+                Last 3 months
+              </SelectItem>
+              <SelectItem value="30d" className="rounded-lg">
+                Last 30 days
+              </SelectItem>
+              <SelectItem value="7d" className="rounded-lg">
+                Last 7 days
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <ChartContainer
+            config={chartConfig}
+            className="aspect-auto h-[250px] w-full"
+          >
+            <AreaChart data={filteredData}>
+              <defs>
+                <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-desktop)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-desktop)"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+                <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="var(--color-mobile)"
+                    stopOpacity={0.8}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="var(--color-mobile)"
+                    stopOpacity={0.1}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return date.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                }}
               />
-            </div>
-          </div>
-          <div className="p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-            <Clock size={16} />
-            <span>Last updated 3 mins ago</span>
-          </div>
-        </div>
-      </div>
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(value) => {
+                      return new Date(value).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      });
+                    }}
+                    indicator="dot"
+                  />
+                }
+              />
+              <Area
+                dataKey="mobile"
+                type="natural"
+                fill="url(#fillMobile)"
+                stroke="var(--color-mobile)"
+                stackId="a"
+              />
+              <Area
+                dataKey="desktop"
+                type="natural"
+                fill="url(#fillDesktop)"
+                stroke="var(--color-desktop)"
+                stackId="a"
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
       {/* Products Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-6">
