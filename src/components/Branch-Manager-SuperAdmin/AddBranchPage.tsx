@@ -16,8 +16,9 @@ function AddBranchPage() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
         <Toaster
