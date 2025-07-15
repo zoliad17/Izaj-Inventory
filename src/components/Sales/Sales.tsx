@@ -1,239 +1,158 @@
-import ReactECharts from "echarts-for-react";
-import { Clock, Lightbulb, PieChartIcon, Zap } from "lucide-react";
+import { Clock, Lightbulb } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  Radar,
+  RadialBar,
+  RadialBarChart,
+  XAxis,
+} from "recharts";
+
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Toaster } from "react-hot-toast";
+("use client");
+import * as React from "react";
+import { TrendingUp } from "lucide-react";
+import { Pie, PieChart, PolarAngleAxis, PolarGrid, RadarChart } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+
+export const description = "A pie chart with stacked sections";
 
 const Sales: React.FC = () => {
   // Bar chart options
-  const barChartOptions = {
-    title: {
-      text: "Lighting Business Sales",
-      subtext: "Monthly Sales Data",
-      left: "center",
-      textStyle: {
-        fontSize: 16,
-        fontWeight: "bold",
-      },
+  const bar_chartData = [
+    { month: "January", desktop: 186 },
+    { month: "February", desktop: 305 },
+    { month: "March", desktop: 237 },
+    { month: "April", desktop: 73 },
+    { month: "May", desktop: 209 },
+    { month: "June", desktop: 214 },
+    { month: "July", desktop: 254 },
+    { month: "August", desktop: 234 },
+    { month: "September", desktop: 150 },
+    { month: "October", desktop: 244 },
+    { month: "November", desktop: 114 },
+    { month: "December", desktop: 200 },
+  ];
+  const bar_chartConfig = {
+    desktop: {
+      label: "Desktop",
+      color: "var(--chart-2)",
     },
-    tooltip: {
-      trigger: "axis",
-      axisPointer: {
-        type: "shadow",
-      },
-    },
-    legend: {
-      bottom: 10,
-      data: ["LED Bulbs", "Tube Lights", "Smart Lights"],
-    },
-    grid: {
-      left: "3%",
-      right: "4%",
-      bottom: "15%",
-      top: "20%",
-      containLabel: true,
-    },
-    xAxis: {
-      type: "category",
-      data: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
-      axisLabel: {
-        rotate: 45,
-      },
-    },
-    yAxis: {
-      type: "value",
-      name: "Sales (in USD)",
-      nameLocation: "middle",
-      nameGap: 30,
-    },
-    series: [
-      {
-        name: "LED Bulbs",
-        type: "bar",
-        data: [
-          1200, 1500, 1800, 2000, 2300, 2500, 2700, 3000, 3200, 3500, 3700,
-          4000,
-        ],
-        itemStyle: {
-          color: "#4f46e5", // Indigo
-        },
-      },
-      {
-        name: "Tube Lights",
-        type: "bar",
-        data: [
-          800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000,
-        ],
-        itemStyle: {
-          color: "#10b981", // Emerald
-        },
-      },
-      {
-        name: "Smart Lights",
-        type: "bar",
-        data: [
-          500, 700, 900, 1100, 1300, 1500, 1700, 1900, 2100, 2300, 2500, 2700,
-        ],
-        itemStyle: {
-          color: "#f59e0b", // Amber
-        },
-      },
-    ],
-  };
+  } satisfies ChartConfig;
 
   // Radar chart options
-  const radarChartOptions = {
-    title: {
-      //   text: "Product Performance",
-      left: "center",
-      textStyle: {
-        fontSize: 16,
-        fontWeight: "bold",
-      },
+  const radar_chartData = [
+    { month: "January", desktop: 186 },
+    { month: "February", desktop: 285 },
+    { month: "March", desktop: 237 },
+    { month: "April", desktop: 203 },
+    { month: "May", desktop: 209 },
+    { month: "June", desktop: 264 },
+  ];
+  const radar_chartConfig = {
+    desktop: {
+      label: "Desktop",
+      color: "var(--chart-2)",
     },
-    tooltip: {
-      trigger: "item",
-    },
-    legend: {
-      data: ["LED Bulbs", "Smart Lights"],
-      bottom: 10,
-    },
-    radar: {
-      indicator: [
-        { name: "Sales", max: 5000 },
-        { name: "Profit Margin", max: 100 },
-        { name: "Customer Rating", max: 5 },
-        { name: "Market Share", max: 100 },
-        { name: "Return Rate", max: 10 },
-        { name: "Growth", max: 100 },
-      ],
-      shape: "circle",
-      splitNumber: 5,
-      axisName: {
-        color: "#333",
-      },
-      splitArea: {
-        areaStyle: {
-          color: ["rgba(79, 70, 229, 0.1)", "rgba(79, 70, 229, 0.2)"],
-          shadowColor: "rgba(0, 0, 0, 0.2)",
-          shadowBlur: 10,
-        },
-      },
-      axisLine: {
-        lineStyle: {
-          color: "rgba(79, 70, 229, 0.5)",
-        },
-      },
-      splitLine: {
-        lineStyle: {
-          color: "rgba(79, 70, 229, 0.5)",
-        },
-      },
-    },
-    series: [
-      {
-        name: "Product Comparison",
-        type: "radar",
-        data: [
-          {
-            value: [4200, 75, 4.8, 65, 2.5, 85],
-            name: "LED Bulbs",
-            areaStyle: {
-              color: "rgba(79, 70, 229, 0.4)",
-            },
-            lineStyle: {
-              color: "#4f46e5",
-              width: 2,
-            },
-            symbolSize: 6,
-          },
-          {
-            value: [2700, 85, 4.5, 35, 1.8, 95],
-            name: "Smart Lights",
-            areaStyle: {
-              color: "rgba(245, 158, 11, 0.4)",
-            },
-            lineStyle: {
-              color: "#f59e0b",
-              width: 2,
-            },
-            symbolSize: 6,
-          },
-        ],
-      },
-    ],
-  };
+  } satisfies ChartConfig;
+  //  pie chart options
 
-  const pieChartOptions = {
-    title: {
-      //   text: "Stock Distribution",
-      left: "center",
-      textStyle: {
-        fontSize: 16,
-        fontWeight: "bold",
-      },
+  const desktopData = [
+    { month: "january", desktop: 186, fill: "var(--color-january)" },
+    { month: "february", desktop: 305, fill: "var(--color-february)" },
+    { month: "march", desktop: 237, fill: "var(--color-march)" },
+    { month: "april", desktop: 173, fill: "var(--color-april)" },
+    { month: "may", desktop: 209, fill: "var(--color-may)" },
+  ];
+  const mobileData = [
+    { month: "january", mobile: 80, fill: "var(--color-january)" },
+    { month: "february", mobile: 200, fill: "var(--color-february)" },
+    { month: "march", mobile: 120, fill: "var(--color-march)" },
+    { month: "april", mobile: 190, fill: "var(--color-april)" },
+    { month: "may", mobile: 130, fill: "var(--color-may)" },
+  ];
+  const chartConfig = {
+    visitors: {
+      label: "Visitors",
     },
-    tooltip: {
-      trigger: "item",
-      formatter: "{a} <br/>{b}: {c} ({d}%)",
+    desktop: {
+      label: "Desktop",
     },
-    legend: {
-      orient: "horizontal",
-      bottom: 0,
-      left: "center",
+    mobile: {
+      label: "Mobile",
     },
-    series: [
-      {
-        name: "Stock",
-        type: "pie",
-        radius: ["40%", "70%"],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: "#fff",
-          borderWidth: 2,
-        },
-        label: {
-          show: true,
-          formatter: "{b}: {c} ({d}%)",
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 18,
-            fontWeight: "bold",
-          },
-        },
-        labelLine: {
-          show: true,
-        },
-        data: [
-          { value: 100, name: "LED Bulb", itemStyle: { color: "#4f46e5" } },
-          {
-            value: 50,
-            name: "Smart Light Strip",
-            itemStyle: { color: "#10b981" },
-          },
-          { value: 10, name: "Chandelier", itemStyle: { color: "#f59e0b" } },
-          { value: 25, name: "Floodlight", itemStyle: { color: "#3b82f6" } },
-          { value: 0, name: "Desk Lamp", itemStyle: { color: "#ef4444" } },
-        ],
-      },
-    ],
-  };
+    january: {
+      label: "January",
+      color: "var(--chart-1)",
+    },
+    february: {
+      label: "February",
+      color: "var(--chart-2)",
+    },
+    march: {
+      label: "March",
+      color: "var(--chart-3)",
+    },
+    april: {
+      label: "April",
+      color: "var(--chart-4)",
+    },
+    may: {
+      label: "May",
+      color: "var(--chart-5)",
+    },
+  } satisfies ChartConfig;
 
+  // radical chart options
+
+  const radical_chartData = [
+    { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
+    { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
+    { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },
+    { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
+    { browser: "other", visitors: 90, fill: "var(--color-other)" },
+  ];
+  const radical_chartConfig = {
+    visitors: {
+      label: "Visitors",
+    },
+    chrome: {
+      label: "Chrome",
+      color: "var(--chart-2)",
+    },
+    safari: {
+      label: "Safari",
+      color: "var(--chart-2)",
+    },
+    firefox: {
+      label: "Firefox",
+      color: "var(--chart-3)",
+    },
+    edge: {
+      label: "Edge",
+      color: "var(--chart-4)",
+    },
+    other: {
+      label: "Other",
+      color: "var(--chart-5)",
+    },
+  } satisfies ChartConfig;
   // Product data
   interface Product {
     id: string;
@@ -293,7 +212,7 @@ const Sales: React.FC = () => {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 `}
     >
-      <div className="p-4 md:p-6">
+      <div className="p-2 md:p-3">
         {/* Toaster for success and error */}
         <Toaster
           position="top-center"
@@ -308,75 +227,189 @@ const Sales: React.FC = () => {
         <h1 className="text-2xl md:text-3xl font-bold mb-6">Sales Dashboard</h1>
 
         {/* Top Row - Pie and Radar Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Pie Chart Card */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 md:p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <PieChartIcon className="text-gray-500" size={20} />
-                <h5 className="text-lg font-medium">Stock Distribution</h5>
+          <Card className="flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle>Pie Chart - Stacked</CardTitle>
+              <CardDescription>January - June 2024</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={chartConfig}
+                className="mx-auto aspect-square max-h-[200px]"
+              >
+                <PieChart>
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelKey="visitors"
+                        nameKey="month"
+                        indicator="line"
+                        labelFormatter={(_, payload) => {
+                          return chartConfig[
+                            payload?.[0].dataKey as keyof typeof chartConfig
+                          ].label;
+                        }}
+                      />
+                    }
+                  />
+                  <Pie data={desktopData} dataKey="desktop" outerRadius={60} />
+                  <Pie
+                    data={mobileData}
+                    dataKey="mobile"
+                    innerRadius={70}
+                    outerRadius={90}
+                  />
+                </PieChart>
+              </ChartContainer>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 leading-none font-medium">
+                Trending up by 5.2% this month{" "}
+                <TrendingUp className="h-4 w-4" />
               </div>
-              <div className="h-64 md:h-80">
-                <ReactECharts
-                  option={pieChartOptions}
-                  style={{ height: "100%", width: "100%" }}
-                  className="echarts-for-react"
-                />
+              <div className="text-muted-foreground leading-none">
+                Showing total visitors for the last 6 months
               </div>
-            </div>
-            <div className="p-3 md:p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-              <Clock size={16} />
-              <span>Last updated 3 mins ago</span>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
 
           {/* Radar Chart Card */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 md:p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <Zap className="text-gray-500" size={20} />
-                <h5 className="text-lg font-medium">Product Performance</h5>
+          <Card>
+            <CardHeader className="items-center pb-4">
+              <CardTitle>Radar Chart - Grid Circle Filled</CardTitle>
+              <CardDescription>
+                Showing total visitors for the last 6 months
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-0">
+              <ChartContainer
+                config={radar_chartConfig}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <RadarChart data={radar_chartData}>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent />}
+                  />
+                  <PolarGrid
+                    className="fill-(--color-desktop) opacity-20"
+                    gridType="circle"
+                  />
+                  <PolarAngleAxis dataKey="month" />
+                  <Radar
+                    dataKey="desktop"
+                    fill="var(--color-desktop)"
+                    fillOpacity={0.5}
+                  />
+                </RadarChart>
+              </ChartContainer>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 leading-none font-medium">
+                Trending up by 5.2% this month{" "}
+                <TrendingUp className="h-4 w-4" />
               </div>
-              <div className="h-64 md:h-80">
-                <ReactECharts
-                  option={radarChartOptions}
-                  style={{ height: "100%", width: "100%" }}
-                  className="echarts-for-react"
-                />
+              <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                January - June 2024
               </div>
-            </div>
-            <div className="p-3 md:p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-              <Clock size={16} />
-              <span>Last updated 3 mins ago</span>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
+
+          {/* radical Chart*/}
+          <Card className="flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle>Radial Chart</CardTitle>
+              <CardDescription>January - June 2024</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={radical_chartConfig}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <RadialBarChart
+                  data={radical_chartData}
+                  innerRadius={30}
+                  outerRadius={110}
+                >
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent hideLabel nameKey="browser" />
+                    }
+                  />
+                  <RadialBar dataKey="visitors" background />
+                </RadialBarChart>
+              </ChartContainer>
+            </CardContent>
+            <CardFooter className="flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 leading-none font-medium">
+                Trending up by 5.2% this month{" "}
+                <TrendingUp className="h-4 w-4" />
+              </div>
+              <div className="text-muted-foreground leading-none">
+                Showing total visitors for the last 6 months
+              </div>
+            </CardFooter>
+          </Card>
         </div>
 
         {/* Middle Row - Bar Chart */}
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 md:p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <Lightbulb className="text-gray-500" size={20} />
-                <h5 className="text-lg font-medium">Monthly Sales</h5>
-              </div>
-              <div className="h-64 md:h-80">
-                <ReactECharts
-                  option={barChartOptions}
-                  style={{ height: "100%", width: "100%" }}
-                  className="echarts-for-react"
+
+        <Card className=" mb-6">
+          <CardHeader>
+            <CardTitle>Bar Chart - Label</CardTitle>
+            <CardDescription>January - June 2024</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={bar_chartConfig}
+              className="h-[200px] w-[100%]"
+            >
+              <BarChart
+                height={200}
+                accessibilityLayer
+                data={bar_chartData}
+                margin={{
+                  top: 20,
+                }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  tickMargin={5}
+                  axisLine={false}
+                  tickFormatter={(value) => value.slice(0, 3)}
                 />
-              </div>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8}>
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                  />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+          <CardFooter className="flex-col items-start gap-2 text-sm">
+            <div className="flex gap-2 leading-none font-medium">
+              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
             </div>
-            <div className="p-3 md:p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-              <Clock size={16} />
-              <span>Last updated 3 mins ago</span>
+            <div className="text-muted-foreground leading-none">
+              Showing total visitors for the last 6 months
             </div>
-          </div>
-        </div>
+          </CardFooter>
+        </Card>
 
         {/* Bottom Row - Products Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <Card className="bg-white rounded-lg  shadow overflow-hidden">
           <div className="p-4 md:p-6">
             <div className="flex items-center gap-3 mb-4 md:mb-6">
               <Lightbulb className="text-gray-500" size={20} />
@@ -452,7 +485,7 @@ const Sales: React.FC = () => {
             <Clock size={16} />
             <span>Last updated 3 mins ago</span>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

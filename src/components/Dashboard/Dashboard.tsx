@@ -225,68 +225,73 @@ function Dashboard() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 `}
     >
-      <div className="grid mt-1.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Total Stock Card */}
-        <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 rounded-full">
-              <Package className="text-amber-600" size={20} />
+      <div className="mt-1.5 mb-6">
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${
+            isSuperAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
+          }`}
+        >
+          {/* Total Stock Card */}
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-full">
+                <Package className="text-amber-600" size={20} />
+              </div>
+              <h5 className="text-lg font-medium">Total Stock</h5>
             </div>
-            <h5 className="text-lg font-medium">Total Stock</h5>
+            <h6 className="text-2xl font-bold text-gray-800 mt-2">450</h6>
           </div>
-          <h6 className="text-2xl font-bold text-gray-800 mt-2">450</h6>
-        </div>
 
-        {/* Products Card */}
-        <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-full">
-              <Lightbulb className="text-blue-600" size={20} />
+          {/* Products Card */}
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Lightbulb className="text-blue-600" size={20} />
+              </div>
+              <h5 className="text-lg font-medium">Products</h5>
             </div>
-            <h5 className="text-lg font-medium">Products</h5>
+            <h6 className="text-2xl font-bold text-gray-800 mt-2">50</h6>
           </div>
-          <h6 className="text-2xl font-bold text-gray-800 mt-2">50</h6>
-        </div>
 
-        {/* Categories Card */}
-        <div className="bg-white rounded-lg shadow-lg border  border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow relative">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-full">
-              <Lightbulb className="text-green-600" size={20} />
-            </div>
-            <h5 className="text-lg font-medium">Categories</h5>
-          </div>
-          <h6 className="text-2xl font-bold text-gray-800 mt-2">12</h6>
-          <button
-            onClick={() => navigate("/categories/add")}
-            className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 rounded-full hover:bg-green-200 transition-colors"
-            title="Add Category"
-          >
-            <Plus className="text-green-600" size={16} />
-          </button>
-        </div>
-
-        {/* Branches Card - Only visible to Super Admin */}
-        {isSuperAdmin && (
+          {/* Categories Card */}
           <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow relative">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-full">
-                <Lightbulb className="text-purple-600" size={20} />
+              <div className="p-2 bg-green-100 rounded-full">
+                <Lightbulb className="text-green-600" size={20} />
               </div>
-              <h5 className="text-lg font-medium">Branches</h5>
+              <h5 className="text-lg font-medium">Categories</h5>
             </div>
-            <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
+            <h6 className="text-2xl font-bold text-gray-800 mt-2">12</h6>
             <button
-              onClick={() => navigate("/branches/add")}
-              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
-              title="Add Branch"
+              onClick={() => navigate("/categories/add")}
+              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 rounded-full hover:bg-green-200 transition-colors"
+              title="Add Category"
             >
-              <Plus className="text-purple-600" size={16} />
+              <Plus className="text-green-600" size={16} />
             </button>
           </div>
-        )}
-      </div>
 
+          {/* Branches Card - Only visible to Super Admin */}
+          {isSuperAdmin && (
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-full">
+                  <Lightbulb className="text-purple-600" size={20} />
+                </div>
+                <h5 className="text-lg font-medium">Branches</h5>
+              </div>
+              <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
+              <button
+                onClick={() => navigate("/branches/add")}
+                className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
+                title="Add Branch"
+              >
+                <Plus className="text-purple-600" size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Line Chart Card */}
       <Card className="pt-0">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">

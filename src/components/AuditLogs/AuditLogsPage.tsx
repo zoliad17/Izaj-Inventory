@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 import {
   Search,
   Filter,
@@ -15,6 +16,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
+import { useSidebar } from "../Sidebar/SidebarContext";
 
 interface AuditLog {
   id: string;
@@ -31,6 +33,7 @@ interface AuditLog {
 }
 
 const AuditLogsPage = () => {
+  const { isCollapsed } = useSidebar();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -346,351 +349,357 @@ const AuditLogsPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">Audit Logs</h1>
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <label
-                htmlFor="itemsPerPage"
-                className="mr-2 text-sm text-gray-600"
-              >
-                Items per page:
-              </label>
-              <select
-                id="itemsPerPage"
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-              </select>
-            </div>
-            <button
-              onClick={refreshLogs}
-              disabled={isLoading}
-              className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-              />
-              <span>Refresh</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+    <div
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
+    >
+      <div className="container mx-auto px-4 py-6 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col space-y-6">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-800">Audit Logs</h1>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center">
+                <label
+                  htmlFor="itemsPerPage"
+                  className="mr-2 text-sm text-gray-600"
+                >
+                  Items per page:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                </select>
               </div>
-              <input
-                type="text"
-                placeholder="Search logs..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {/* Action Filter */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Filter className="h-5 w-5 text-gray-400" />
-              </div>
-              <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={selectedAction}
-                onChange={(e) => setSelectedAction(e.target.value)}
+              <button
+                onClick={refreshLogs}
+                disabled={isLoading}
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                <option value="ALL">All Actions</option>
-                <option value="REQUEST">Request</option>
-                <option value="APPROVE">Approve</option>
-                <option value="REJECT">Reject</option>
-                <option value="TRANSFER">Transfer</option>
-                <option value="RECEIVE">Receive</option>
-              </select>
-            </div>
-
-            {/* Branch Filter */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Building className="h-5 w-5 text-gray-400" />
-              </div>
-              <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
-              >
-                <option value="ALL">All Branches</option>
-                <option value="Lucena">Lucena</option>
-                <option value="Batangas">Batangas</option>
-                <option value="Laguna">Laguna</option>
-              </select>
+                <RefreshCw
+                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                />
+                <span>Refresh</span>
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Logs Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          {isLoading ? (
-            <div className="flex justify-center items-center p-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          {/* Filters */}
+          <div className="bg-white p-4 rounded-lg shadow">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search logs..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Action Filter */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={selectedAction}
+                  onChange={(e) => setSelectedAction(e.target.value)}
+                >
+                  <option value="ALL">All Actions</option>
+                  <option value="REQUEST">Request</option>
+                  <option value="APPROVE">Approve</option>
+                  <option value="REJECT">Reject</option>
+                  <option value="TRANSFER">Transfer</option>
+                  <option value="RECEIVE">Receive</option>
+                </select>
+              </div>
+
+              {/* Branch Filter */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Building className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                >
+                  <option value="ALL">All Branches</option>
+                  <option value="Lucena">Lucena</option>
+                  <option value="Batangas">Batangas</option>
+                  <option value="Laguna">Laguna</option>
+                </select>
+              </div>
             </div>
-          ) : sortedLogs.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No audit logs found</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => requestSort("timestamp")}
-                      >
-                        <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          Date & Time
-                          {sortConfig.key === "timestamp" &&
-                            (sortConfig.direction === "ascending" ? (
-                              <ChevronUp className="w-4 h-4 ml-1" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 ml-1" />
-                            ))}
-                        </div>
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => requestSort("action")}
-                      >
-                        <div className="flex items-center">
-                          <Filter className="w-4 h-4 mr-2" />
-                          Action
-                          {sortConfig.key === "action" &&
-                            (sortConfig.direction === "ascending" ? (
-                              <ChevronUp className="w-4 h-4 ml-1" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 ml-1" />
-                            ))}
-                        </div>
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Product
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Branches
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => requestSort("userName")}
-                      >
-                        <div className="flex items-center">
-                          <User className="w-4 h-4 mr-2" />
-                          User
-                          {sortConfig.key === "userName" &&
-                            (sortConfig.direction === "ascending" ? (
-                              <ChevronUp className="w-4 h-4 ml-1" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 ml-1" />
-                            ))}
-                        </div>
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Notes
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentItems.map((log) => (
-                      <tr key={log.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {log.timestamp.toLocaleDateString()}
+          </div>
+
+          {/* Logs Table */}
+          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+            {isLoading ? (
+              <div className="flex justify-center items-center p-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : sortedLogs.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No audit logs found</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => requestSort("timestamp")}
+                        >
+                          <div className="flex items-center">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Date & Time
+                            {sortConfig.key === "timestamp" &&
+                              (sortConfig.direction === "ascending" ? (
+                                <ChevronUp className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ))}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {log.timestamp.toLocaleTimeString()}
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => requestSort("action")}
+                        >
+                          <div className="flex items-center">
+                            <Filter className="w-4 h-4 mr-2" />
+                            Action
+                            {sortConfig.key === "action" &&
+                              (sortConfig.direction === "ascending" ? (
+                                <ChevronUp className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ))}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(
-                              log.action
-                            )}`}
-                          >
-                            <div className="flex items-center">
-                              {getActionIcon(log.action)}
-                              <span className="ml-1">{log.action}</span>
-                            </div>
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {log.productName}
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Product
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Branches
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                          onClick={() => requestSort("userName")}
+                        >
+                          <div className="flex items-center">
+                            <User className="w-4 h-4 mr-2" />
+                            User
+                            {sortConfig.key === "userName" &&
+                              (sortConfig.direction === "ascending" ? (
+                                <ChevronUp className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              ))}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {log.productId} • Qty: {log.quantity}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
-                            <span className="font-medium">From:</span>{" "}
-                            {log.fromBranch}
-                          </div>
-                          <div className="text-sm text-gray-900">
-                            <span className="font-medium">To:</span>{" "}
-                            {log.toBranch}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {log.userName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {log.userId}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {log.notes || "—"}
-                          </div>
-                        </td>
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Notes
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => paginate(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      paginate(Math.min(totalPages, currentPage + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {currentItems.map((log) => (
+                        <tr key={log.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {log.timestamp.toLocaleDateString()}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {log.timestamp.toLocaleTimeString()}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(
+                                log.action
+                              )}`}
+                            >
+                              <div className="flex items-center">
+                                {getActionIcon(log.action)}
+                                <span className="ml-1">{log.action}</span>
+                              </div>
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {log.productName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {log.productId} • Qty: {log.quantity}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              <span className="font-medium">From:</span>{" "}
+                              {log.fromBranch}
+                            </div>
+                            <div className="text-sm text-gray-900">
+                              <span className="font-medium">To:</span>{" "}
+                              {log.toBranch}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {log.userName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {log.userId}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-500 max-w-xs truncate">
+                              {log.notes || "—"}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing{" "}
-                      <span className="font-medium">
-                        {indexOfFirstItem + 1}
-                      </span>{" "}
-                      to{" "}
-                      <span className="font-medium">
-                        {Math.min(indexOfLastItem, sortedLogs.length)}
-                      </span>{" "}
-                      of{" "}
-                      <span className="font-medium">{sortedLogs.length}</span>{" "}
-                      results
-                    </p>
-                  </div>
-                  <div>
-                    <nav
-                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                      aria-label="Pagination"
+
+                {/* Pagination */}
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => paginate(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <button
-                        onClick={() => paginate(1)}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      Previous
+                    </button>
+                    <button
+                      onClick={() =>
+                        paginate(Math.min(totalPages, currentPage + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Showing{" "}
+                        <span className="font-medium">
+                          {indexOfFirstItem + 1}
+                        </span>{" "}
+                        to{" "}
+                        <span className="font-medium">
+                          {Math.min(indexOfLastItem, sortedLogs.length)}
+                        </span>{" "}
+                        of{" "}
+                        <span className="font-medium">{sortedLogs.length}</span>{" "}
+                        results
+                      </p>
+                    </div>
+                    <div>
+                      <nav
+                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                        aria-label="Pagination"
                       >
-                        <span className="sr-only">First</span>
-                        <ChevronsLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => paginate(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Previous</span>
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
+                        <button
+                          onClick={() => paginate(1)}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">First</span>
+                          <ChevronsLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => paginate(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Previous</span>
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
 
-                      {getPageNumbers().map((number, index) =>
-                        number === -1 ? (
-                          <span
-                            key={`ellipsis-${index}`}
-                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
-                          >
-                            ...
-                          </span>
-                        ) : (
-                          <button
-                            key={number}
-                            onClick={() => paginate(number)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === number
-                                ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
-                          >
-                            {number}
-                          </button>
-                        )
-                      )}
+                        {getPageNumbers().map((number, index) =>
+                          number === -1 ? (
+                            <span
+                              key={`ellipsis-${index}`}
+                              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                            >
+                              ...
+                            </span>
+                          ) : (
+                            <button
+                              key={number}
+                              onClick={() => paginate(number)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                currentPage === number
+                                  ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                                  : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                              }`}
+                            >
+                              {number}
+                            </button>
+                          )
+                        )}
 
-                      <button
-                        onClick={() =>
-                          paginate(Math.min(totalPages, currentPage + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Next</span>
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => paginate(totalPages)}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Last</span>
-                        <ChevronsRight className="h-5 w-5" />
-                      </button>
-                    </nav>
+                        <button
+                          onClick={() =>
+                            paginate(Math.min(totalPages, currentPage + 1))
+                          }
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Next</span>
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => paginate(totalPages)}
+                          disabled={currentPage === totalPages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="sr-only">Last</span>
+                          <ChevronsRight className="h-5 w-5" />
+                        </button>
+                      </nav>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -43,7 +43,7 @@ const routeRoles: Record<string, UserRole[]> = {
   branchProducts: ["Admin", "Branch Manager", "Super Admin"],
   branchCategory: ["Admin", "Branch Manager", "Super Admin"],
   add_category: ["Admin", "Branch Manager", "Super Admin"],
-  add_branch: ["Admin", "Branch Manager", "Super Admin"],
+  add_branch: ["Admin", "Super Admin"],
   view_product: ["Admin", "Branch Manager", "Super Admin"],
   send_request: ["Admin", "Branch Manager", "Super Admin"],
   sales: ["Admin", "Branch Manager", "Super Admin"],

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+// import { ArrowLeft } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 
 function AddCategoryPage() {
@@ -20,19 +20,19 @@ function AddCategoryPage() {
       } p-2 sm:p-4`}
     >
       <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
-        <button
+        {/* <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-600 mb-6 hover:text-green-700 transition-colors"
         >
           <ArrowLeft size={16} />
           Back to Dashboard
-        </button>
+        </button> */}
 
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800">
           Add New Lighting Category
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6 ">
           {/* Basic Information Section */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+// import { ArrowLeft } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Toaster } from "react-hot-toast";
 
@@ -31,26 +31,26 @@ function AddBranchPage() {
             },
           }}
         />
-        <button
+        {/* <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-600 mb-6 hover:text-purple-700 transition-colors"
         >
           <ArrowLeft size={16} />
           Back to Dashboard
-        </button>
+        </button> */}
 
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800">
           Add New Branch
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Branch Information Section */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
               Branch Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div className="grid  grid-cols-1 md:grid-cols-1 gap-4">
               <div>
                 <label
                   htmlFor="name"
@@ -93,7 +93,7 @@ function AddBranchPage() {
               Contact Information
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <div>
                 <label
                   htmlFor="manager"
