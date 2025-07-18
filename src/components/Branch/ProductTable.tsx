@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 // Define interface for Product data
 interface Product {
@@ -16,6 +18,7 @@ interface Product {
 
 function ProductTable() {
   const { isCollapsed } = useSidebar();
+  const { branchId } = useParams<{ branchId: string }>();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,63 +29,52 @@ function ProductTable() {
   const [requestQuantity, setRequestQuantity] = useState<{
     [key: string]: number;
   }>({});
-  const [currentRequestProduct, setCurrentRequestProduct] =
-    useState<Product | null>(null);
+  const [currentRequestProduct, setCurrentRequestProduct] = useState<Product | null>(null);
   const productsPerPage = 5;
 
-  // State with typed products array
-  const [products] = useState<Product[]>([
-    {
-      id: "001",
-      name: "LED Bulb",
-      category: "Bulbs",
-      price: "Php 345.99",
-      stock: 100,
-      status: "In Stock",
-      imageUrl: "light1.jpg",
-      detailsPage: "/product/001",
-    },
-    {
-      id: "002",
-      name: "Fluorescent Tube",
-      category: "Tubes",
-      price: "Php 420.50",
-      stock: 5,
-      status: "Low Stock",
-      imageUrl: "light2.jpg",
-      detailsPage: "/product/002",
-    },
-    {
-      id: "003",
-      name: "Halogen Lamp",
-      category: "Lamps",
-      price: "Php 280.00",
-      stock: 0,
-      status: "Out of Stock",
-      imageUrl: "light3.jpg",
-      detailsPage: "/product/003",
-    },
-    {
-      id: "004",
-      name: "Solar Panel",
-      category: "Solar",
-      price: "Php 1200.00",
-      stock: 25,
-      status: "In Stock",
-      imageUrl: "light4.jpg",
-      detailsPage: "/product/004",
-    },
-    {
-      id: "005",
-      name: "LED Strip",
-      category: "Strips",
-      price: "Php 150.75",
-      stock: 50,
-      status: "In Stock",
-      imageUrl: "light5.jpg",
-      detailsPage: "/product/005",
-    },
-  ]);
+  // State for fetched products and branch name
+  const [products, setProducts] = useState<Product[]>([]);
+  const [branchName, setBranchName] = useState<string>("");
+
+  // Fetch branch name/location
+  useEffect(() => {
+    if (!branchId) return;
+    const fetchBranch = async () => {
+      const { data, error } = await supabase.from("branch").select("location").eq("id", branchId).single();
+      if (!error && data) {
+        setBranchName(data.location);
+      } else {
+        setBranchName("");
+      }
+    };
+    fetchBranch();
+  }, [branchId]);
+
+  // Fetch products for this branch
+  useEffect(() => {
+    if (!branchId) return;
+    const fetchProducts = async () => {
+      const { data, error } = await supabase
+        .from("centralized_product")
+        .select(`id, product_name, quantity, price, status, category_id, category:category_id (category_name)`)
+        .eq("branch_id", branchId);
+      if (!error && data) {
+        setProducts(
+          data.map((p: any) => ({
+            id: p.id.toString(),
+            name: p.product_name,
+            category: p.category?.category_name || "",
+            price: p.price ? `Php ${Number(p.price).toFixed(2)}` : "",
+            stock: p.quantity,
+            status: p.status,
+          }))
+        );
+      } else {
+        setProducts([]);
+      }
+    };
+    fetchProducts();
+  }, [branchId]);
 
   // Get unique categories for filter dropdown
   const categories = [
@@ -171,15 +163,15 @@ function ProductTable() {
     console.log("Request submitted:", {
       products: currentRequestProduct
         ? [
-            {
-              productId: currentRequestProduct.id,
-              quantity: requestQuantity[currentRequestProduct.id] || 1,
-            },
-          ]
+          {
+            productId: currentRequestProduct.id,
+            quantity: requestQuantity[currentRequestProduct.id] || 1,
+          },
+        ]
         : selectedProducts.map((id) => ({
-            productId: id,
-            quantity: requestQuantity[id] || 1,
-          })),
+          productId: id,
+          quantity: requestQuantity[id] || 1,
+        })),
     });
 
     // Reset and close modal
@@ -199,9 +191,8 @@ function ProductTable() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       {/* Request Modal */}
       {isModalOpen && (
@@ -293,7 +284,9 @@ function ProductTable() {
           {/* Header with search and actions */}
           <div className="flex flex-col mb-3 md:flex-row justify-between items-start md:items-center  ">
             <div>
-              <h1 className="text-2xl font-bold">Branch Lucena</h1>
+              {branchName && (
+                <h1 className="text-2xl font-bold">Branch {branchName}</h1>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -449,13 +442,12 @@ function ProductTable() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              product.status === "In Stock"
-                                ? "bg-green-100 text-green-800"
-                                : product.status === "Low Stock"
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === "In Stock"
+                              ? "bg-green-100 text-green-800"
+                              : product.status === "Low Stock"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : "bg-red-100 text-red-800"
-                            }`}
+                              }`}
                           >
                             {product.status}
                           </span>
@@ -539,11 +531,10 @@ function ProductTable() {
                         <button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {page}
                         </button>

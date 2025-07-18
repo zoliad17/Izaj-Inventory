@@ -108,7 +108,7 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/branch_products"
+            path="/branch_products/:branchId"
             element={
               <ProtectedRoute allowedRoles={routeRoles.branchProducts}>
                 <Layout>
