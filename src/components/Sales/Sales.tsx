@@ -224,7 +224,7 @@ const Sales: React.FC = () => {
             },
           }}
         />
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Sales Dashboard</h1>
+        <h5 className="text-xl md:text-xl font-bold mb-6">Sales Dashboard</h5>
 
         {/* Top Row - Pie and Radar Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -409,11 +409,11 @@ const Sales: React.FC = () => {
         </Card>
 
         {/* Bottom Row - Products Table */}
-        <Card className="bg-white rounded-lg  shadow overflow-hidden">
-          <div className="p-4 md:p-6">
+        <Card>
+          <div className="py-1 md:px-6 ">
             <div className="flex items-center gap-3 mb-4 md:mb-6">
               <Lightbulb className="text-gray-500" size={20} />
-              <h5 className="text-lg font-medium">Top Products</h5>
+              <h5 className="text-lg font-medium mt-[-3]">Top Products</h5>
             </div>
 
             <div className="overflow-x-auto">
