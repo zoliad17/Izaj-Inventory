@@ -8,12 +8,10 @@ import {
   SwitchHorizontalIcon,
   // CogIcon,
   UserCircleIcon,
-  ChevronDoubleLeftIcon,
-  ChevronDoubleRightIcon,
   SearchIcon,
 } from "@heroicons/react/outline";
 import { useSidebar } from "./SidebarContext";
-import { LogOutIcon } from "lucide-react";
+import { LogOutIcon, MenuIcon } from "lucide-react";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 // Define types for the navigation items
@@ -51,6 +49,8 @@ function Sidebar() {
   const user: User | null = userString ? JSON.parse(userString) : null;
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
+
   const userRole = user?.role?.role_name || localStorage.getItem("userRole");
 
   useEffect(() => {
@@ -200,19 +200,34 @@ function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${isCollapsed ? "w-25" : "w-64"
-        }`}
+      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${
+        isCollapsed ? "w-25" : "w-64"
+      }`}
     >
       {/* Header Section */}
       <div>
         <div className="flex items-center p-4 justify-between border-b border-gray-200">
           {!isCollapsed ? (
-            <div className="flex items-center">
-              <img
-                src="/src/assets/image/logo.jpg"
-                alt="Logo"
-                className="w-10 h-10 rounded-full object-cover"
-              />
+            <div
+              className="flex items-center"
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
+            >
+              {isLogoHovered ? (
+                <button
+                  onClick={toggleSidebar}
+                  className="text-gray-500 cursor-pointer hover:text-gray-700 p-1 rounded-md transition-colors duration-200"
+                  aria-label="Collapse sidebar"
+                >
+                  <MenuIcon className="h-6 w-6" />
+                </button>
+              ) : (
+                <img
+                  src="/src/assets/image/logo.jpg"
+                  alt="Logo"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              )}
               <div className="ml-3">
                 <div className="text-lg font-semibold whitespace-nowrap">
                   IZAJ-LIGHTING
@@ -220,23 +235,28 @@ function Sidebar() {
               </div>
             </div>
           ) : (
-            <img
-              src="/src/assets/image/logo.jpg"
-              alt="Logo"
-              className="w-10 h-10 rounded-full object-cover mx-auto"
-            />
+            <div
+              className="w-full flex justify-center"
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
+            >
+              {isLogoHovered ? (
+                <button
+                  onClick={toggleSidebar}
+                  className="text-gray-500 cursor-pointer hover:text-gray-700 p-1 rounded-md transition-colors duration-200"
+                  aria-label="Expand sidebar"
+                >
+                  <MenuIcon className="h-6 w-6" />
+                </button>
+              ) : (
+                <img
+                  src="/src/assets/image/logo.jpg"
+                  alt="Logo"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              )}
+            </div>
           )}
-          <button
-            onClick={toggleSidebar}
-            className="text-gray-500 cursor-pointer hover:text-gray-700 hover:bg-gray-100 p-1 rounded-md transition-colors duration-200"
-            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {isCollapsed ? (
-              <ChevronDoubleRightIcon className="h-5 w-5 ml-1.5" />
-            ) : (
-              <ChevronDoubleLeftIcon className="h-5 w-5" />
-            )}
-          </button>
         </div>
 
         {/* Search Bar (only shown when expanded) */}
@@ -264,8 +284,9 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
-                      }`}
+                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
+                      isCollapsed ? "p-3 justify-center" : "p-3"
+                    }`}
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6" />
@@ -282,8 +303,9 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
-                          }`}
+                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
+                          isCollapsed ? "p-3 justify-center" : "p-3"
+                        }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
@@ -294,8 +316,9 @@ function Sidebar() {
                               {item.label}
                             </span>
                             <svg
-                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
-                                }`}
+                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${
+                                isDropdownOpen ? "rotate-180" : ""
+                              }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -315,8 +338,9 @@ function Sidebar() {
                       {/* Dropdown content */}
                       {!isCollapsed && item.subItems && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ${isDropdownOpen ? "max-h-40" : "max-h-0"
-                            }`}
+                          className={`overflow-hidden transition-all duration-300 ${
+                            isDropdownOpen ? "max-h-40" : "max-h-0"
+                          }`}
                         >
                           <ul className="ml-2 pl-6 border-l-2 border-gray-200">
                             {item.subItems.map((subItem, subIndex) => (
@@ -362,8 +386,9 @@ function Sidebar() {
           )}
           <button
             onClick={handleLogout}
-            className={`flex items-center justify-center font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3" : "px-3 py-2"
-              }`}
+            className={`flex items-center justify-center font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 ${
+              isCollapsed ? "p-3" : "px-3 py-2"
+            }`}
             title="Logout"
           >
             {isCollapsed ? <LogOutIcon className="h-6 w-6" /> : "Logout"}
