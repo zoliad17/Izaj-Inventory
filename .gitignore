@@ -15,6 +15,9 @@ dist-ssr
 # Bun lockfile
 bun.lock*
 
+#To-do.md
+To-do.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

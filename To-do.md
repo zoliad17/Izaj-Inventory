@@ -3,10 +3,11 @@
 - [x] Create/Update/Delete in SuperAdmin User page
 - [x] Display Users in SuperAdmin Page
 - [x] Display all branch and products according to its branch id
+- [ ] CRUD Category
+- [ ] Crud Branches and Update Database for input fields
 - [ ] Picture or Excel extractor to pass to supabase
-- [ ] Add a delay like a pending where it deducts unless not approved it will revert to the original value to avoid collision
+- [ ] Add a pending where it deducts the product temporarily then if its not approved its just goes back to the original value to avoid collision
 - [ ] Make the password hashed
 - [ ] Send the acount created by the superadmin through email of the user being created
-- [ ] CRUD Category, Branches , Update Database for input fields
 
 
