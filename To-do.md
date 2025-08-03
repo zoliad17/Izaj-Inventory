@@ -3,6 +3,7 @@
 - [x] Create/Update/Delete in SuperAdmin User page
 - [x] Display Users in SuperAdmin Page
 - [x] Display all branch and products according to its branch id
+- [x] Add Branch feature
 - [ ] CRUD Category
 - [ ] Crud Branches and Update Database for input fields
 - [ ] Picture or Excel extractor to pass to supabase

@@ -295,3 +295,76 @@ app.delete("/api/users/:user_id", async (req, res) => {
   }
   res.status(204).send();
 });
+
+// POST add new branch to Supabase
+app.post("/api/branches", async (req, res) => {
+  const branch = req.body;
+
+  // Debug: log incoming branch data
+  console.log("Add Branch Request:", branch);
+
+  if (!branch.location || !branch.address) {
+    return res.status(400).json({
+      error: "location and address are required",
+    });
+  }
+
+  const insertPayload = {
+    location: branch.location,
+    "Address": branch.address,
+  };
+
+  console.log("Insert payload:", insertPayload);
+
+  try {
+    // First, check if the branch already exists
+    const { data: existingBranch, error: checkError } = await supabase
+      .from("branch")
+      .select("id")
+      .eq("location", branch.location)
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 is "no rows returned" error
+      console.error("Error checking existing branch:", checkError);
+      return res.status(500).json({
+        error: "Error checking for existing branch",
+        details: checkError,
+      });
+    }
+
+    if (existingBranch) {
+      return res
+        .status(400)
+        .json({ error: "Branch with this name already exists" });
+    }
+
+    // Insert the new branch
+    const { data, error } = await supabase
+      .from("branch")
+      .insert([insertPayload])
+      .select("id, location, \"Address\"");
+
+    if (error) {
+      console.error("Error inserting branch:", error);
+      return res.status(500).json({
+        error: "Failed to create branch",
+        details: error,
+        message: error.message,
+        code: error.code,
+        hint: error.hint,
+      });
+    }
+
+    res.status(201).json(data[0]);
+  } catch (error) {
+    console.error("Error in create_branch:", error);
+    res.status(500).json({
+      error: "Failed to create branch",
+      details: error.message,
+      stack: error.stack,
+    });
+  }
+});
+
+

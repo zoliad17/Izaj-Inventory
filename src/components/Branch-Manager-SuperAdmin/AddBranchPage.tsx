@@ -1,24 +1,54 @@
 import { useNavigate } from "react-router-dom";
 // import { ArrowLeft } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
+import { useState } from "react";
 
 function AddBranchPage() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log("Branch added");
-    navigate("/dashboard"); // Redirect back to dashboard after adding
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const branchData = {
+      location: formData.get("name") as string,
+      address: formData.get("address") as string,
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/branches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(branchData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add branch");
+      }
+
+      const result = await response.json();
+      toast.success("Branch added successfully!");
+      console.log("Branch added:", result);
+      navigate("/dashboard"); // Redirect back to dashboard after adding
+    } catch (error) {
+      console.error("Error adding branch:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to add branch");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
         <Toaster
@@ -88,7 +118,7 @@ function AddBranchPage() {
           </div>
 
           {/* Contact Information Section */}
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
               Contact Information
             </h2>
@@ -127,7 +157,7 @@ function AddBranchPage() {
                 placeholder="contact@branch.example.com"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="flex justify-end space-x-4 pt-4">
             <button
@@ -139,9 +169,10 @@ function AddBranchPage() {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              disabled={isSubmitting}
+              className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Branch
+              {isSubmitting ? "Adding..." : "Add Branch"}
             </button>
           </div>
         </form>
