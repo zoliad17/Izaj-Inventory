@@ -7,9 +7,10 @@ import { supabase } from "../../../backend/Server/Supabase/supabase";
 // Define interface for Branch data
 interface Branch {
   id: number;
-  name: string | null;
+  name: string,
   image: string | null;
   location: string;
+  address: string | null;
   contact: string | null;
   description: string | null;
 }
@@ -38,7 +39,7 @@ function BranchLocation() {
     const fetchBranches = async () => {
       const { data, error } = await supabase
         .from("branch")
-        .select("id, location");
+        .select("id, location, address");
 
       if (error) {
         console.error("Failed to fetch branches:", error);
@@ -53,6 +54,7 @@ function BranchLocation() {
           location: b.location,
           contact: b.contact || null,
           description: b.description || null,
+          address: b.address || null,
         }));
 
         setBranches(branchData);
@@ -115,17 +117,16 @@ function BranchLocation() {
 
                     <div className="flex items-center text-gray-600 mb-2">
                       <LocationMarkerIcon className="h-5 w-5 mr-2" />
-                      <span>{branch.location}</span>
+                      <span>{branch.address}</span>
                     </div>
 
-                    <div className="flex items-center text-gray-600 mb-2">
+                    {/* <div className="flex items-center text-gray-600 mb-2">
                       <PhoneIcon className="h-5 w-5 mr-2" />
                       <span>{branch.contact || "N/A"}</span>
-                    </div>
-
-                    <p className="text-gray-700">
+                    </div> */}
+                    {/* <p className="text-gray-700">
                       {branch.description || "No description available."}
-                    </p>
+                    </p> */}
                   </div>
 
                   <div className="p-4 bg-gray-100 mt-auto">
