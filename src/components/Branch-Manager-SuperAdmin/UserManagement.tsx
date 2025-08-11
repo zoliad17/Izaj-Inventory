@@ -388,13 +388,15 @@ function UserManagement() {
             },
           }}
         />
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center cursor-pointer gap-2 text-gray-800 mb-6 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft size={16} />
-        </button>
-        <h1 className="text-2xl font-bold mb-4">User Management</h1>
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h5 className="text-2xl font-bold">User Management</h5>
+        </div>
 
         {/* Search, Branch Filter and Export Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">

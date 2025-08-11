@@ -402,10 +402,11 @@ function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-6">
+      {/* Bottom Row - Products Table */}
+
+      <Card className="mt-6">
+        <div className="py-1 md:px-6">
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
             <Lightbulb className="text-gray-500" size={20} />
             <h5 className="text-lg font-medium">Top Products</h5>
           </div>
@@ -414,22 +415,22 @@ function Dashboard() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Product ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Price
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Stock
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
@@ -437,24 +438,24 @@ function Dashboard() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {products.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {product.id}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {product.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                       {product.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {product.price}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                       {product.stock}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full Php {
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           product.status === "in-stock"
                             ? "bg-green-100 text-green-800"
                             : product.status === "low-stock"
@@ -475,11 +476,12 @@ function Dashboard() {
             </table>
           </div>
         </div>
-        <div className="p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-          <Clock size={16} />
+
+        <div className="px-4 py-3 md:px-6 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm text-gray-500">
+          <Clock size={16} className="text-gray-400" />
           <span>Last updated 3 mins ago</span>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

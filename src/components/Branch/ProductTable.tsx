@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import { Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
-import { useParams } from "react-router-dom";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  ArrowLeft,
+} from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 
 // Define interface for Product data
@@ -19,7 +25,7 @@ interface Product {
 function ProductTable() {
   const { isCollapsed } = useSidebar();
   const { branchId } = useParams<{ branchId: string }>();
-
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
@@ -29,7 +35,8 @@ function ProductTable() {
   const [requestQuantity, setRequestQuantity] = useState<{
     [key: string]: number;
   }>({});
-  const [currentRequestProduct, setCurrentRequestProduct] = useState<Product | null>(null);
+  const [currentRequestProduct, setCurrentRequestProduct] =
+    useState<Product | null>(null);
   const productsPerPage = 5;
 
   // State for fetched products and branch name
@@ -40,7 +47,11 @@ function ProductTable() {
   useEffect(() => {
     if (!branchId) return;
     const fetchBranch = async () => {
-      const { data, error } = await supabase.from("branch").select("location").eq("id", branchId).single();
+      const { data, error } = await supabase
+        .from("branch")
+        .select("location")
+        .eq("id", branchId)
+        .single();
       if (!error && data) {
         setBranchName(data.location);
       } else {
@@ -56,7 +67,9 @@ function ProductTable() {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("centralized_product")
-        .select(`id, product_name, quantity, price, status, category_id, category:category_id (category_name)`)
+        .select(
+          `id, product_name, quantity, price, status, category_id, category:category_id (category_name)`
+        )
         .eq("branch_id", branchId);
       if (!error && data) {
         setProducts(
@@ -163,15 +176,15 @@ function ProductTable() {
     console.log("Request submitted:", {
       products: currentRequestProduct
         ? [
-          {
-            productId: currentRequestProduct.id,
-            quantity: requestQuantity[currentRequestProduct.id] || 1,
-          },
-        ]
+            {
+              productId: currentRequestProduct.id,
+              quantity: requestQuantity[currentRequestProduct.id] || 1,
+            },
+          ]
         : selectedProducts.map((id) => ({
-          productId: id,
-          quantity: requestQuantity[id] || 1,
-        })),
+            productId: id,
+            quantity: requestQuantity[id] || 1,
+          })),
     });
 
     // Reset and close modal
@@ -191,8 +204,9 @@ function ProductTable() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       {/* Request Modal */}
       {isModalOpen && (
@@ -283,11 +297,23 @@ function ProductTable() {
         <div className="p-6">
           {/* Header with search and actions */}
           <div className="flex flex-col mb-3 md:flex-row justify-between items-start md:items-center  ">
-            <div>
+            <div className="flex items-center gap-4 mb-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              {branchName && (
+                <h5 className="text-2xl font-bold">Branch {branchName}</h5>
+              )}
+            </div>
+
+            {/* <div>
               {branchName && (
                 <h1 className="text-2xl font-bold">Branch {branchName}</h1>
               )}
-            </div>
+            </div> */}
 
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <div className="relative flex-grow">
@@ -442,12 +468,13 @@ function ProductTable() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === "In Stock"
-                              ? "bg-green-100 text-green-800"
-                              : product.status === "Low Stock"
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              product.status === "In Stock"
+                                ? "bg-green-100 text-green-800"
+                                : product.status === "Low Stock"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : "bg-red-100 text-red-800"
-                              }`}
+                            }`}
                           >
                             {product.status}
                           </span>
@@ -531,10 +558,11 @@ function ProductTable() {
                         <button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === page
+                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
                         >
                           {page}
                         </button>

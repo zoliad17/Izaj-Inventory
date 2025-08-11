@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import { FileSearch } from "lucide-react";
+import { ArrowLeft, FileSearch } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 // Define interface for Product data
 interface Product {
@@ -16,7 +17,7 @@ interface Product {
 
 function Transferred() {
   const { isCollapsed } = useSidebar();
-
+  const navigate = useNavigate();
   // Sample product data with proper typing
   const [products, setProducts] = useState<Product[]>([
     {
@@ -176,7 +177,16 @@ function Transferred() {
         />
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h5 className="text-xl font-bold">Transferred Items</h5>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h5 className="text-xl font-bold">Transferred Items</h5>
+            </div>
+
             {selectedProducts.length > 0 && (
               <button
                 onClick={removeSelectedProducts}

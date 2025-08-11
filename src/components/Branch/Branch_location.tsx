@@ -1,13 +1,14 @@
 import { useNavigate } from "react-router-dom";
-import { LocationMarkerIcon, PhoneIcon } from "@heroicons/react/outline";
+import { LocationMarkerIcon } from "@heroicons/react/outline";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
+import { ArrowLeft } from "lucide-react";
 
 // Define interface for Branch data
 interface Branch {
   id: number;
-  name: string,
+  name: string;
   image: string | null;
   location: string;
   address: string | null;
@@ -71,7 +72,7 @@ function BranchLocation() {
 
       // If user has a branch_id, filter out their own branch
       if (user?.branch_id) {
-        filtered = branches.filter(branch => branch.id !== user.branch_id);
+        filtered = branches.filter((branch) => branch.id !== user.branch_id);
       }
 
       setFilteredBranches(filtered);
@@ -80,12 +81,21 @@ function BranchLocation() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="p-3 bg-white">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <h5 className="text-xl font-bold mt-0">Active Branch</h5>
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h5 className="text-2xl font-bold">Active Branch</h5>
+          </div>
           {user?.branch_id && (
             <p className="text-sm text-gray-500 mt-2 sm:mt-0">
               Showing branches available for transfer

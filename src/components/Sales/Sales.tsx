@@ -1,4 +1,4 @@
-import { Clock, Lightbulb } from "lucide-react";
+import { ArrowLeft, Clock, Lightbulb } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -30,6 +30,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useNavigate } from "react-router-dom";
 
 export const description = "A pie chart with stacked sections";
 
@@ -206,6 +207,7 @@ const Sales: React.FC = () => {
     },
   ];
   const { isCollapsed } = useSidebar();
+  const navigate = useNavigate();
   return (
     <div
       className={`transition-all duration-300 ${
@@ -224,7 +226,15 @@ const Sales: React.FC = () => {
             },
           }}
         />
-        <h5 className="text-xl md:text-xl font-bold mb-6">Sales Dashboard</h5>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center cursor-pointer text-gray-800 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft size={20} className="mr-1" />
+          </button>
+          <h5 className="text-xl md:text-2xl font-bold">Sales Dashboard</h5>
+        </div>
 
         {/* Top Row - Pie and Radar Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

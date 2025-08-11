@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Toaster } from "react-hot-toast";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -14,7 +16,7 @@ interface Product {
 
 function Requested_Item() {
   const { isCollapsed } = useSidebar();
-
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([
     {
       id: "001",
@@ -200,7 +202,15 @@ function Requested_Item() {
           }}
         />
         <div className="p-6">
-          <h5 className="text-xl font-bold mb-4">Requested Items</h5>
+          <div className="flex items-center gap-4 mb-3.5">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h5 className="text-xl font-bold">Requested Items</h5>
+          </div>
 
           {/* Control Bar with Filters, Search, Export, and Pagination */}
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">

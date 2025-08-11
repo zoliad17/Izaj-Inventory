@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Toaster } from "react-hot-toast";
 import { toast } from "react-toastify";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -16,7 +18,7 @@ interface Product {
 
 function PendingRequest() {
   const { isCollapsed } = useSidebar();
-
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([
     {
       id: "001",
@@ -199,7 +201,15 @@ function PendingRequest() {
         />
         <div className="p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h5 className="text-xl font-bold">Pending Request</h5>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h5 className="text-xl font-bold">Pending Request</h5>
+            </div>
           </div>
 
           {/* Compact Filter Controls */}

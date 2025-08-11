@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import light1 from "/src/assets/image/light1.jpg";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import { Upload, Plus, Edit, Trash2, X, Search } from "lucide-react";
+import { Upload, Plus, Edit, Trash2, X, Search, ArrowLeft } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 // Import toast for notifications
 import toast, { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 interface Product {
   id: number;
   branch_id: number; // Added branch_id property
@@ -26,7 +27,7 @@ const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
 
 function AllStock() {
   const { isCollapsed } = useSidebar();
-
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [branchId, setBranchId] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -325,8 +326,9 @@ function AllStock() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="bg-white rounded-lg shadow-md overflow-hidden ">
         {/* Toaster for success and error */}
@@ -342,7 +344,15 @@ function AllStock() {
         />
         <div className="p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <h5 className="text-xl font-bold">All Stock</h5>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <h5 className="text-xl font-bold">Available Stocks</h5>
+            </div>
           </div>
 
           {/* Filter Controls */}
@@ -507,12 +517,13 @@ function AllStock() {
                       </td>
                       <td className="px-4 py-2 text-sm font-medium">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs ${product.status === "In Stock"
-                            ? "bg-green-100 text-green-800"
-                            : product.status === "Low Stock"
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            product.status === "In Stock"
+                              ? "bg-green-100 text-green-800"
+                              : product.status === "Low Stock"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-red-100 text-red-800"
-                            }`}
+                          }`}
                         >
                           {product.status}
                         </span>
@@ -586,10 +597,11 @@ function AllStock() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only"></span>
                       &larr;
@@ -599,10 +611,11 @@ function AllStock() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === page
+                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          }`}
                         >
                           {page}
                         </button>
@@ -613,10 +626,11 @@ function AllStock() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:bg-gray-50"
-                        }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}
                     >
                       <span className="sr-only"></span>
                       &rarr;
