@@ -15,7 +15,7 @@ function AddBranchPage() {
 
     const formData = new FormData(e.target as HTMLFormElement);
     const branchData = {
-      location: formData.get("name") as string,
+      location: formData.get("location") as string,
       address: formData.get("address") as string,
     };
 
@@ -83,15 +83,15 @@ function AddBranchPage() {
             <div className="grid  grid-cols-1 md:grid-cols-1 gap-4">
               <div>
                 <label
-                  htmlFor="name"
+                  htmlFor="location"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Branch Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
+                  id="location"
+                  name="location"
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="e.g., Northwest Regional Office"

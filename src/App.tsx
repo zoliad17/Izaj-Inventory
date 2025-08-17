@@ -8,6 +8,8 @@ import {
 } from "react-router-dom";
 import Login from "./components/Aut/Login";
 import ProtectedRoute from "./components/Aut/ProtectedRoute";
+import SetupAccount from "./components/Aut/SetupAccount";
+import ResetPassword from "./components/Aut/ResetPassword";
 import AddUser from "./components/Branch-Manager-SuperAdmin/AddUser";
 import UserManagement from "./components/Branch-Manager-SuperAdmin/UserManagement";
 import Branch_location from "./components/Branch/Branch_location";
@@ -84,6 +86,12 @@ const App: React.FC = () => {
         <Routes>
           {/* Public Route: Login Page */}
           <Route path="/" element={<Login />} />
+
+          {/* Public Route: Setup Account Page */}
+          <Route path="/setup-account" element={<SetupAccount />} />
+
+          {/* Public Route: Reset Password Page */}
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Protected Routes */}
           <Route

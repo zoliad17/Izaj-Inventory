@@ -176,15 +176,15 @@ function ProductTable() {
     console.log("Request submitted:", {
       products: currentRequestProduct
         ? [
-            {
-              productId: currentRequestProduct.id,
-              quantity: requestQuantity[currentRequestProduct.id] || 1,
-            },
-          ]
+          {
+            productId: currentRequestProduct.id,
+            quantity: requestQuantity[currentRequestProduct.id] || 1,
+          },
+        ]
         : selectedProducts.map((id) => ({
-            productId: id,
-            quantity: requestQuantity[id] || 1,
-          })),
+          productId: id,
+          quantity: requestQuantity[id] || 1,
+        })),
     });
 
     // Reset and close modal
@@ -204,9 +204,8 @@ function ProductTable() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       {/* Request Modal */}
       {isModalOpen && (
@@ -468,13 +467,12 @@ function ProductTable() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              product.status === "In Stock"
-                                ? "bg-green-100 text-green-800"
-                                : product.status === "Low Stock"
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === "In Stock"
+                              ? "bg-green-100 text-green-800"
+                              : product.status === "Low Stock"
                                 ? "bg-yellow-100 text-yellow-800"
                                 : "bg-red-100 text-red-800"
-                            }`}
+                              }`}
                           >
                             {product.status}
                           </span>
@@ -558,11 +556,10 @@ function ProductTable() {
                         <button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {page}
                         </button>

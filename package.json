@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "start": "cd backend/Server && bun start"
   },
   "dependencies": {
     "@heroicons/react": "^1.0.6",
@@ -22,6 +23,7 @@
     "echarts-for-react": "^3.0.2",
     "express": "^5.1.0",
     "lucide-react": "^0.484.0",
+    "nodemailer": "^7.0.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",

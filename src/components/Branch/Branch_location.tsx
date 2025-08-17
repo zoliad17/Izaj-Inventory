@@ -81,9 +81,8 @@ function BranchLocation() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="p-3 bg-white">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">

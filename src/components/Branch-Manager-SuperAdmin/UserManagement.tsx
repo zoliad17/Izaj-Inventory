@@ -17,7 +17,7 @@ import toast, { Toaster } from "react-hot-toast";
 
 // Define interface for User data
 interface User {
-  user_id: number;
+  user_id: string; // Changed from number to string (UUID)
   name: string;
   contact: string;
   email: string;
@@ -41,14 +41,11 @@ function UserManagement() {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
-  const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
+  const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [branchFilter, setBranchFilter] = useState<string>("All");
-  const [otp, setOtp] = useState<string>("");
-  const [generatedOtp, setGeneratedOtp] = useState<string>("");
-  const [otpSent, setOtpSent] = useState<boolean>(false);
-  const [otpVerified, setOtpVerified] = useState<boolean>(false);
+
   const itemsPerPage = 5;
 
   const [newUser, setNewUser] = useState<Omit<User, "user_id">>({
@@ -175,7 +172,7 @@ function UserManagement() {
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
-    userId?: number
+    userId?: string
   ) => {
     const { name, value } = e.target;
 
@@ -194,7 +191,7 @@ function UserManagement() {
   };
 
   // Handle updating the user
-  const handleUpdate = async (userId: number) => {
+  const handleUpdate = async (userId: string) => {
     try {
       const response = await fetch(
         `http://localhost:5000/api/users/${userId}`,
@@ -264,39 +261,14 @@ function UserManagement() {
     }
   };
 
-  // Generate and send OTP (mock implementation)
-  const sendOtp = () => {
-    // In a real app, you would send this to the user's email
-    const generated = Math.floor(1000 + Math.random() * 9000).toString();
-    setGeneratedOtp(generated);
-    setOtpSent(true);
-    toast(`OTP sent to ${newUser.email} (Mock OTP: ${generated})`);
-  };
-
-  // Verify OTP
-  const verifyOtp = () => {
-    if (otp === generatedOtp) {
-      setOtpVerified(true);
-      toast.success("OTP verified successfully!");
-    } else {
-      toast.error("Invalid OTP. Please try again.");
-    }
-  };
-
-  // Add new user
+  // Add new user (New flow - creates pending user)
   const handleAddUser = async () => {
-    if (!otpVerified) {
-      toast.error("Please verify OTP first");
-      return;
-    }
-
     // Validate required fields
     if (
       !newUser.name ||
       !newUser.email ||
       !newUser.contact ||
-      !newUser.role_id ||
-      !newUser.password
+      !newUser.role_id
     ) {
       toast.error("Please fill in all required fields");
       return;
@@ -313,16 +285,15 @@ function UserManagement() {
       const userData = {
         name: newUser.name,
         email: newUser.email,
-        password: newUser.password,
         contact: cleanContact,
         role_id: newUser.role_id,
         branch_id: newUser.branch_id,
         status: newUser.status || "Active",
       };
 
-      console.log("Creating user with data:", userData);
+      console.log("Creating pending user with data:", userData);
 
-      const response = await fetch("http://localhost:5000/api/create_users", {
+      const response = await fetch("http://localhost:5000/api/create_pending_user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -334,16 +305,25 @@ function UserManagement() {
 
       if (!response.ok) {
         console.error("Server error response:", data);
-        throw new Error(data.error || data.message || "Failed to create user");
+        throw new Error(data.error || data.message || "Failed to create pending user");
+      }
+
+      // Show success message with setup link
+      toast.success("Pending user created successfully!");
+
+      // Show setup link and email info in console for development
+      console.log("Setup link:", data.setupLink);
+      if (data.emailPreview) {
+        console.log("Email preview:", data.emailPreview);
+        toast.success(`Email sent! Preview: ${data.emailPreview}`, {
+          duration: 15000,
+        });
       }
 
       // Refresh the user list
       await fetchUsers();
 
       setIsAddModalOpen(false);
-      setOtpSent(false);
-      setOtpVerified(false);
-      setOtp("");
       setNewUser({
         name: "",
         contact: "",
@@ -352,11 +332,10 @@ function UserManagement() {
         role_id: roles[0]?.id || 1,
         branch_id: branches[0]?.id || "",
       });
-      toast.success("User added successfully!");
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Error creating pending user:", error);
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create user";
+        error instanceof Error ? error.message : "Failed to create pending user";
       toast.error(errorMessage);
     }
   };
@@ -372,9 +351,8 @@ function UserManagement() {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="p-2">
         {/* Toaster for success and error */}
@@ -429,6 +407,11 @@ function UserManagement() {
               <Plus size={16} />
               Add User
             </button>
+            {/* OTP button commented out - not needed in new flow */}
+            {/* <button className="flex items-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">
+                <Download size={16} />
+                Send OTP
+              </button> */}
             <button className="flex items-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">
               <Download size={16} />
               Export to Excel
@@ -557,11 +540,10 @@ function UserManagement() {
                           </select>
                         ) : (
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.status === "Active"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {user.status || "Active"}
                           </span>
@@ -654,11 +636,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === 1
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       Previous
                     </button>
@@ -667,11 +648,10 @@ function UserManagement() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                          }`}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -682,11 +662,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === totalPages
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage === totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       Next
                     </button>
@@ -768,24 +747,7 @@ function UserManagement() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password *"
-                    onChange={(e) =>
-                      setNewUser((prev) => ({
-                        ...prev,
-                        password: e.target.value,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                  />
-                </div>
+
               </div>
 
               {/* Column 2 */}
@@ -868,57 +830,12 @@ function UserManagement() {
               </div>
             </div>
 
-            {/* OTP Verification Section - Full width below columns */}
-            <div className="mt-4">
-              {!otpVerified && (
-                <div className="pt-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={sendOtp}
-                      disabled={!newUser.email || otpSent}
-                      className={`px-3 py-2 rounded-md text-sm ${
-                        !newUser.email || otpSent
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
-                    >
-                      {otpSent ? "OTP Sent" : "Send OTP"}
-                    </button>
-                    {otpSent && (
-                      <div className="flex-1 flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Enter OTP"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                        <button
-                          onClick={verifyOtp}
-                          className="px-3 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
-                        >
-                          Verify
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
-              {otpVerified && (
-                <div className="p-2 bg-green-100 text-green-800 rounded-md text-sm mt-2">
-                  OTP verified successfully!
-                </div>
-              )}
-            </div>
 
             <div className="flex justify-end space-x-4 mt-6">
               <button
                 onClick={() => {
                   setIsAddModalOpen(false);
-                  setOtpSent(false);
-                  setOtpVerified(false);
-                  setOtp("");
                 }}
                 className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
               >
@@ -926,12 +843,7 @@ function UserManagement() {
               </button>
               <button
                 onClick={handleAddUser}
-                disabled={!otpVerified}
-                className={`py-2 px-4 rounded-lg transition duration-300 ${
-                  otpVerified
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
               >
                 Add User
               </button>

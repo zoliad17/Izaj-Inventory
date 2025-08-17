@@ -34,8 +34,9 @@ interface SubItem {
 interface User {
   email?: string;
   username?: string;
+  name?: string;
   role?: { role_name: string };
-  branch_id?: number; // Add this line
+  branch_id?: number;
 }
 
 interface Branch {
@@ -200,9 +201,8 @@ function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${
-        isCollapsed ? "w-25" : "w-64"
-      }`}
+      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${isCollapsed ? "w-25" : "w-64"
+        }`}
     >
       {/* Header Section */}
       <div>
@@ -282,9 +282,8 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
-                      isCollapsed ? "p-3 justify-center" : "p-3"
-                    }`}
+                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
+                      }`}
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6" />
@@ -301,9 +300,8 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${
-                          isCollapsed ? "p-3 justify-center" : "p-3"
-                        }`}
+                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
+                          }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
@@ -314,9 +312,8 @@ function Sidebar() {
                               {item.label}
                             </span>
                             <svg
-                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${
-                                isDropdownOpen ? "rotate-180" : ""
-                              }`}
+                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
+                                }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -336,9 +333,8 @@ function Sidebar() {
                       {/* Dropdown content */}
                       {!isCollapsed && item.subItems && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ${
-                            isDropdownOpen ? "max-h-40" : "max-h-0"
-                          }`}
+                          className={`overflow-hidden transition-all duration-300 ${isDropdownOpen ? "max-h-40" : "max-h-0"
+                            }`}
                         >
                           <ul className="ml-2 pl-6 border-l-2 border-gray-200">
                             {item.subItems.map((subItem, subIndex) => (
@@ -366,27 +362,54 @@ function Sidebar() {
 
       {/* Footer Section */}
       <div className="p-3 border-t border-gray-200">
-        <div className="flex flex-col space-y-2">
-          {user && !isCollapsed && (
-            <div className="px-3 py-2 text-sm font-medium text-gray-700 truncate">
-              {user.email || user.username}
-              {user.role && (
-                <>
-                  <span className="block text-xs text-gray-500">
-                    {user.role.role_name}
-                  </span>
-                  <span className="block text-xs text-gray-500">
-                    {userBranch?.location ?? "Unknown Branch"}
-                  </span>
-                </>
+        <div className="flex flex-col space-y-3">
+          {user && (
+            <>
+              {!isCollapsed ? (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                  {/* User Avatar */}
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                      {(user.name || user.email || user.username || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="ml-3 flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-gray-900 truncate">
+                        {user.name || user.email || user.username}
+                      </h4>
+                      <p className="text-xs text-gray-600 truncate">
+                        {user.role?.role_name || "User"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* User Details */}
+                  <div className="space-y-2">
+                    <div className="flex items-center text-xs text-gray-600">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                      <span className="font-medium">Active</span>
+                    </div>
+                    <div className="flex items-center text-xs text-gray-600">
+                      <LocationMarkerIcon className="w-3 h-3 mr-2 text-gray-400" />
+                      <span className="truncate">
+                        {userBranch?.location || "Unknown Branch"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-center mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {(user.name || user.email || user.username || "U").charAt(0).toUpperCase()}
+                  </div>
+                </div>
               )}
-            </div>
+            </>
           )}
+
           <button
             onClick={handleLogout}
-            className={`flex items-center justify-center font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all duration-200 ${
-              isCollapsed ? "p-3" : "px-3 py-2"
-            }`}
+            className={`flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 shadow-sm ${isCollapsed ? "p-3" : "px-3 py-2.5"
+              }`}
             title="Logout"
           >
             {isCollapsed ? <LogOutIcon className="h-6 w-6" /> : "Logout"}
