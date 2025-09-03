@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const { supabase } = require("./supabase.node");
-const { sendSetupEmail, sendResetPasswordEmail } = require("./utils/emailService");
+const { sendSetupEmail, sendResetPasswordEmail, sendRequestNotificationEmail, sendRequestStatusEmail } = require("./utils/emailService");
 
 // Load environment variables from .env.local (in root directory)
 require("dotenv").config({ path: '../../.env.local' });
@@ -188,6 +188,446 @@ app.get("/api/categories", async (req, res) => {
 // Simple test endpoint to verify server is running
 app.get("/api/test", (req, res) => {
   res.json({ message: "API is working!" });
+});
+
+// ==================== PRODUCT REQUEST ENDPOINTS ====================
+
+// GET all branches for request dropdown
+app.get("/api/branches", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("branch")
+      .select("id, location, address")
+      .order("location");
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching branches:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET products from a specific branch (for requests)
+app.get("/api/branches/:branchId/products", async (req, res) => {
+  try {
+    const { branchId } = req.params;
+    const { data, error } = await supabase
+      .from("centralized_product")
+      .select(`
+        id,
+        product_name,
+        quantity,
+        price,
+        status,
+        category_id,
+        category:category_id (
+          id,
+          category_name
+        )
+      `)
+      .eq("branch_id", branchId)
+      .gt("quantity", 0); // Only show products with stock
+
+    if (error) throw error;
+
+    const mapped = data.map((product) => ({
+      ...product,
+      category_name: product.category?.category_name || "",
+    }));
+
+    res.json(mapped);
+  } catch (error) {
+    console.error("Error fetching branch products:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST create product request
+app.post("/api/product-requests", async (req, res) => {
+  try {
+    const { requestFrom, requestTo, items, notes } = req.body;
+
+    // Validate required fields
+    if (!requestFrom || !requestTo || !items || items.length === 0) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Create the main request
+    const { data: requestData, error: requestError } = await supabase
+      .from("product_requisition")
+      .insert([{
+        request_from: requestFrom,
+        request_to: requestTo,
+        status: "pending",
+        notes: notes || null
+      }])
+      .select("request_id")
+      .single();
+
+    if (requestError) throw requestError;
+
+    // Create request items
+    const requestItems = items.map(item => ({
+      request_id: requestData.request_id,
+      product_id: item.product_id,
+      quantity: item.quantity
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("product_requisition_items")
+      .insert(requestItems);
+
+    if (itemsError) throw itemsError;
+
+    // Get requester and recipient info for email
+    const { data: requesterData } = await supabase
+      .from("user")
+      .select("name, email, branch_id")
+      .eq("user_id", requestFrom)
+      .single();
+
+    const { data: recipientData } = await supabase
+      .from("user")
+      .select("name, email")
+      .eq("user_id", requestTo)
+      .single();
+
+    // Send email notification
+    if (recipientData?.email) {
+      const emailResult = await sendRequestNotificationEmail(
+        recipientData.email,
+        recipientData.name,
+        requesterData?.name || "Unknown",
+        requestData.request_id
+      );
+      console.log("Request notification email result:", emailResult);
+    }
+
+    // Log audit trail
+    for (const item of items) {
+      const { error: auditError } = await supabase
+        .from("audit logs")
+        .insert([{
+          user: requestFrom,
+          quantity: item.quantity,
+          action: `REQUEST_PRODUCT_${requestData.request_id}`
+        }]);
+
+      if (auditError) {
+        console.error("Error logging audit trail:", auditError);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      request_id: requestData.request_id,
+      message: "Product request created successfully"
+    });
+
+  } catch (error) {
+    console.error("Error creating product request:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET pending requests for a user (incoming requests)
+app.get("/api/product-requests/pending/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data, error } = await supabase
+      .from("product_requisition")
+      .select(`
+        request_id,
+        request_from,
+        status,
+        created_at,
+        notes,
+        requester:request_from (
+          name,
+          email,
+          branch_id,
+          branch:branch_id (
+            location
+          )
+        ),
+        items:product_requisition_items (
+          id,
+          quantity,
+          product:product_id (
+            id,
+            product_name,
+            quantity,
+            price,
+            category_id,
+            category:category_id (
+              category_name
+            )
+          )
+        )
+      `)
+      .eq("request_to", userId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Transform the data for easier frontend consumption
+    const transformedData = data.map(request => ({
+      ...request,
+      requester_branch: request.requester?.branch?.location || "Unknown Branch",
+      items: request.items.map(item => ({
+        ...item,
+        product_name: item.product?.product_name || "Unknown Product",
+        available_quantity: item.product?.quantity || 0,
+        price: item.product?.price || 0,
+        category_name: item.product?.category?.category_name || "Unknown Category"
+      }))
+    }));
+
+    res.json(transformedData);
+  } catch (error) {
+    console.error("Error fetching pending requests:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET sent requests for a user (outgoing requests)
+app.get("/api/product-requests/sent/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data, error } = await supabase
+      .from("product_requisition")
+      .select(`
+        request_id,
+        request_to,
+        status,
+        created_at,
+        updated_at,
+        reviewed_at,
+        notes,
+        reviewer:reviewed_by (
+          name
+        ),
+        recipient:request_to (
+          name,
+          branch_id,
+          branch:branch_id (
+            location
+          )
+        ),
+        items:product_requisition_items (
+          id,
+          quantity,
+          product:product_id (
+            id,
+            product_name,
+            price,
+            category_id,
+            category:category_id (
+              category_name
+            )
+          )
+        )
+      `)
+      .eq("request_from", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Transform the data
+    const transformedData = data.map(request => ({
+      ...request,
+      recipient_branch: request.recipient?.branch?.location || "Unknown Branch",
+      reviewer_name: request.reviewer?.name || null,
+      items: request.items.map(item => ({
+        ...item,
+        product_name: item.product?.product_name || "Unknown Product",
+        price: item.product?.price || 0,
+        category_name: item.product?.category?.category_name || "Unknown Category"
+      }))
+    }));
+
+    res.json(transformedData);
+  } catch (error) {
+    console.error("Error fetching sent requests:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT approve/deny product request
+app.put("/api/product-requests/:requestId/review", async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { action, reviewedBy, notes } = req.body; // action: 'approved' or 'denied'
+
+    if (!action || !reviewedBy || !['approved', 'denied'].includes(action)) {
+      return res.status(400).json({ error: "Invalid action or missing required fields" });
+    }
+
+    // Update the request status
+    const { data: requestData, error: requestError } = await supabase
+      .from("product_requisition")
+      .update({
+        status: action,
+        reviewed_by: reviewedBy,
+        reviewed_at: new Date().toISOString(),
+        notes: notes || null
+      })
+      .eq("request_id", requestId)
+      .select(`
+        request_from,
+        request_to,
+        items:product_requisition_items (
+          product_id,
+          quantity
+        )
+      `)
+      .single();
+
+    if (requestError) throw requestError;
+
+    // If approved, update product quantities
+    if (action === 'approved') {
+      for (const item of requestData.items) {
+        const { error: updateError } = await supabase
+          .from("centralized_product")
+          .update({
+            quantity: supabase.raw(`quantity - ${item.quantity}`)
+          })
+          .eq("id", item.product_id);
+
+        if (updateError) {
+          console.error("Error updating product quantity:", updateError);
+          // Continue with other items even if one fails
+        }
+      }
+    }
+
+    // Get requester info for email notification
+    const { data: requesterData } = await supabase
+      .from("user")
+      .select("name, email")
+      .eq("user_id", requestData.request_from)
+      .single();
+
+    const { data: reviewerData } = await supabase
+      .from("user")
+      .select("name")
+      .eq("user_id", reviewedBy)
+      .single();
+
+    // Send email notification
+    if (requesterData?.email) {
+      const emailResult = await sendRequestStatusEmail(
+        requesterData.email,
+        requesterData.name,
+        action,
+        requestId,
+        reviewerData?.name || "Unknown",
+        notes
+      );
+      console.log("Request status email result:", emailResult);
+    }
+
+    // Log audit trail
+    for (const item of requestData.items) {
+      const { error: auditError } = await supabase
+        .from("audit logs")
+        .insert([{
+          user: reviewedBy,
+          quantity: item.quantity,
+          action: `${action.toUpperCase()}_REQUEST_${requestId}`
+        }]);
+
+      if (auditError) {
+        console.error("Error logging audit trail:", auditError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Request ${action} successfully`
+    });
+
+  } catch (error) {
+    console.error("Error reviewing product request:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET all requests (for Super Admin)
+app.get("/api/product-requests/all", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("product_requisition")
+      .select(`
+        request_id,
+        request_from,
+        request_to,
+        status,
+        created_at,
+        updated_at,
+        reviewed_at,
+        notes,
+        requester:request_from (
+          name,
+          email,
+          branch_id,
+          branch:branch_id (
+            location
+          )
+        ),
+        recipient:request_to (
+          name,
+          email,
+          branch_id,
+          branch:branch_id (
+            location
+          )
+        ),
+        reviewer:reviewed_by (
+          name
+        ),
+        items:product_requisition_items (
+          id,
+          quantity,
+          product:product_id (
+            id,
+            product_name,
+            price,
+            category_id,
+            category:category_id (
+              category_name
+            )
+          )
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Transform the data
+    const transformedData = data.map(request => ({
+      ...request,
+      requester_branch: request.requester?.branch?.location || "Unknown Branch",
+      recipient_branch: request.recipient?.branch?.location || "Unknown Branch",
+      reviewer_name: request.reviewer?.name || null,
+      items: request.items.map(item => ({
+        ...item,
+        product_name: item.product?.product_name || "Unknown Product",
+        price: item.product?.price || 0,
+        category_name: item.product?.category?.category_name || "Unknown Category"
+      }))
+    }));
+
+    res.json(transformedData);
+  } catch (error) {
+    console.error("Error fetching all requests:", error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.listen(PORT, () => {

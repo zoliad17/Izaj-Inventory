@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import light1 from "/src/assets/image/light1.jpg";
 import { useSidebar } from "../Sidebar/SidebarContext";
-import { Upload, Plus, Edit, Trash2, X, Search, ArrowLeft } from "lucide-react";
+import { Upload, Plus, Edit, Trash2, X, Search, ArrowLeft, Download } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 // Import toast for notifications
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 interface Product {
   id: number;
   branch_id: number; // Added branch_id property
@@ -281,9 +282,234 @@ function AllStock() {
     setIsBulkDeleteModalOpen(true);
   };
 
-  // Import Excel stub
+  // Excel Import functionality
   const handleImportExcel = () => {
-    alert("Import Excel functionality not implemented yet.");
+    if (categories.length === 0) {
+      toast.error('Categories not loaded yet. Please try again in a moment.');
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.xlsx,.xls';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        // Validate Excel template format
+        if (jsonData.length === 0) {
+          toast.error('Excel file is empty');
+          return;
+        }
+
+        const requiredColumns = ['Product Name', 'Category', 'Price', 'Quantity', 'Status'];
+        const firstRow = jsonData[0] as any;
+        const hasRequiredColumns = requiredColumns.every(col =>
+          Object.keys(firstRow).includes(col)
+        );
+
+        if (!hasRequiredColumns) {
+          toast.error(`Excel template must contain columns: ${requiredColumns.join(', ')}`);
+          return;
+        }
+
+        // Process and validate data
+        const processedData = [];
+        const errors = [];
+
+        for (let i = 0; i < jsonData.length; i++) {
+          const row = jsonData[i] as any;
+          const rowNum = i + 2; // Excel row number (accounting for header)
+
+          // Validate required fields
+          if (!row['Product Name'] || !row['Category'] || !row['Price'] || !row['Quantity']) {
+            errors.push(`Row ${rowNum}: Missing required fields`);
+            continue;
+          }
+
+          // Validate data types
+          const price = parseFloat(row['Price']);
+          const quantity = parseInt(row['Quantity']);
+
+          if (isNaN(price) || price < 0) {
+            errors.push(`Row ${rowNum}: Invalid price value`);
+            continue;
+          }
+
+          if (isNaN(quantity) || quantity < 0) {
+            errors.push(`Row ${rowNum}: Invalid quantity value`);
+            continue;
+          }
+
+          // Validate status
+          const validStatuses = ['In Stock', 'Out of Stock', 'Low Stock'];
+          if (!validStatuses.includes(row['Status'])) {
+            errors.push(`Row ${rowNum}: Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+            continue;
+          }
+
+          // Find category ID (case-insensitive, trim whitespace, and handle singular/plural)
+          const categoryName = row['Category'].toString().trim();
+
+          // Try exact match first
+          let category = categories.find(cat =>
+            cat.category_name.toLowerCase() === categoryName.toLowerCase()
+          );
+
+          // If no exact match, try singular/plural variations
+          if (!category) {
+            category = categories.find(cat => {
+              const dbCategory = cat.category_name.toLowerCase();
+              const inputCategory = categoryName.toLowerCase();
+
+              // Check if one is singular and other is plural
+              return (
+                dbCategory === inputCategory + 's' || // DB has plural, input has singular
+                inputCategory === dbCategory + 's' || // Input has plural, DB has singular
+                dbCategory === inputCategory.slice(0, -1) || // DB has singular, input has plural
+                inputCategory === dbCategory.slice(0, -1)    // Input has singular, DB has plural
+              );
+            });
+          }
+
+          if (!category) {
+            const availableCategories = categories.map(cat => cat.category_name).join(', ');
+            errors.push(`Row ${rowNum}: Category "${categoryName}" not found. Available categories: ${availableCategories}`);
+            continue;
+          }
+
+          processedData.push({
+            product_name: row['Product Name'],
+            category_id: category.id,
+            price: price,
+            quantity: quantity,
+            status: row['Status'],
+            branch_id: branchId
+          });
+        }
+
+        if (errors.length > 0) {
+          const availableCategories = categories.map(cat => cat.category_name).join(', ');
+          const errorMessage = `Validation errors found:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n...' : ''}\n\nAvailable categories: ${availableCategories}`;
+          toast.error(errorMessage);
+          return;
+        }
+
+        if (processedData.length === 0) {
+          toast.error('No valid data to import');
+          return;
+        }
+
+        // Import to database
+        const { data: insertedData, error } = await supabase
+          .from('centralized_product')
+          .insert(processedData)
+          .select();
+
+        if (error) {
+          console.error('Import error:', error);
+          toast.error('Failed to import data to database');
+          return;
+        }
+
+        toast.success(`Successfully imported ${insertedData.length} products`);
+
+        // Refresh the products list
+        fetchProducts();
+
+      } catch (error) {
+        console.error('Import error:', error);
+        toast.error('Failed to read Excel file');
+      }
+    };
+    input.click();
+  };
+
+  // Excel Export functionality
+  const handleExportExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = products.map(product => ({
+        'Product ID': product.id,
+        'Product Name': product.name,
+        'Category': categories.find(cat => cat.id === product.category)?.category_name || 'Unknown',
+        'Price': parseFloat(product.price.replace('Php ', '').replace(',', '')),
+        'Quantity': product.stock,
+        'Status': product.status
+      }));
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `products_export_${timestamp}.xlsx`;
+
+      // Download file
+      XLSX.writeFile(workbook, filename);
+      toast.success('Excel file exported successfully');
+
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export Excel file');
+    }
+  };
+
+  // Download Excel Template
+  const handleDownloadTemplate = () => {
+    try {
+      if (categories.length === 0) {
+        toast.error('Categories not loaded yet. Please try again in a moment.');
+        return;
+      }
+
+      // Create template with sample data using actual categories
+      const templateData = [
+        {
+          'Product Name': 'LED Bulb 10W',
+          'Category': categories[0]?.category_name || 'Sample Category',
+          'Price': 299.99,
+          'Quantity': 100,
+          'Status': 'In Stock'
+        },
+        {
+          'Product Name': 'Smart Light Strip',
+          'Category': categories[1]?.category_name || categories[0]?.category_name || 'Sample Category',
+          'Price': 1299.99,
+          'Quantity': 50,
+          'Status': 'In Stock'
+        },
+        {
+          'Product Name': 'Chandelier',
+          'Category': categories[2]?.category_name || categories[0]?.category_name || 'Sample Category',
+          'Price': 4999.99,
+          'Quantity': 5,
+          'Status': 'Low Stock'
+        }
+      ];
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+
+      // Download template file
+      XLSX.writeFile(workbook, 'product_import_template.xlsx');
+      toast.success('Template downloaded successfully');
+
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast.error('Failed to download template');
+    }
   };
 
   // Fix status type in all product mapping
@@ -432,7 +658,21 @@ function AllStock() {
                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <Upload className="w-5 h-5" />
-                <span className="hidden sm:inline">Import</span>
+                <span className="hidden sm:inline">Import Excel</span>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline">Export Excel</span>
+              </button>
+              <button
+                onClick={handleDownloadTemplate}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline">Download Template</span>
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}

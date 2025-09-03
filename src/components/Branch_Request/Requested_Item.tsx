@@ -1,563 +1,410 @@
-import { useState } from "react";
-import { useSidebar } from "../Sidebar/SidebarContext";
-import { Toaster } from "react-hot-toast";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import {
+  Package,
+  User,
+  MapPin,
+  Calendar,
+  MessageSquare,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  RefreshCw,
+  Eye,
+  ArrowLeft
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: string;
-  stock: number;
-  status: "Transferred" | "In-Transit" | "Pending" | "Low Stock";
-  description: string;
+interface RequestItem {
+  id: number;
+  quantity: number;
+  product_name: string;
+  price: number;
+  category_name: string;
 }
 
-function Requested_Item() {
-  const { isCollapsed } = useSidebar();
-  const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: "001",
-      name: "LED Bulb",
-      category: "Bulbs",
-      price: "Php 655.99",
-      stock: 100,
-      status: "Pending",
-      description: "Energy-efficient LED bulb with a lifespan of 25,000 hours.",
-    },
-    {
-      id: "002",
-      name: "Wireless Mouse",
-      category: "Peripherals",
-      price: "Php 899.99",
-      stock: 50,
-      status: "Pending",
-      description: "Ergonomic wireless mouse with 2.4GHz connectivity.",
-    },
-    {
-      id: "003",
-      name: "Keyboard",
-      category: "Peripherals",
-      price: "Php 1200.00",
-      stock: 30,
-      status: "Transferred",
-      description: "Mechanical keyboard with RGB lighting.",
-    },
-    {
-      id: "004",
-      name: "Monitor",
-      category: "Displays",
-      price: "Php 8999.99",
-      stock: 10,
-      status: "In-Transit",
-      description: "27-inch 4K monitor with HDR support.",
-    },
-    {
-      id: "005",
-      name: "Headphones",
-      category: "Audio",
-      price: "Php 2500.50",
-      stock: 5,
-      status: "Low Stock",
-      description: "Noise-cancelling wireless headphones.",
-    },
-  ]);
-
-  // Modal states
-  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
-  const [confirmModalContent, setConfirmModalContent] = useState<{
-    title: string;
-    message: string;
-    action: () => void;
-  }>({ title: "", message: "", action: () => {} });
-
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editedProduct, setEditedProduct] = useState<Partial<Product>>({});
-
-  // Filter and search states
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 3;
-
-  // Get unique categories for filter dropdown
-  const categories = Array.from(new Set(products.map((p) => p.category)));
-
-  // Filter products based on search and filters
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || product.status === statusFilter;
-    const matchesCategory =
-      categoryFilter === "all" || product.category === categoryFilter;
-
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setEditedProduct((prev) => ({
-      ...prev,
-      [name]: name === "stock" ? parseInt(value) || 0 : value,
-    }));
+interface SentRequest {
+  request_id: number;
+  request_to: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+  reviewed_at?: string;
+  notes?: string;
+  reviewer_name?: string;
+  recipient: {
+    name: string;
+    branch_id: number;
   };
+  recipient_branch: string;
+  items: RequestItem[];
+}
 
-  const saveChanges = () => {
-    if (selectedProduct) {
-      const updatedProducts = products.map((p) =>
-        p.id === selectedProduct.id
-          ? ({ ...p, ...editedProduct } as Product)
-          : p
-      );
-      setProducts(updatedProducts);
-      setSelectedProduct({ ...selectedProduct, ...editedProduct } as Product);
-      setIsEditModalOpen(false);
+interface User {
+  user_id: string;
+  name: string;
+  branch_id: number;
+}
+
+export default function Requested_Item() {
+  const navigate = useNavigate();
+  const [requests, setRequests] = useState<SentRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<SentRequest | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadSentRequests();
+    }
+  }, [currentUser]);
+
+  const loadCurrentUser = async () => {
+    try {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error('Error loading current user:', error);
+      toast.error('Failed to load user data');
     }
   };
 
-  const confirmAction = (
-    title: string,
-    message: string,
-    action: () => void
-  ) => {
-    setConfirmModalContent({ title, message, action });
-    setIsConfirmModalOpen(true);
+  const loadSentRequests = async () => {
+    if (!currentUser) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`http://localhost:5000/api/product-requests/sent/${currentUser.user_id}`);
+      if (!response.ok) throw new Error('Failed to fetch sent requests');
+
+      const data = await response.json();
+      setRequests(data);
+    } catch (error) {
+      console.error('Error loading sent requests:', error);
+      toast.error('Failed to load sent requests');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEdit = (product: Product) => {
-    setSelectedProduct(product);
-    setEditedProduct({ ...product });
-    setIsEditModalOpen(true);
+  const handleViewDetails = (request: SentRequest) => {
+    setSelectedRequest(request);
+    setShowDetailsModal(true);
   };
 
-  const handleRemoveRequest = (productId: string) => {
-    confirmAction(
-      "Remove Request",
-      "Are you sure you want to remove this request?",
-      () => {
-        setProducts(products.filter((p) => p.id !== productId));
-        setIsConfirmModalOpen(false);
-      }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'approved': return 'text-green-600 bg-green-100';
+      case 'denied': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'approved': return <CheckCircle2 className="h-4 w-4" />;
+      case 'denied': return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getTotalValue = (items: RequestItem[]) => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-2 text-gray-600">Loading sent requests...</span>
+        </div>
+      </div>
     );
-  };
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false);
-    setSelectedProduct(null);
-    setEditedProduct({});
-  };
-
-  const closeConfirmModal = () => {
-    setIsConfirmModalOpen(false);
-  };
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Mock export function
-  const mockExport = () => {
-    alert(
-      "Export to Excel functionality would be implemented here in a real application"
-    );
-    console.log("Data that would be exported:", filteredProducts);
-  };
+  }
 
   return (
-    <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
-    >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden ">
-        {/* Toaster for success and error */}
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 2000,
-            style: {
-              background: "#363636",
-              color: "#fff",
-            },
-          }}
-        />
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-3.5">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h5 className="text-xl font-bold">Requested Items</h5>
-          </div>
-
-          {/* Control Bar with Filters, Search, Export, and Pagination */}
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-            {/* Filters and Search */}
-            <div className="flex flex-col lg:flex-row gap-2 w-full sm:w-auto">
-              {/* Status Filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="p-2 border rounded text-sm"
-              >
-                <option value="all">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Transferred">Transferred</option>
-                <option value="In-Transit">In-Transit</option>
-                <option value="Low Stock">Low Stock</option>
-              </select>
-
-              {/* Category Filter */}
-              <select
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="p-2 border rounded text-sm"
-              >
-                <option value="all">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-
-              {/* Search */}
-              <input
-                type="text"
-                placeholder="Search by name or SKU..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="p-2 border rounded text-sm flex-grow sm:w-64"
-              />
-              {/* Export Button */}
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="bg-white rounded-lg shadow-lg">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
-                onClick={mockExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                onClick={() => navigate(-1)}
+                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  ></path>
-                </svg>
-                Export
+                <ArrowLeft size={20} />
               </button>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Package className="h-6 w-6 text-blue-600" />
+                  Requested Items
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Track the status of your product requests to other branches
+                </p>
+              </div>
             </div>
+            <button
+              onClick={loadSentRequests}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
           </div>
+        </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    SKU/CODE
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Product Name
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Category
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Price
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Quantity
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Status
-                  </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedProducts.length > 0 ? (
-                  paginatedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.id}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.name}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.category}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.price}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        {product.stock}
-                      </td>
-                      <td
-                        className={`px-4 py-2 text-sm font-medium ${
-                          product.status === "Pending"
-                            ? "text-yellow-600"
-                            : product.status === "Transferred"
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {product.status}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(product)}
-                            className="px-3 py-1 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleRemoveRequest(product.id)}
-                            className="px-3 py-1 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm font-medium"
-                          >
-                            Remove
-                          </button>
+        <div className="p-6">
+          {requests.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Sent Requests</h3>
+              <p className="text-gray-600">You haven't sent any product requests yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {requests.map((request) => (
+                <div key={request.request_id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Request #{request.request_id}
+                        </h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(request.status)}`}>
+                          {getStatusIcon(request.status)}
+                          {request.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span><strong>To:</strong> {request.recipient.name}</span>
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-4 py-6 text-center text-sm text-gray-500"
-                    >
-                      No products found matching your criteria
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          <span><strong>Branch:</strong> {request.recipient_branch}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <span><strong>Sent:</strong> {formatDate(request.created_at)}</span>
+                        </div>
+                      </div>
 
-          {/* Pagination Controls - Bottom */}
-          {filteredProducts.length > 0 && (
-            <div className="flex justify-between items-center mt-4">
-              <div className="text-sm text-gray-600">
-                Showing{" "}
-                {filteredProducts.length === 0
-                  ? 0
-                  : (currentPage - 1) * itemsPerPage + 1}
-                -{Math.min(currentPage * itemsPerPage, filteredProducts.length)}{" "}
-                of {filteredProducts.length} items
-              </div>
-              <div className="flex space-x-1">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === 1
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-                >
-                  Previous
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
+                      {request.reviewed_at && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <span><strong>Reviewed:</strong> {formatDate(request.reviewed_at)}</span>
+                          {request.reviewer_name && (
+                            <span className="ml-4"><strong>By:</strong> {request.reviewer_name}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Request Summary */}
+                  <div className="mb-4 p-4 bg-gray-50 rounded-md">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Items:</span>
+                        <p className="text-gray-600">{request.items.length}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Total Quantity:</span>
+                        <p className="text-gray-600">{request.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Total Value:</span>
+                        <p className="text-gray-600">₱{getTotalValue(request.items).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Status:</span>
+                        <p className={`font-medium ${getStatusColor(request.status).split(' ')[0]}`}>
+                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Review Notes */}
+                  {request.notes && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-700">Review Notes:</p>
+                          <p className="text-sm text-blue-600">{request.notes}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <div className="flex justify-end">
                     <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === page
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-200 hover:bg-gray-300"
-                      }`}
+                      onClick={() => handleViewDetails(request)}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                     >
-                      {page}
+                      <Eye className="h-4 w-4" />
+                      View Details
                     </button>
-                  )
-                )}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === totalPages || totalPages === 0
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-        <div className="p-4 bg-gray-100">
-          <small className="text-gray-500">Last updated 3 mins ago</small>
-        </div>
       </div>
 
-      {/* Edit Modal */}
-      {isEditModalOpen && selectedProduct && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 to-black/70 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold mb-4">Edit Request</h2>
+      {/* Details Modal */}
+      {showDetailsModal && selectedRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Request Details #{selectedRequest.request_id}
+              </h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-2.5 mb-8">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={editedProduct.name || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
+            {/* Request Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="space-y-3">
+                <div>
+                  <span className="font-medium text-gray-700">Recipient:</span>
+                  <p className="text-gray-600">{selectedRequest.recipient.name}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Branch:</span>
+                  <p className="text-gray-600">{selectedRequest.recipient_branch}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Status:</span>
+                  <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedRequest.status)}`}>
+                    {selectedRequest.status.toUpperCase()}
+                  </span>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  name="category"
-                  value={editedProduct.category || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price
-                </label>
-                <input
-                  type="text"
-                  name="price"
-                  value={editedProduct.price || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={editedProduct.stock || 0}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={editedProduct.description || ""}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                  rows={3}
-                />
+              <div className="space-y-3">
+                <div>
+                  <span className="font-medium text-gray-700">Sent Date:</span>
+                  <p className="text-gray-600">{formatDate(selectedRequest.created_at)}</p>
+                </div>
+                {selectedRequest.reviewed_at && (
+                  <div>
+                    <span className="font-medium text-gray-700">Reviewed Date:</span>
+                    <p className="text-gray-600">{formatDate(selectedRequest.reviewed_at)}</p>
+                  </div>
+                )}
+                {selectedRequest.reviewer_name && (
+                  <div>
+                    <span className="font-medium text-gray-700">Reviewed By:</span>
+                    <p className="text-gray-600">{selectedRequest.reviewer_name}</p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-2">
-              <button
-                onClick={() =>
-                  confirmAction(
-                    "Discard Changes",
-                    "Are you sure you want to discard your changes?",
-                    closeEditModal
-                  )
-                }
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() =>
-                  confirmAction(
-                    "Save Changes",
-                    "Are you sure you want to save these changes?",
-                    saveChanges
-                  )
-                }
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Save Changes
-              </button>
+            {/* Items Table */}
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-3">Requested Items:</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {selectedRequest.items.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {item.product_name}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-600">
+                          {item.category_name}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          {item.quantity}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          ₱{item.price.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2 text-sm text-gray-900">
+                          ₱{(item.price * item.quantity).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50">
+                    <tr>
+                      <td colSpan={4} className="px-4 py-2 text-sm font-medium text-gray-900 text-right">
+                        Total Value:
+                      </td>
+                      <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                        ₱{getTotalValue(selectedRequest.items).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Confirmation Modal */}
-      {isConfirmModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 to-black/70 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {confirmModalContent.title}
-            </h2>
-            <p className="mb-6">{confirmModalContent.message}</p>
-            <div className="flex justify-end space-x-2">
+            {/* Review Notes */}
+            {selectedRequest.notes && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <h4 className="font-medium text-blue-700 mb-2">Review Notes:</h4>
+                <p className="text-blue-600">{selectedRequest.notes}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-6">
               <button
-                onClick={closeConfirmModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                onClick={() => setShowDetailsModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
               >
-                No
-              </button>
-              <button
-                onClick={() => {
-                  confirmModalContent.action();
-                  closeConfirmModal();
-                }}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Yes
+                Close
               </button>
             </div>
           </div>
@@ -566,5 +413,3 @@ function Requested_Item() {
     </div>
   );
 }
-
-export default Requested_Item;

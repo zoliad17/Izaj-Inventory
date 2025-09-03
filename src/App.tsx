@@ -25,10 +25,12 @@ import Transferred from "./components/Branch_Request/Transffered";
 import AllStock from "./components/Stock_Components/All_Stock";
 import Sales from "./components/Sales/Sales";
 import Requested_Item from "./components/Branch_Request/Requested_Item";
+import UnifiedProductRequest from "./components/Branch/UnifiedProductRequest";
 import ProductTable from "./components/Branch/ProductTable";
 import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
 import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
 import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
+
 
 // Define props for Layout component
 interface LayoutProps {
@@ -149,17 +151,17 @@ const App: React.FC = () => {
             }
           />
 
-          {/* Branch_Requesting */}
-          {/* <Route
-            path="/send_request"
+          {/* Unified Product Request */}
+          <Route
+            path="/unified_products/:branchId"
             element={
               <ProtectedRoute allowedRoles={routeRoles.send_request}>
                 <Layout>
-                  <Send_Request />
+                  <UnifiedProductRequest />
                 </Layout>
               </ProtectedRoute>
             }
-          /> */}
+          />
           <Route
             path="/requested_item"
             element={

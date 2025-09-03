@@ -140,10 +140,10 @@ function BranchLocation() {
 
                   <div className="p-4 bg-gray-100 mt-auto">
                     <button
-                      className="w-full md:w-auto cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
-                      onClick={() => navigate(`/branch_products/${branch.id}`)}
+                      className="w-full cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
+                      onClick={() => navigate(`/unified_products/${branch.id}`)}
                     >
-                      View Products
+                      Browse & Request Products
                     </button>
                   </div>
                 </div>

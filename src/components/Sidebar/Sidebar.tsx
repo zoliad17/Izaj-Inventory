@@ -116,12 +116,6 @@ function Sidebar() {
           path: "/transferred",
           allowedRoles: ["Admin", "Branch Manager"],
         },
-        // {
-        //   icon: SwitchHorizontalIcon,
-        //   label: "Send Request",
-        //   path: "/send_request",
-        //   allowedRoles: ["Admin", "Branch Manager"],
-        // },
         {
           icon: SwitchHorizontalIcon,
           label: "Requested Item",
