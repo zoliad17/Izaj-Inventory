@@ -30,6 +30,7 @@ import ProductTable from "./components/Branch/ProductTable";
 import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
 import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
 import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
+import { ThemeProvider } from "./components/ThemeContext/ThemeContext";
 
 
 // Define props for Layout component
@@ -83,179 +84,181 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
 const App: React.FC = () => {
   return (
-    <SidebarProvider>
-      <Router>
-        <Routes>
-          {/* Public Route: Login Page */}
-          <Route path="/" element={<Login />} />
+    <ThemeProvider>
+      <SidebarProvider>
+        <Router>
+          <Routes>
+            {/* Public Route: Login Page */}
+            <Route path="/" element={<Login />} />
 
-          {/* Public Route: Setup Account Page */}
-          <Route path="/setup-account" element={<SetupAccount />} />
+            {/* Public Route: Setup Account Page */}
+            <Route path="/setup-account" element={<SetupAccount />} />
 
-          {/* Public Route: Reset Password Page */}
-          <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Public Route: Reset Password Page */}
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.dashboard}>
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.dashboard}>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/branch_location"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.branchLocation}>
-                <Layout>
-                  <Branch_location />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branch_products/:branchId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.branchProducts}>
-                <Layout>
-                  <ProductTable />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/branch_location"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.branchLocation}>
+                  <Layout>
+                    <Branch_location />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/branch_products/:branchId"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.branchProducts}>
+                  <Layout>
+                    <ProductTable />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* AddCategoryPage */}
-          <Route
-            path="/categories/add"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.add_category}>
-                <Layout>
-                  <AddCategoryPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          {/* Add Branch */}
-          <Route
-            path="/branches/add"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.add_branch}>
-                <Layout>
-                  <AddBranchPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* AddCategoryPage */}
+            <Route
+              path="/categories/add"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.add_category}>
+                  <Layout>
+                    <AddCategoryPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Add Branch */}
+            <Route
+              path="/branches/add"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.add_branch}>
+                  <Layout>
+                    <AddBranchPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Unified Product Request */}
-          <Route
-            path="/unified_products/:branchId"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.send_request}>
-                <Layout>
-                  <UnifiedProductRequest />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/requested_item"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.send_request}>
-                <Layout>
-                  <Requested_Item />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            {/* Unified Product Request */}
+            <Route
+              path="/unified_products/:branchId"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.send_request}>
+                  <Layout>
+                    <UnifiedProductRequest />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/requested_item"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.send_request}>
+                  <Layout>
+                    <Requested_Item />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/pending_request"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.pendingRequest}>
-                <Layout>
-                  <Pending_request />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transferred"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.transferred}>
-                <Layout>
-                  <Transferred />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          {/* Sales */}
-          <Route
-            path="/sales"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.allStock}>
-                <Layout>
-                  <Sales />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          {/* Stock_Components */}
-          <Route
-            path="/all_stock"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.allStock}>
-                <Layout>
-                  <AllStock />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/pending_request"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.pendingRequest}>
+                  <Layout>
+                    <Pending_request />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transferred"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.transferred}>
+                  <Layout>
+                    <Transferred />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Sales */}
+            <Route
+              path="/sales"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.allStock}>
+                  <Layout>
+                    <Sales />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            {/* Stock_Components */}
+            <Route
+              path="/all_stock"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.allStock}>
+                  <Layout>
+                    <AllStock />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/add-user"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.addUser}>
-                <Layout>
-                  <AddUser />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/user-management"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.userManagement}>
-                <Layout>
-                  <UserManagement />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/add-user"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.addUser}>
+                  <Layout>
+                    <AddUser />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user-management"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.userManagement}>
+                  <Layout>
+                    <UserManagement />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/auditlogs"
-            element={
-              <ProtectedRoute allowedRoles={routeRoles.auditlogs}>
-                <Layout>
-                  <AuditLogsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/auditlogs"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.auditlogs}>
+                  <Layout>
+                    <AuditLogsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Public Route: Unauthorized Page */}
-          <Route path="/unauthorized" element={<Unauthorized />} />
+            {/* Public Route: Unauthorized Page */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
 
-          {/* Redirect to /dashboard if no route matches */}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </Router>
-    </SidebarProvider>
+            {/* Redirect to /dashboard if no route matches */}
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </Router>
+      </SidebarProvider>
+    </ThemeProvider>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   XCircle,
@@ -10,8 +10,9 @@ import {
   RefreshCw,
   ArrowLeft
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useSidebar } from '../Sidebar/SidebarContext';
 
 interface RequestItem {
   id: number;
@@ -45,6 +46,7 @@ interface User {
 
 export default function PendingRequest() {
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<number | null>(null);
@@ -177,23 +179,37 @@ export default function PendingRequest() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+    <div
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+    >
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
+        <div className="p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                   <Package className="h-6 w-6 text-blue-600" />
                   Pending Requests
                 </h1>
-                <p className="text-gray-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Review and approve/deny product requests from other branches
                 </p>
               </div>

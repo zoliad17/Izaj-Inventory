@@ -14,6 +14,10 @@ import { useSidebar } from "./SidebarContext";
 import { LogOutIcon, MenuIcon } from "lucide-react";
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 
+// theme
+import { useTheme } from "../ThemeContext/ThemeContext";
+import { MoonIcon, SunIcon } from "@heroicons/react/outline";
+
 // Define types for the navigation items
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -51,6 +55,8 @@ function Sidebar() {
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const userRole = user?.role?.role_name || localStorage.getItem("userRole");
 
@@ -195,12 +201,13 @@ function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white text-gray-800 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 transition-all duration-300 ease-in-out ${isCollapsed ? "w-25" : "w-64"
-        }`}
+      className={`h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${
+        isCollapsed ? "w-25" : "w-64"
+      }`}
     >
       {/* Header Section */}
       <div>
-        <div className="flex items-center p-4 justify-between border-b border-gray-200">
+        <div className="flex items-center p-4 justify-between border-b border-gray-200 dark:border-gray-700">
           {!isCollapsed ? (
             <div
               className="flex items-center"
@@ -276,8 +283,9 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`flex items-center font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
-                      }`}
+                    className={`flex items-center font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 ${
+                      isCollapsed ? "p-3 justify-center" : "p-3"
+                    }`}
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6" />
@@ -294,8 +302,9 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`flex items-center w-full font-medium hover:bg-gray-100 rounded-lg transition-all duration-200 ${isCollapsed ? "p-3 justify-center" : "p-3"
-                          }`}
+                        className={`flex items-center w-full font-medium hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 ${
+                          isCollapsed ? "p-3 justify-center" : "p-3"
+                        }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
@@ -306,8 +315,9 @@ function Sidebar() {
                               {item.label}
                             </span>
                             <svg
-                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""
-                                }`}
+                              className={`ml-2 w-4 h-4 transition-transform duration-200 ${
+                                isDropdownOpen ? "rotate-180" : ""
+                              }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -327,15 +337,16 @@ function Sidebar() {
                       {/* Dropdown content */}
                       {!isCollapsed && item.subItems && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ${isDropdownOpen ? "max-h-40" : "max-h-0"
-                            }`}
+                          className={`overflow-hidden transition-all  hover:bg-gray-100 dark:hover:bg-gray-800 duration-300 ${
+                            isDropdownOpen ? "max-h-40" : "max-h-0"
+                          }`}
                         >
-                          <ul className="ml-2 pl-6 border-l-2 border-gray-200">
+                          <ul className="ml-2 pl-6 border-l-2">
                             {item.subItems.map((subItem, subIndex) => (
                               <li key={subIndex}>
                                 <Link
                                   to={subItem.path}
-                                  className="flex items-center px-3 py-2 text-sm font-medium hover:bg-gray-100 rounded-lg transition-all duration-200"
+                                  className="flex items-center px-3 py-2 text-sm font-medium  hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200"
                                 >
                                   <subItem.icon className="h-5 w-5 mr-3" />
                                   {subItem.label}
@@ -355,22 +366,24 @@ function Sidebar() {
       </div>
 
       {/* Footer Section */}
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-3 border-t border-gray-200 dark:border-gray-700">
         <div className="flex flex-col space-y-3">
           {user && (
             <>
               {!isCollapsed ? (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-100">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-4 border border-blue-100 dark:border-blue-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors duration-200">
                   {/* User Avatar */}
                   <div className="flex items-center mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                      {(user.name || user.email || user.username || "U").charAt(0).toUpperCase()}
+                      {(user.name || user.email || user.username || "U")
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                         {user.name || user.email || user.username}
                       </h4>
-                      <p className="text-xs text-gray-600 truncate">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
                         {user.role?.role_name || "User"}
                       </p>
                     </div>
@@ -378,12 +391,12 @@ function Sidebar() {
 
                   {/* User Details */}
                   <div className="space-y-2">
-                    <div className="flex items-center text-xs text-gray-600">
+                    <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
                       <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                       <span className="font-medium">Active</span>
                     </div>
-                    <div className="flex items-center text-xs text-gray-600">
-                      <LocationMarkerIcon className="w-3 h-3 mr-2 text-gray-400" />
+                    <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                      <LocationMarkerIcon className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                       <span className="truncate">
                         {userBranch?.location || "Unknown Branch"}
                       </span>
@@ -393,7 +406,9 @@ function Sidebar() {
               ) : (
                 <div className="flex justify-center mb-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {(user.name || user.email || user.username || "U").charAt(0).toUpperCase()}
+                    {(user.name || user.email || user.username || "U")
+                      .charAt(0)
+                      .toUpperCase()}
                   </div>
                 </div>
               )}
@@ -401,9 +416,40 @@ function Sidebar() {
           )}
 
           <button
+            onClick={toggleTheme}
+            className={`flex items-center justify-center font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 ${
+              isCollapsed ? "p-3" : "px-3 py-2.5"
+            }`}
+            title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isCollapsed ? (
+              isDarkMode ? (
+                <SunIcon className="h-6 w-6" />
+              ) : (
+                <MoonIcon className="h-6 w-6" />
+              )
+            ) : (
+              <>
+                {isDarkMode ? (
+                  <>
+                    <SunIcon className="h-5 w-5 mr-2" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <MoonIcon className="h-5 w-5 mr-2" />
+                    Dark Mode
+                  </>
+                )}
+              </>
+            )}
+          </button>
+
+          <button
             onClick={handleLogout}
-            className={`flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 shadow-sm ${isCollapsed ? "p-3" : "px-3 py-2.5"
-              }`}
+            className={`flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all duration-200 shadow-sm ${
+              isCollapsed ? "p-3" : "px-3 py-2.5"
+            }`}
             title="Logout"
           >
             {isCollapsed ? <LogOutIcon className="h-6 w-6" /> : "Logout"}

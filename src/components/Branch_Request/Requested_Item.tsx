@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Package,
   User,
@@ -12,8 +12,9 @@ import {
   Eye,
   ArrowLeft
 } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useSidebar } from '../Sidebar/SidebarContext';
 
 interface RequestItem {
   id: number;
@@ -48,6 +49,7 @@ interface User {
 
 export default function Requested_Item() {
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
   const [requests, setRequests] = useState<SentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -144,27 +146,41 @@ export default function Requested_Item() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="bg-white rounded-lg shadow-lg">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  <Package className="h-6 w-6 text-blue-600" />
-                  Requested Items
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  Track the status of your product requests to other branches
-                </p>
-              </div>
+    <div
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+    >
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
+        {/* Toaster for success and error */}
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: "#363636",
+              color: "#fff",
+            },
+          }}
+        />
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-3.5">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Package className="h-6 w-6 text-blue-600" />
+                Requested Items
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
+                Track the status of your product requests to other branches
+              </p>
             </div>
+          </div>
+          <div className="flex justify-end mb-4">
             <button
               onClick={loadSentRequests}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -179,17 +195,17 @@ export default function Requested_Item() {
           {requests.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Sent Requests</h3>
-              <p className="text-gray-600">You haven't sent any product requests yet.</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Sent Requests</h3>
+              <p className="text-gray-600 dark:text-gray-400">You haven't sent any product requests yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {requests.map((request) => (
-                <div key={request.request_id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div key={request.request_id} className="border border-gray-200 dark:border-neutral-600 rounded-lg p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                           Request #{request.request_id}
                         </h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(request.status)}`}>
@@ -198,7 +214,7 @@ export default function Requested_Item() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           <span><strong>To:</strong> {request.recipient.name}</span>
@@ -214,7 +230,7 @@ export default function Requested_Item() {
                       </div>
 
                       {request.reviewed_at && (
-                        <div className="mt-2 text-sm text-gray-600">
+                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                           <span><strong>Reviewed:</strong> {formatDate(request.reviewed_at)}</span>
                           {request.reviewer_name && (
                             <span className="ml-4"><strong>By:</strong> {request.reviewer_name}</span>
@@ -225,22 +241,22 @@ export default function Requested_Item() {
                   </div>
 
                   {/* Request Summary */}
-                  <div className="mb-4 p-4 bg-gray-50 rounded-md">
+                  <div className="mb-4 p-4 bg-gray-50 dark:bg-neutral-700 rounded-md">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <span className="font-medium text-gray-700">Items:</span>
-                        <p className="text-gray-600">{request.items.length}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Items:</span>
+                        <p className="text-gray-600 dark:text-gray-400">{request.items.length}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Total Quantity:</span>
-                        <p className="text-gray-600">{request.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Total Quantity:</span>
+                        <p className="text-gray-600 dark:text-gray-400">{request.items.reduce((sum, item) => sum + item.quantity, 0)}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Total Value:</span>
-                        <p className="text-gray-600">₱{getTotalValue(request.items).toFixed(2)}</p>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Total Value:</span>
+                        <p className="text-gray-600 dark:text-gray-400">₱{getTotalValue(request.items).toFixed(2)}</p>
                       </div>
                       <div>
-                        <span className="font-medium text-gray-700">Status:</span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Status:</span>
                         <p className={`font-medium ${getStatusColor(request.status).split(' ')[0]}`}>
                           {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                         </p>
@@ -250,12 +266,12 @@ export default function Requested_Item() {
 
                   {/* Review Notes */}
                   {request.notes && (
-                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
                       <div className="flex items-start gap-2">
                         <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-blue-700">Review Notes:</p>
-                          <p className="text-sm text-blue-600">{request.notes}</p>
+                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Review Notes:</p>
+                          <p className="text-sm text-blue-600 dark:text-blue-400">{request.notes}</p>
                         </div>
                       </div>
                     </div>
@@ -389,23 +405,23 @@ export default function Requested_Item() {
                   </tfoot>
                 </table>
               </div>
-            </div>
 
-            {/* Review Notes */}
-            {selectedRequest.notes && (
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-                <h4 className="font-medium text-blue-700 mb-2">Review Notes:</h4>
-                <p className="text-blue-600">{selectedRequest.notes}</p>
+              {/* Review Notes */}
+              {selectedRequest.notes && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">Review Notes:</h4>
+                  <p className="text-blue-600 dark:text-blue-400">{selectedRequest.notes}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
               </div>
-            )}
-
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>

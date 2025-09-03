@@ -232,61 +232,92 @@ function Dashboard() {
           }`}
         >
           {/* Total Stock Card */}
-          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-full">
-                <Package className="text-amber-600" size={20} />
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                <Package
+                  className="text-amber-600 dark:text-amber-400"
+                  size={20}
+                />
               </div>
-              <h5 className="text-lg font-medium">Total Stock</h5>
+              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Total Stock
+              </h5>
             </div>
-            <h6 className="text-2xl font-bold text-gray-800 mt-2">450</h6>
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              450
+            </h6>
           </div>
 
           {/* Products Card */}
-          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Lightbulb className="text-blue-600" size={20} />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                <Lightbulb
+                  className="text-blue-600 dark:text-blue-400"
+                  size={20}
+                />
               </div>
-              <h5 className="text-lg font-medium">Products</h5>
+              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Products
+              </h5>
             </div>
-            <h6 className="text-2xl font-bold text-gray-800 mt-2">50</h6>
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              50
+            </h6>
           </div>
 
           {/* Categories Card */}
-          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-full">
-                <Lightbulb className="text-green-600" size={20} />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                <Lightbulb
+                  className="text-green-600 dark:text-green-400"
+                  size={20}
+                />
               </div>
-              <h5 className="text-lg font-medium">Categories</h5>
+              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Categories
+              </h5>
             </div>
-            <h6 className="text-2xl font-bold text-gray-800 mt-2">12</h6>
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              12
+            </h6>
             <button
               onClick={() => navigate("/categories/add")}
-              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 rounded-full hover:bg-green-200 transition-colors"
+              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
               title="Add Category"
             >
-              <Plus className="text-green-600" size={16} />
+              <Plus className="text-green-600 dark:text-green-400" size={16} />
             </button>
           </div>
 
           {/* Branches Card - Only visible to Super Admin */}
           {isSuperAdmin && (
-            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-full">
-                  <Lightbulb className="text-purple-600" size={20} />
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                  <Lightbulb
+                    className="text-purple-600 dark:text-purple-400"
+                    size={20}
+                  />
                 </div>
-                <h5 className="text-lg font-medium">Branches</h5>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Branches
+                </h5>
               </div>
-              <h6 className="text-2xl font-bold text-gray-800 mt-2">8</h6>
+              <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+                8
+              </h6>
               <button
                 onClick={() => navigate("/branches/add")}
-                className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 rounded-full hover:bg-purple-200 transition-colors"
+                className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 dark:bg-purple-900/30 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800/50 transition-colors"
                 title="Add Branch"
               >
-                <Plus className="text-purple-600" size={16} />
+                <Plus
+                  className="text-purple-600 dark:text-purple-400"
+                  size={16}
+                />
               </button>
             </div>
           )}
@@ -407,60 +438,65 @@ function Dashboard() {
       <Card className="mt-6">
         <div className="py-1 md:px-6">
           <div className="flex items-center gap-3 mb-4 md:mb-6">
-            <Lightbulb className="text-gray-500" size={20} />
-            <h5 className="text-lg font-medium">Top Products</h5>
+            <Lightbulb className="text-gray-500 dark:text-gray-400" size={20} />
+            <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              Top Products
+            </h5>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-900">
+              <thead className="bg-gray-50 dark:bg-neutral-900">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Product ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                     Category
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Price
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                     Stock
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                  <tr
+                    key={product.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       {product.id}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                       {product.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                       {product.category}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {product.price}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                       {product.stock}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           product.status === "in-stock"
-                            ? "bg-green-100 text-green-800"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                             : product.status === "low-stock"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                         }`}
                       >
                         {product.status === "in-stock"
@@ -477,8 +513,8 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="px-4 py-3 md:px-6 bg-gray-50 border-t border-gray-200 flex items-center gap-2 text-sm text-gray-500">
-          <Clock size={16} className="text-gray-400" />
+        <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <Clock size={16} className="text-gray-400 dark:text-gray-500" />
           <span>Last updated 3 mins ago</span>
         </div>
       </Card>
