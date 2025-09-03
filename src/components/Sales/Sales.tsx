@@ -229,7 +229,7 @@ const Sales: React.FC = () => {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center cursor-pointer text-gray-800 hover:text-gray-900 transition-colors"
+            className="flex items-center dark:text-gray-200 cursor-pointer text-gray-800 hover:text-gray-900 transition-colors"
           >
             <ArrowLeft size={20} className="mr-1" />
           </button>
@@ -419,63 +419,71 @@ const Sales: React.FC = () => {
         </Card>
 
         {/* Bottom Row - Products Table */}
-        <Card>
-          <div className="py-1 md:px-6 ">
+        <Card className="mt-6">
+          <div className="py-1 md:px-6">
             <div className="flex items-center gap-3 mb-4 md:mb-6">
-              <Lightbulb className="text-gray-500" size={20} />
-              <h5 className="text-lg font-medium mt-[-3]">Top Products</h5>
+              <Lightbulb
+                className="text-gray-500 dark:text-gray-400"
+                size={20}
+              />
+              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                Top Products
+              </h5>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-900">
+                <thead className="bg-gray-50 dark:bg-neutral-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Product ID
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                       Stock
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    >
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                         {product.id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                         {product.name}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         {product.category}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {product.price}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                         {product.stock}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             product.status === "in-stock"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                               : product.status === "low-stock"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                           }`}
                         >
                           {product.status === "in-stock"
@@ -491,8 +499,9 @@ const Sales: React.FC = () => {
               </table>
             </div>
           </div>
-          <div className="p-3 md:p-4 bg-gray-50 flex items-center gap-2 text-sm text-gray-500">
-            <Clock size={16} />
+
+          <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <Clock size={16} className="text-gray-400 dark:text-gray-500" />
             <span>Last updated 3 mins ago</span>
           </div>
         </Card>

@@ -185,9 +185,9 @@ function PendingRequest() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
     >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden ">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
         {/* Toaster for success and error */}
         <Toaster
           position="top-center"
@@ -204,11 +204,13 @@ function PendingRequest() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
-              <h5 className="text-xl font-bold">Pending Request</h5>
+              <h5 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                Pending Request
+              </h5>
             </div>
           </div>
 
@@ -218,7 +220,7 @@ function PendingRequest() {
               <input
                 type="text"
                 placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -226,7 +228,7 @@ function PendingRequest() {
                 }}
               />
               <svg
-                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -242,7 +244,7 @@ function PendingRequest() {
             </div>
 
             <select
-              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
               value={selectedCategory}
               onChange={(e) => {
                 setSelectedCategory(e.target.value);
@@ -250,38 +252,82 @@ function PendingRequest() {
               }}
             >
               {categories.map((category) => (
-                <option key={category} value={category}>
+                <option
+                  key={category}
+                  value={category}
+                  className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+                >
                   {category === "All" ? "All Categories" : category}
                 </option>
               ))}
             </select>
 
             <select
-              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
             >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              <option
+                value="All"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                All Status
+              </option>
+              <option
+                value="Pending"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                Pending
+              </option>
+              <option
+                value="Approved"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                Approved
+              </option>
+              <option
+                value="Rejected"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                Rejected
+              </option>
             </select>
 
             <select
-              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
               value={itemsPerPage}
               onChange={(e) => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
             >
-              <option value="5">5 per page</option>
-              <option value="10">10 per page</option>
-              <option value="20">20 per page</option>
-              <option value="50">50 per page</option>
+              <option
+                value="5"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                5 per page
+              </option>
+              <option
+                value="10"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                10 per page
+              </option>
+              <option
+                value="20"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                20 per page
+              </option>
+              <option
+                value="50"
+                className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+              >
+                50 per page
+              </option>
             </select>
 
             <button
@@ -308,28 +354,28 @@ function PendingRequest() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
+            <table className="min-w-full bg-white dark:bg-neutral-800">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                <tr className="bg-gray-100 dark:bg-neutral-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Product ID
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Product Name
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Category
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Price
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Quantity
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Status
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Action
                   </th>
                 </tr>
@@ -337,44 +383,47 @@ function PendingRequest() {
               <tbody>
                 {currentItems.length > 0 ? (
                   currentItems.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                    >
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.id}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.name}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.category}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.price}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.stock}
                       </td>
                       <td className="px-4 py-2 text-sm font-medium">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             product.status === "Approved"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                               : product.status === "Rejected"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                              : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                           }`}
                         >
                           {product.status}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleActionClick(product, "accept")}
                             disabled={product.status !== "Pending"}
                             className={`px-3 py-1 rounded-md text-sm font-medium ${
                               product.status !== "Pending"
-                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                                ? "bg-gray-200 text-gray-500 dark:bg-neutral-700 dark:text-neutral-400 cursor-not-allowed"
+                                : "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50"
                             }`}
                           >
                             Accept
@@ -386,8 +435,8 @@ function PendingRequest() {
                             disabled={product.status !== "Pending"}
                             className={`px-3 py-1 rounded-md text-sm font-medium ${
                               product.status !== "Pending"
-                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "bg-red-50 text-red-600 hover:bg-red-100"
+                                ? "bg-gray-200 text-gray-500 dark:bg-neutral-700 dark:text-neutral-400 cursor-not-allowed"
+                                : "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50"
                             }`}
                           >
                             Decline
@@ -400,7 +449,7 @@ function PendingRequest() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-4 py-6 text-center text-gray-500"
+                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
                     >
                       No products found matching your filter criteria
                     </td>
@@ -412,7 +461,7 @@ function PendingRequest() {
 
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Showing {indexOfFirstItem + 1} to{" "}
               {Math.min(indexOfLastItem, filteredProducts.length)} of{" "}
               {filteredProducts.length} entries
@@ -423,8 +472,8 @@ function PendingRequest() {
                 disabled={currentPage === 1}
                 className={`px-3 py-1 rounded-md ${
                   currentPage === 1
-                    ? "bg-gray-200 cursor-not-allowed"
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                    : "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                 }`}
               >
                 Previous
@@ -437,7 +486,7 @@ function PendingRequest() {
                     className={`px-3 py-1 rounded-md ${
                       currentPage === page
                         ? "bg-blue-500 text-white"
-                        : "bg-gray-200 hover:bg-gray-300"
+                        : "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                     }`}
                   >
                     {page}
@@ -451,8 +500,8 @@ function PendingRequest() {
                 disabled={currentPage === totalPages}
                 className={`px-3 py-1 rounded-md ${
                   currentPage === totalPages
-                    ? "bg-gray-200 cursor-not-allowed"
-                    : "bg-gray-200 hover:bg-gray-300"
+                    ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                    : "bg-gray-200 dark:bg-neutral-700 hover:bg-gray-300 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                 }`}
               >
                 Next
@@ -460,19 +509,21 @@ function PendingRequest() {
             </div>
           </div>
         </div>
-        <div className="p-4 bg-gray-100">
-          <small className="text-gray-500">Last updated 3 mins ago</small>
+        <div className="p-4 bg-gray-100 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-600">
+          <small className="text-gray-500 dark:text-gray-400">
+            Last updated 3 mins ago
+          </small>
         </div>
       </div>
 
       {/* Confirmation Modal */}
       {isModalOpen && selectedProduct && actionType && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h2 className="text-xl font-bold mb-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-lg w-full max-w-md p-6 border border-gray-200 dark:border-neutral-700">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               Confirm {actionType === "accept" ? "Acceptance" : "Rejection"}
             </h2>
-            <p className="mb-4">
+            <p className="mb-4 text-gray-700 dark:text-gray-300">
               Are you sure you want to {actionType} the product{" "}
               <span className="font-semibold">{selectedProduct.name}</span> (ID:{" "}
               {selectedProduct.id})?
@@ -480,7 +531,7 @@ function PendingRequest() {
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 onClick={closeModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -490,7 +541,7 @@ function PendingRequest() {
                   actionType === "accept"
                     ? "bg-green-500 hover:bg-green-600"
                     : "bg-red-500 hover:bg-red-600"
-                } text-white px-4 py-2 rounded`}
+                } text-white px-4 py-2 rounded transition-colors`}
               >
                 Confirm {actionType === "accept" ? "Accept" : "Decline"}
               </button>

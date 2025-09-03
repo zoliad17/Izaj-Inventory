@@ -39,7 +39,9 @@ function AddBranchPage() {
       navigate("/dashboard"); // Redirect back to dashboard after adding
     } catch (error) {
       console.error("Error adding branch:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to add branch");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add branch"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -47,10 +49,11 @@ function AddBranchPage() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
-      <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
+      <div className="p-2 max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <Toaster
           position="top-center"
           toastOptions={{
@@ -61,30 +64,23 @@ function AddBranchPage() {
             },
           }}
         />
-        {/* <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 mb-6 hover:text-purple-700 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </button> */}
 
-        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800">
+        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800 dark:text-white">
           Add New Branch
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Branch Information Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2">
               Branch Information
             </h2>
 
-            <div className="grid  grid-cols-1 md:grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
               <div>
                 <label
                   htmlFor="location"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Branch Name <span className="text-red-500">*</span>
                 </label>
@@ -93,7 +89,7 @@ function AddBranchPage() {
                   id="location"
                   name="location"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., Northwest Regional Office"
                 />
               </div>
@@ -102,7 +98,7 @@ function AddBranchPage() {
             <div>
               <label
                 htmlFor="address"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Full Address <span className="text-red-500">*</span>
               </label>
@@ -111,59 +107,17 @@ function AddBranchPage() {
                 id="address"
                 name="address"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Street, City, State, ZIP"
               />
             </div>
           </div>
 
-          {/* Contact Information Section */}
-          {/* <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
-              Contact Information
-            </h2>
-
-            <div>
-              <div>
-                <label
-                  htmlFor="manager"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Branch Manager <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="manager"
-                  name="manager"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Full name"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="contact@branch.example.com"
-              />
-            </div>
-          </div> */}
-
           <div className="flex justify-end space-x-4 pt-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
             >
               Cancel
             </button>

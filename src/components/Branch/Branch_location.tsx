@@ -81,78 +81,81 @@ function BranchLocation() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 dark:bg-neutral-950`}
     >
-      <div className="p-3 bg-white">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <h5 className="text-2xl font-bold">Active Branch</h5>
-          </div>
-          {user?.branch_id && (
-            <p className="text-sm text-gray-500 mt-2 sm:mt-0">
-              Showing branches available for transfer
-            </p>
-          )}
+      {/* <div className="p-3 bg-white dark:bg-neutral-800 rounded-lg shadow"> */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div className="flex items-center gap-4 mb-2.5 mt-2.5">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h5 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Active Branch
+          </h5>
         </div>
-
-        {/* Show message if no branches available */}
-        {filteredBranches.length === 0 ? (
-          <div className="mt-5 p-6 text-center text-gray-500">
-            <p>No other branches available to view.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
-            {filteredBranches.map((branch) => (
-              <div key={branch.id} className="col flex flex-col">
-                <div className="card h-full bg-white rounded-lg shadow-md overflow-hidden outline-1 flex flex-col">
-                  {/* Placeholder image if null */}
-                  <img
-                    src={branch.image || "/src/assets/image/logo.jpg"}
-                    className="w-full h-48 object-cover"
-                    alt={`${branch.name || branch.location} Image`}
-                  />
-
-                  <div className="p-6 flex-grow">
-                    <h5 className="text-xl font-bold mb-2">
-                      {branch.name || branch.location}
-                    </h5>
-
-                    <div className="flex items-center text-gray-600 mb-2">
-                      <LocationMarkerIcon className="h-5 w-5 mr-2" />
-                      <span>{branch.address}</span>
-                    </div>
-
-                    {/* <div className="flex items-center text-gray-600 mb-2">
-                      <PhoneIcon className="h-5 w-5 mr-2" />
-                      <span>{branch.contact || "N/A"}</span>
-                    </div> */}
-                    {/* <p className="text-gray-700">
-                      {branch.description || "No description available."}
-                    </p> */}
-                  </div>
-
-                  <div className="p-4 bg-gray-100 mt-auto">
-                    <button
-                      className="w-full md:w-auto cursor-pointer bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
-                      onClick={() => navigate(`/branch_products/${branch.id}`)}
-                    >
-                      View Products
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        {user?.branch_id && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0">
+            Showing branches available for transfer
+          </p>
         )}
       </div>
+
+      {/* Show message if no branches available */}
+      {filteredBranches.length === 0 ? (
+        <div className="mt-5 p-6 text-center text-gray-500 dark:text-gray-400">
+          <p>No other branches available to view.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
+          {filteredBranches.map((branch) => (
+            <div key={branch.id} className="col flex flex-col">
+              <div className="card h-full bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden outline-1 flex flex-col border border-gray-200 dark:border-neutral-700">
+                {/* Placeholder image if null */}
+                <img
+                  src={branch.image || "/src/assets/image/logo.jpg"}
+                  className="w-full h-48 object-cover"
+                  alt={`${branch.name || branch.location} Image`}
+                />
+
+                <div className="p-6 flex-grow">
+                  <h5 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                    {branch.name || branch.location}
+                  </h5>
+
+                  <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
+                    <LocationMarkerIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-500" />
+                    <span>{branch.address}</span>
+                  </div>
+
+                  {/* <div className="flex items-center text-gray-600 dark:text-gray-400 mb-2">
+                  <PhoneIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-500" />
+                  <span>{branch.contact || "N/A"}</span>
+                </div> */}
+                  {/* <p className="text-gray-700 dark:text-gray-300">
+                  {branch.description || "No description available."}
+                </p> */}
+                </div>
+
+                <div className="p-4 bg-gray-100 dark:bg-neutral-700 mt-auto">
+                  <button
+                    className="w-full md:w-auto cursor-pointer bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition duration-300"
+                    onClick={() => navigate(`/branch_products/${branch.id}`)}
+                  >
+                    View Products
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+    // </div>
   );
 }
 

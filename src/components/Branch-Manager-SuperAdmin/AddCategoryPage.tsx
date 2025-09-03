@@ -17,25 +17,17 @@ function AddCategoryPage() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 bg-gray-50 dark:bg-gray-900`}
     >
-      <div className="p-2 max-w-6xl mx-auto bg-white rounded-lg shadow-md">
-        {/* <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 mb-6 hover:text-green-700 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </button> */}
-
-        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800">
+      <div className="p-2 max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800 dark:text-white">
           Add New Lighting Category
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 p-6 ">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* Basic Information Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
               Category Information
             </h2>
 
@@ -43,7 +35,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
@@ -52,7 +44,7 @@ function AddCategoryPage() {
                   id="name"
                   name="name"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., LED Bulbs, Chandeliers"
                 />
               </div>
@@ -60,7 +52,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="code"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Category Code
                 </label>
@@ -68,7 +60,7 @@ function AddCategoryPage() {
                   type="text"
                   id="code"
                   name="code"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., LED-001"
                 />
               </div>
@@ -77,7 +69,7 @@ function AddCategoryPage() {
             <div>
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Description
               </label>
@@ -85,7 +77,7 @@ function AddCategoryPage() {
                 id="description"
                 name="description"
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Detailed description of this lighting category"
               />
             </div>
@@ -93,7 +85,7 @@ function AddCategoryPage() {
 
           {/* Technical Specifications Section */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
               Technical Specifications
             </h2>
 
@@ -101,7 +93,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="voltage"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Voltage Range
                 </label>
@@ -109,7 +101,7 @@ function AddCategoryPage() {
                   type="text"
                   id="voltage"
                   name="voltage"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., 110-240V"
                 />
               </div>
@@ -117,7 +109,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="wattage"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Wattage Range
                 </label>
@@ -125,7 +117,7 @@ function AddCategoryPage() {
                   type="text"
                   id="wattage"
                   name="wattage"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., 5W-100W"
                 />
               </div>
@@ -133,7 +125,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="colorTemp"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Color Temperature
                 </label>
@@ -141,7 +133,7 @@ function AddCategoryPage() {
                   type="text"
                   id="colorTemp"
                   name="colorTemp"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., 2700K-6500K"
                 />
               </div>
@@ -151,7 +143,7 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="lifespan"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Average Lifespan (hours)
                 </label>
@@ -159,7 +151,7 @@ function AddCategoryPage() {
                   type="number"
                   id="lifespan"
                   name="lifespan"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="e.g., 25000"
                 />
               </div>
@@ -167,14 +159,14 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="warranty"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Warranty Period
                 </label>
                 <select
                   id="warranty"
                   name="warranty"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select Warranty</option>
                   <option value="1">1 Year</option>
@@ -189,7 +181,7 @@ function AddCategoryPage() {
 
           {/* Application & Compatibility */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
               Application & Compatibility
             </h2>
 
@@ -197,14 +189,14 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="application"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Primary Application
                 </label>
                 <select
                   id="application"
                   name="application"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select Application</option>
                   <option value="residential">Residential</option>
@@ -218,14 +210,14 @@ function AddCategoryPage() {
               <div>
                 <label
                   htmlFor="fixtureType"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
                   Fixture Type
                 </label>
                 <select
                   id="fixtureType"
                   name="fixtureType"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="">Select Fixture Type</option>
                   <option value="bulb">Bulb</option>
@@ -242,7 +234,7 @@ function AddCategoryPage() {
             <div>
               <label
                 htmlFor="compatibility"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Compatibility Notes
               </label>
@@ -250,7 +242,7 @@ function AddCategoryPage() {
                 id="compatibility"
                 name="compatibility"
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Any special compatibility requirements"
               />
             </div>
@@ -258,14 +250,14 @@ function AddCategoryPage() {
 
           {/* Image Upload */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-700 border-b pb-2">
+            <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
               Visual Representation
             </h2>
 
             <div>
               <label
                 htmlFor="image"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
                 Category Image
               </label>
@@ -274,9 +266,9 @@ function AddCategoryPage() {
                 id="image"
                 name="image"
                 accept="image/*"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 dark:file:bg-green-900 dark:file:text-green-200"
               />
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Upload a representative image for this category (JPEG, PNG)
               </p>
             </div>
@@ -286,13 +278,13 @@ function AddCategoryPage() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
             >
               Add Category
             </button>

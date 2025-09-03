@@ -162,9 +162,9 @@ function Transferred() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
     >
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
         <Toaster
           position="top-center"
           toastOptions={{
@@ -180,11 +180,13 @@ function Transferred() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 hover:text-gray-900 transition-colors"
+                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
-              <h5 className="text-xl font-bold">Transferred Items</h5>
+              <h5 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                Transferred Items
+              </h5>
             </div>
 
             {selectedProducts.length > 0 && (
@@ -198,15 +200,15 @@ function Transferred() {
           </div>
 
           {/* Filter, Search, and Export Controls in one line */}
-          <div className="flex flex-col sm:flex-row items-center  gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
             <div className="relative w-full sm:w-1/3">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FileSearch className="text-gray-400" />
+                <FileSearch className="text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 type="text"
                 placeholder="Search by name or SKU..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -217,7 +219,7 @@ function Transferred() {
 
             <div className="w-full sm:w-1/4">
               <select
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
                 value={categoryFilter}
                 onChange={(e) => {
                   setCategoryFilter(e.target.value);
@@ -225,7 +227,11 @@ function Transferred() {
                 }}
               >
                 {categories.map((category) => (
-                  <option key={category} value={category}>
+                  <option
+                    key={category}
+                    value={category}
+                    className="bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100"
+                  >
                     {category}
                   </option>
                 ))}
@@ -258,10 +264,10 @@ function Transferred() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white">
+            <table className="min-w-full bg-white dark:bg-neutral-800">
               <thead>
-                <tr className="bg-gray-100">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                <tr className="bg-gray-100 dark:bg-neutral-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={
@@ -271,25 +277,25 @@ function Transferred() {
                         )
                       }
                       onChange={selectAllOnPage}
-                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
                     />
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     SKU/CODE
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Product Name
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Category
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Price
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Quantity
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Status
                   </th>
                 </tr>
@@ -297,37 +303,40 @@ function Transferred() {
               <tbody>
                 {paginatedProducts.length > 0 ? (
                   paginatedProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
+                    <tr
+                      key={product.id}
+                      className="hover:bg-gray-50 dark:hover:bg-neutral-700/50"
+                    >
                       <td className="px-4 py-2">
                         <input
                           type="checkbox"
                           checked={selectedProducts.includes(product.id)}
                           onChange={() => toggleProductSelection(product.id)}
-                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.id}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.name}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.category}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.price}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                         {product.stock}
                       </td>
                       <td
                         className={`px-4 py-2 text-sm font-medium ${
                           product.status === "Transferred"
-                            ? "text-green-600"
+                            ? "text-green-600 dark:text-green-400"
                             : product.status === "In-Transit"
-                            ? "text-yellow-600"
-                            : "text-red-600"
+                            ? "text-yellow-600 dark:text-yellow-400"
+                            : "text-red-600 dark:text-red-400"
                         }`}
                       >
                         {product.status}
@@ -338,7 +347,7 @@ function Transferred() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-4 py-6 text-center text-gray-500"
+                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
                     >
                       No products found matching your criteria
                     </td>
@@ -352,7 +361,7 @@ function Transferred() {
           {filteredProducts.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between mt-4">
               <div className="mb-2 sm:mb-0">
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
                   Showing{" "}
                   <span className="font-medium">
                     {(currentPage - 1) * itemsPerPage + 1}
@@ -377,8 +386,8 @@ function Transferred() {
                   disabled={currentPage === 1}
                   className={`px-3 py-1 rounded ${
                     currentPage === 1
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-gray-300 hover:bg-gray-400"
+                      ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                      : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                   }`}
                 >
                   Previous
@@ -391,7 +400,7 @@ function Transferred() {
                       className={`px-3 py-1 rounded ${
                         currentPage === page
                           ? "bg-blue-500 text-white"
-                          : "bg-gray-300 hover:bg-gray-400"
+                          : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                       }`}
                     >
                       {page}
@@ -405,8 +414,8 @@ function Transferred() {
                   disabled={currentPage === totalPages}
                   className={`px-3 py-1 rounded ${
                     currentPage === totalPages
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-gray-300 hover:bg-gray-400"
+                      ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                      : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
                   }`}
                 >
                   Next
@@ -415,8 +424,10 @@ function Transferred() {
             </div>
           )}
         </div>
-        <div className="p-4 bg-gray-100">
-          <small className="text-gray-500">Last updated 3 mins ago</small>
+        <div className="p-4 bg-gray-100 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-600">
+          <small className="text-gray-500 dark:text-gray-400">
+            Last updated 3 mins ago
+          </small>
         </div>
       </div>
     </div>
