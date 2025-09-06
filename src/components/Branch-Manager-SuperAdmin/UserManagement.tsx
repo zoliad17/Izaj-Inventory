@@ -14,6 +14,7 @@ import {
 import { supabase } from "../../../backend/Server/Supabase/supabase";
 // import { use } from "echarts/types/src/extension.js";
 import toast, { Toaster } from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 // Define interface for User data
 interface User {
@@ -356,11 +357,57 @@ function UserManagement() {
     }));
   };
 
+  // Export users to Excel
+  const exportToExcel = () => {
+    try {
+      // Prepare data for export
+      const exportData = filteredUsers.map((user) => ({
+        Name: user.name,
+        Contact: user.contact,
+        Email: user.email,
+        Role: user.role_name || "N/A",
+        Branch: user.branch_name || "N/A",
+        Status: user.status || "Active",
+      }));
+
+      // Create a new workbook
+      const wb = XLSX.utils.book_new();
+
+      // Create a worksheet from the data
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Set column widths
+      const colWidths = [
+        { wch: 20 }, // Name
+        { wch: 15 }, // Contact
+        { wch: 30 }, // Email
+        { wch: 15 }, // Role
+        { wch: 20 }, // Branch
+        { wch: 10 }, // Status
+      ];
+      ws['!cols'] = colWidths;
+
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Users");
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split('T')[0];
+      const filename = `users_export_${currentDate}.xlsx`;
+
+      // Save the file
+      XLSX.writeFile(wb, filename);
+
+      toast.success(`Users exported successfully as ${filename}`);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export users to Excel");
+    }
+  };
+
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
     >
       <div className="p-2">
         {/* Toaster for success and error */}
@@ -417,7 +464,10 @@ function UserManagement() {
               <Plus size={16} />
               Add User
             </button>
-            <button className="flex items-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">
+            <button
+              onClick={exportToExcel}
+              className="flex items-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300"
+            >
               <Download size={16} />
               Export to Excel
             </button>
@@ -545,11 +595,10 @@ function UserManagement() {
                           </select>
                         ) : (
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.status === "Active"
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
                                 ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
                                 : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
-                            }`}
+                              }`}
                           >
                             {user.status || "Active"}
                           </span>
@@ -642,11 +691,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.max(prev - 1, 1))
                       }
                       disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${
-                        currentPage === 1
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === 1
                           ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                           : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                      }`}
+                        }`}
                     >
                       Previous
                     </button>
@@ -655,11 +703,10 @@ function UserManagement() {
                         <button
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === pageNum
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
                               ? "z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-200"
                               : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                          }`}
+                            }`}
                         >
                           {pageNum}
                         </button>
@@ -670,11 +717,10 @@ function UserManagement() {
                         setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                       }
                       disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${
-                        currentPage === totalPages
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === totalPages
                           ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                           : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                      }`}
+                        }`}
                     >
                       Next
                     </button>

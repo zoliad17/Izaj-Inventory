@@ -62,8 +62,6 @@ app.post("/api/products", async (req, res) => {
     branch_id: product.branch_id,
   };
 
-  console.log("Insert payload:", insertPayload);
-
   const { data, error } = await supabase
     .from("centralized_product")
     .insert([insertPayload])
@@ -72,6 +70,38 @@ app.post("/api/products", async (req, res) => {
   if (error) {
     console.error("Error inserting product:", error);
     return res.status(500).json({ error: error.message });
+  }
+
+  // Log product creation (we need to get the user ID from the request)
+  // For now, we'll log without user_id since this endpoint doesn't have authentication
+  const { error: auditError } = await supabase
+    .from("audit_logs")
+    .insert([{
+      user_id: "00000000-0000-0000-0000-000000000000", // Placeholder for system actions
+      action: "PRODUCT_CREATED",
+      description: `Product "${product.name}" created in branch ${product.branch_id}`,
+      entity_type: "centralized_product",
+      entity_id: data[0].id.toString(),
+      metadata: {
+        product_name: product.name,
+        category_id: product.category,
+        price: Number(product.price),
+        quantity: Number(product.stock),
+        status: product.status,
+        branch_id: product.branch_id
+      },
+      new_values: {
+        product_name: product.name,
+        category_id: product.category,
+        price: Number(product.price),
+        quantity: Number(product.stock),
+        status: product.status,
+        branch_id: product.branch_id
+      }
+    }]);
+
+  if (auditError) {
+    console.error("Error logging product creation audit trail:", auditError);
   }
 
   res.status(201).json(data[0]);
@@ -97,6 +127,38 @@ app.put("/api/products/:id", async (req, res) => {
   if (error) return res.status(500).json({ error: error.message });
   if (!data || data.length === 0)
     return res.status(404).json({ error: "Product not found" });
+
+  // Log product update
+  const { error: auditError } = await supabase
+    .from("audit_logs")
+    .insert([{
+      user_id: "00000000-0000-0000-0000-000000000000", // Placeholder for system actions
+      action: "PRODUCT_UPDATED",
+      description: `Product "${product.name}" updated`,
+      entity_type: "centralized_product",
+      entity_id: id,
+      metadata: {
+        product_name: product.name,
+        category_id: product.category,
+        price: Number(product.price),
+        quantity: Number(product.stock),
+        status: product.status,
+        branch_id: product.branch_id
+      },
+      new_values: {
+        product_name: product.name,
+        category_id: product.category,
+        price: Number(product.price),
+        quantity: Number(product.stock),
+        status: product.status,
+        branch_id: product.branch_id
+      }
+    }]);
+
+  if (auditError) {
+    console.error("Error logging product update audit trail:", auditError);
+  }
+
   res.json(data[0]);
 });
 
@@ -154,7 +216,25 @@ app.post("/api/login", async (req, res) => {
   if (!data.role || !data.role.role_name)
     return res.status(500).json({ error: "User role information is missing" });
 
-  console.log("Login successful for:", data.name);
+  // Log successful login
+  const { error: auditError } = await supabase
+    .from("audit_logs")
+    .insert([{
+      user_id: data.user_id,
+      action: "USER_LOGIN",
+      description: `User ${data.name} (${data.email}) logged in successfully`,
+      entity_type: "user",
+      entity_id: data.user_id,
+      metadata: {
+        user_role: data.role.role_name,
+        branch_id: data.branch_id,
+        login_method: 'email_password'
+      }
+    }]);
+
+  if (auditError) {
+    console.error("Error logging login audit trail:", auditError);
+  }
 
   res.json({
     user: data,
@@ -218,6 +298,7 @@ app.get("/api/branches/:branchId/products", async (req, res) => {
         id,
         product_name,
         quantity,
+        reserved_quantity,
         price,
         status,
         category_id,
@@ -231,10 +312,16 @@ app.get("/api/branches/:branchId/products", async (req, res) => {
 
     if (error) throw error;
 
-    const mapped = data.map((product) => ({
-      ...product,
-      category_name: product.category?.category_name || "",
-    }));
+    const mapped = data.map((product) => {
+      const availableQuantity = product.quantity - (product.reserved_quantity || 0);
+      return {
+        ...product,
+        quantity: availableQuantity, // Show available quantity instead of total
+        total_quantity: product.quantity, // Keep original total for reference
+        reserved_quantity: product.reserved_quantity || 0,
+        category_name: product.category?.category_name || "",
+      };
+    });
 
     res.json(mapped);
   } catch (error) {
@@ -251,6 +338,36 @@ app.post("/api/product-requests", async (req, res) => {
     // Validate required fields
     if (!requestFrom || !requestTo || !items || items.length === 0) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Check and reserve inventory for each item
+    const reservationResults = [];
+    for (const item of items) {
+      // Check current available quantity (total - reserved)
+      const { data: productData, error: productError } = await supabase
+        .from("centralized_product")
+        .select("quantity, reserved_quantity")
+        .eq("id", item.product_id)
+        .single();
+
+      if (productError) throw productError;
+      if (!productData) {
+        throw new Error(`Product with ID ${item.product_id} not found`);
+      }
+
+      const availableQuantity = productData.quantity - (productData.reserved_quantity || 0);
+
+      if (availableQuantity < item.quantity) {
+        return res.status(400).json({
+          error: `Insufficient inventory for product ID ${item.product_id}. Available: ${availableQuantity}, Requested: ${item.quantity}`
+        });
+      }
+
+      reservationResults.push({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        available_quantity: availableQuantity
+      });
     }
 
     // Create the main request
@@ -280,6 +397,53 @@ app.post("/api/product-requests", async (req, res) => {
 
     if (itemsError) throw itemsError;
 
+    // Reserve inventory by updating reserved_quantity
+    for (const item of items) {
+      // First get current reserved_quantity
+      const { data: productData, error: fetchError } = await supabase
+        .from("centralized_product")
+        .select("reserved_quantity")
+        .eq("id", item.product_id)
+        .single();
+
+      if (fetchError) {
+        console.error("Error fetching product data:", fetchError);
+        throw new Error("Failed to fetch product data");
+      }
+
+      const newReservedQuantity = (productData.reserved_quantity || 0) + item.quantity;
+
+      const { error: reserveError } = await supabase
+        .from("centralized_product")
+        .update({
+          reserved_quantity: newReservedQuantity
+        })
+        .eq("id", item.product_id);
+
+      if (reserveError) {
+        console.error("Error reserving inventory:", reserveError);
+        // Rollback: remove reserved quantities for already processed items
+        for (let i = 0; i < items.indexOf(item); i++) {
+          const { data: rollbackData } = await supabase
+            .from("centralized_product")
+            .select("reserved_quantity")
+            .eq("id", items[i].product_id)
+            .single();
+
+          if (rollbackData) {
+            const rollbackReservedQuantity = Math.max(0, (rollbackData.reserved_quantity || 0) - items[i].quantity);
+            await supabase
+              .from("centralized_product")
+              .update({
+                reserved_quantity: rollbackReservedQuantity
+              })
+              .eq("id", items[i].product_id);
+          }
+        }
+        throw new Error("Failed to reserve inventory");
+      }
+    }
+
     // Get requester and recipient info for email
     const { data: requesterData } = await supabase
       .from("user")
@@ -305,18 +469,31 @@ app.post("/api/product-requests", async (req, res) => {
     }
 
     // Log audit trail
-    for (const item of items) {
-      const { error: auditError } = await supabase
-        .from("audit logs")
-        .insert([{
-          user: requestFrom,
-          quantity: item.quantity,
-          action: `REQUEST_PRODUCT_${requestData.request_id}`
-        }]);
+    const { error: auditError } = await supabase
+      .from("audit_logs")
+      .insert([{
+        user_id: requestFrom,
+        action: "PRODUCT_REQUEST_CREATED",
+        description: `Product request #${requestData.request_id} created with ${items.length} items`,
+        entity_type: "product_requisition",
+        entity_id: requestData.request_id,
+        metadata: {
+          request_to: requestTo,
+          item_count: items.length,
+          total_quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+          notes: notes || null
+        },
+        new_values: {
+          items: items.map(item => ({
+            product_id: item.product_id,
+            quantity: item.quantity
+          })),
+          notes: notes || null
+        }
+      }]);
 
-      if (auditError) {
-        console.error("Error logging audit trail:", auditError);
-      }
+    if (auditError) {
+      console.error("Error logging audit trail:", auditError);
     }
 
     res.status(201).json({
@@ -489,18 +666,70 @@ app.put("/api/product-requests/:requestId/review", async (req, res) => {
 
     if (requestError) throw requestError;
 
-    // If approved, update product quantities
+    // Handle inventory updates based on action
     if (action === 'approved') {
+      // For approved requests: permanently deduct from inventory and remove reservation
       for (const item of requestData.items) {
+        // First get current values
+        const { data: productData, error: fetchError } = await supabase
+          .from("centralized_product")
+          .select("quantity, reserved_quantity")
+          .eq("id", item.product_id)
+          .single();
+
+        if (fetchError) {
+          console.error("Error fetching product data:", fetchError);
+          continue;
+        }
+
+        // Calculate new values
+        const newQuantity = Math.max(0, productData.quantity - item.quantity);
+        const newReservedQuantity = Math.max(0, (productData.reserved_quantity || 0) - item.quantity);
+
+        // Update with calculated values
         const { error: updateError } = await supabase
           .from("centralized_product")
           .update({
-            quantity: supabase.raw(`quantity - ${item.quantity}`)
+            quantity: newQuantity,
+            reserved_quantity: newReservedQuantity
           })
           .eq("id", item.product_id);
 
         if (updateError) {
           console.error("Error updating product quantity:", updateError);
+          // Continue with other items even if one fails
+        }
+      }
+    } else if (action === 'denied') {
+      // For denied requests: restore reserved quantity back to available inventory
+      for (const item of requestData.items) {
+        // First get current values
+        const { data: productData, error: fetchError } = await supabase
+          .from("centralized_product")
+          .select("quantity, reserved_quantity")
+          .eq("id", item.product_id)
+          .single();
+
+        if (fetchError) {
+          console.error("Error fetching product data:", fetchError);
+          continue;
+        }
+
+        // Calculate new values - restore reserved quantity to available
+        const newQuantity = productData.quantity + item.quantity;
+        const newReservedQuantity = Math.max(0, (productData.reserved_quantity || 0) - item.quantity);
+
+        // Update with calculated values
+        const { error: restoreError } = await supabase
+          .from("centralized_product")
+          .update({
+            quantity: newQuantity,
+            reserved_quantity: newReservedQuantity
+          })
+          .eq("id", item.product_id);
+
+        if (restoreError) {
+          console.error("Error restoring reserved quantity:", restoreError);
           // Continue with other items even if one fails
         }
       }
@@ -533,18 +762,35 @@ app.put("/api/product-requests/:requestId/review", async (req, res) => {
     }
 
     // Log audit trail
-    for (const item of requestData.items) {
-      const { error: auditError } = await supabase
-        .from("audit logs")
-        .insert([{
-          user: reviewedBy,
-          quantity: item.quantity,
-          action: `${action.toUpperCase()}_REQUEST_${requestId}`
-        }]);
+    const { error: auditError } = await supabase
+      .from("audit_logs")
+      .insert([{
+        user_id: reviewedBy,
+        action: action === 'approved' ? "PRODUCT_REQUEST_APPROVED" : "PRODUCT_REQUEST_DENIED",
+        description: `Request #${requestId} ${action} by ${reviewerData?.name || 'Unknown'}`,
+        entity_type: "product_requisition",
+        entity_id: requestId,
+        metadata: {
+          original_requester: requestData.request_from,
+          item_count: requestData.items.length,
+          total_quantity: requestData.items.reduce((sum, item) => sum + item.quantity, 0),
+          reviewer_notes: notes || null
+        },
+        old_values: {
+          status: 'pending',
+          reviewed_by: null,
+          reviewed_at: null
+        },
+        new_values: {
+          status: action,
+          reviewed_by: reviewedBy,
+          reviewed_at: new Date().toISOString(),
+          notes: notes || null
+        }
+      }]);
 
-      if (auditError) {
-        console.error("Error logging audit trail:", auditError);
-      }
+    if (auditError) {
+      console.error("Error logging audit trail:", auditError);
     }
 
     res.json({
@@ -554,6 +800,89 @@ app.put("/api/product-requests/:requestId/review", async (req, res) => {
 
   } catch (error) {
     console.error("Error reviewing product request:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET pending requests for a specific branch (for Branch Managers)
+app.get("/api/product-requests/pending-for-branch/:branchId", async (req, res) => {
+  try {
+    const { branchId } = req.params;
+
+    // First, get the branch manager for this branch
+    const { data: roleData } = await supabase
+      .from("role")
+      .select("id")
+      .eq("role_name", "Branch Manager")
+      .single();
+
+    if (!roleData) {
+      return res.status(404).json({ error: "Branch Manager role not found" });
+    }
+
+    const { data: branchManagerData } = await supabase
+      .from("user")
+      .select("user_id")
+      .eq("branch_id", branchId)
+      .eq("role_id", roleData.id)
+      .single();
+
+    if (!branchManagerData) {
+      return res.status(404).json({ error: "No Branch Manager found for this branch" });
+    }
+
+    // Get pending requests for this branch manager
+    const { data, error } = await supabase
+      .from("product_requisition")
+      .select(`
+        request_id,
+        request_from,
+        status,
+        created_at,
+        notes,
+        requester:request_from (
+          name,
+          email,
+          branch_id,
+          branch:branch_id (
+            location
+          )
+        ),
+        items:product_requisition_items (
+          id,
+          quantity,
+          product:product_id (
+            id,
+            product_name,
+            price,
+            category_id,
+            category:category_id (
+              category_name
+            )
+          )
+        )
+      `)
+      .eq("request_to", branchManagerData.user_id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Transform the data
+    const transformedData = data.map(request => ({
+      ...request,
+      requester_branch: request.requester?.branch?.location || "Unknown Branch",
+      items: request.items.map(item => ({
+        ...item,
+        product_name: item.product?.product_name || "Unknown Product",
+        price: item.product?.price || 0,
+        category_name: item.product?.category?.category_name || "Unknown Category"
+      }))
+    }));
+
+    res.json(transformedData);
+  } catch (error) {
+    console.error("Error fetching pending requests for branch:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -627,6 +956,178 @@ app.get("/api/product-requests/all", async (req, res) => {
   } catch (error) {
     console.error("Error fetching all requests:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// GET audit logs for admin (all users)
+app.get("/api/audit-logs", async (req, res) => {
+  try {
+    const { page = 1, limit = 10, action, user_id, entity_type, start_date, end_date } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from("audit_logs")
+      .select(`
+        *,
+        user:user_id (
+          name,
+          email,
+          role:role_id (
+            role_name
+          ),
+          branch:branch_id (
+            location
+          )
+        )
+      `)
+      .order('timestamp', { ascending: false });
+
+    // Apply filters
+    if (action) {
+      query = query.eq('action', action);
+    }
+    if (user_id) {
+      query = query.eq('user_id', user_id);
+    }
+    if (entity_type) {
+      query = query.eq('entity_type', entity_type);
+    }
+    if (start_date) {
+      query = query.gte('timestamp', start_date);
+    }
+    if (end_date) {
+      query = query.lte('timestamp', end_date);
+    }
+
+    // Get total count for pagination
+    const { count } = await query.select('*', { count: 'exact', head: true });
+
+    // Get paginated results
+    const { data, error } = await query
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    res.json({
+      logs: data || [],
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
+// GET audit logs for specific user
+app.get("/api/audit-logs/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 10, action, entity_type, start_date, end_date } = req.query;
+    const offset = (page - 1) * limit;
+
+    let query = supabase
+      .from("audit_logs")
+      .select(`
+        *,
+        user:user_id (
+          name,
+          email,
+          role:role_id (
+            role_name
+          ),
+          branch:branch_id (
+            location
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false });
+
+    // Apply filters
+    if (action) {
+      query = query.eq('action', action);
+    }
+    if (entity_type) {
+      query = query.eq('entity_type', entity_type);
+    }
+    if (start_date) {
+      query = query.gte('timestamp', start_date);
+    }
+    if (end_date) {
+      query = query.lte('timestamp', end_date);
+    }
+
+    // Get total count for pagination
+    const { count } = await query.select('*', { count: 'exact', head: true });
+
+    // Get paginated results
+    const { data, error } = await query
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    res.json({
+      logs: data || [],
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching user audit logs:", error);
+    res.status(500).json({ error: "Failed to fetch user audit logs" });
+  }
+});
+
+// GET audit log statistics
+app.get("/api/audit-logs/stats", async (req, res) => {
+  try {
+    const { start_date, end_date } = req.query;
+
+    let query = supabase
+      .from("audit_logs")
+      .select('action, timestamp, user_id');
+
+    if (start_date) {
+      query = query.gte('timestamp', start_date);
+    }
+    if (end_date) {
+      query = query.lte('timestamp', end_date);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Calculate statistics
+    const stats = {
+      total_actions: data.length,
+      actions_by_type: {},
+      actions_by_user: {},
+      recent_activity: data
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(0, 10)
+    };
+
+    data.forEach(log => {
+      // Count by action type
+      stats.actions_by_type[log.action] = (stats.actions_by_type[log.action] || 0) + 1;
+
+      // Count by user
+      stats.actions_by_user[log.user_id] = (stats.actions_by_user[log.user_id] || 0) + 1;
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching audit log statistics:", error);
+    res.status(500).json({ error: "Failed to fetch audit log statistics" });
   }
 });
 
@@ -905,6 +1406,26 @@ app.post("/api/complete_user_setup", async (req, res) => {
       // Don't fail the request, just log the error
     }
 
+    // Log user setup completion
+    const { error: auditError } = await supabase
+      .from("audit_logs")
+      .insert([{
+        user_id: newUser[0].user_id,
+        action: "USER_SETUP_COMPLETED",
+        description: `User ${newUser[0].name} (${newUser[0].email}) completed account setup`,
+        entity_type: "user",
+        entity_id: newUser[0].user_id,
+        metadata: {
+          role_id: newUser[0].role_id,
+          branch_id: newUser[0].branch_id,
+          setup_method: 'email_token'
+        }
+      }]);
+
+    if (auditError) {
+      console.error("Error logging user setup audit trail:", auditError);
+    }
+
     res.json({
       message: "User setup completed successfully",
       user: newUser[0]
@@ -1092,6 +1613,25 @@ app.post("/api/reset-password", async (req, res) => {
         error: "Failed to reset password",
         details: updateError,
       });
+    }
+
+    // Log password reset
+    const { error: auditError } = await supabase
+      .from("audit_logs")
+      .insert([{
+        user_id: user.user_id,
+        action: "PASSWORD_RESET",
+        description: `Password reset completed for user ${user.email}`,
+        entity_type: "user",
+        entity_id: user.user_id,
+        metadata: {
+          reset_method: 'email_token',
+          email: user.email
+        }
+      }]);
+
+    if (auditError) {
+      console.error("Error logging password reset audit trail:", auditError);
     }
 
     res.json({

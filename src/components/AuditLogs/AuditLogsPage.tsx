@@ -21,17 +21,30 @@ import { useSidebar } from "../Sidebar/SidebarContext";
 import { useNavigate } from "react-router-dom";
 
 interface AuditLog {
-  id: string;
-  timestamp: Date;
-  action: "REQUEST" | "APPROVE" | "REJECT" | "TRANSFER" | "RECEIVE";
-  productId: string;
-  productName: string;
-  quantity: number;
-  fromBranch: string;
-  toBranch: string;
-  userId: string;
-  userName: string;
+  id: number;
+  user_id: string;
+  action: string;
+  description: string;
+  metadata?: any;
+  entity_type?: string;
+  entity_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  old_values?: any;
+  new_values?: any;
   notes?: string;
+  timestamp: string;
+  created_at: string;
+  user?: {
+    name: string;
+    email: string;
+    role?: {
+      role_name: string;
+    };
+    branch?: {
+      location: string;
+    };
+  };
 }
 
 const AuditLogsPage = () => {
@@ -42,7 +55,8 @@ const AuditLogsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAction, setSelectedAction] = useState<string>("ALL");
-  const [selectedBranch, setSelectedBranch] = useState<string>("ALL");
+  const [selectedUser, setSelectedUser] = useState<string>("ALL");
+  const [selectedEntityType, setSelectedEntityType] = useState<string>("ALL");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof AuditLog;
     direction: "ascending" | "descending";
@@ -54,189 +68,72 @@ const AuditLogsPage = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Mock data - replace with your API call
+  // Fetch audit logs from API
   useEffect(() => {
     const fetchLogs = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 800));
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+        });
 
-        const mockLogs: AuditLog[] = [
-          // ... (your existing mock data)
-          // Adding more items to demonstrate pagination
-          {
-            id: "6",
-            timestamp: new Date("2023-06-09T08:20:00"),
-            action: "REQUEST",
-            productId: "LAMP-3045",
-            productName: "LED Downlight 10W",
-            quantity: 15,
-            fromBranch: "Batangas",
-            toBranch: "Laguna",
-            userId: "user-101",
-            userName: "Alex Garcia",
-            notes: "For office renovation",
-          },
-          {
-            id: "7",
-            timestamp: new Date("2023-06-08T13:45:00"),
-            action: "APPROVE",
-            productId: "LAMP-3045",
-            productName: "LED Downlight 10W",
-            quantity: 15,
-            fromBranch: "Batangas",
-            toBranch: "Laguna",
-            userId: "user-789",
-            userName: "Sarah Johnson",
-          },
-          {
-            id: "8",
-            timestamp: new Date("2023-06-07T10:30:00"),
-            action: "TRANSFER",
-            productId: "BULB-3344",
-            productName: "Smart Bulb White",
-            quantity: 20,
-            fromBranch: "Lucena",
-            toBranch: "Laguna",
-            userId: "user-123",
-            userName: "Mike Brown",
-          },
-          {
-            id: "9",
-            timestamp: new Date("2023-06-06T16:20:00"),
-            action: "RECEIVE",
-            productId: "BULB-3344",
-            productName: "Smart Bulb White",
-            quantity: 20,
-            fromBranch: "Lucena",
-            toBranch: "Laguna",
-            userId: "user-456",
-            userName: "John Smith",
-          },
-          {
-            id: "10",
-            timestamp: new Date("2023-06-05T11:15:00"),
-            action: "REQUEST",
-            productId: "STRIP-7788",
-            productName: "LED Strip 10m",
-            quantity: 5,
-            fromBranch: "Laguna",
-            toBranch: "Batangas",
-            userId: "user-101",
-            userName: "Alex Garcia",
-            notes: "For showroom decoration",
-          },
-          {
-            id: "11",
-            timestamp: new Date("2023-06-04T09:45:00"),
-            action: "REJECT",
-            productId: "STRIP-7788",
-            productName: "LED Strip 10m",
-            quantity: 5,
-            fromBranch: "Laguna",
-            toBranch: "Batangas",
-            userId: "user-789",
-            userName: "Sarah Johnson",
-            notes: "Backordered until next week",
-          },
-          {
-            id: "12",
-            timestamp: new Date("2023-06-03T14:30:00"),
-            action: "TRANSFER",
-            productId: "LAMP-2034",
-            productName: "LED Panel Light 60x60",
-            quantity: 3,
-            fromBranch: "Batangas",
-            toBranch: "Lucena",
-            userId: "user-123",
-            userName: "Mike Brown",
-          },
-          {
-            id: "13",
-            timestamp: new Date("2023-06-02T16:50:00"),
-            action: "RECEIVE",
-            productId: "LAMP-2034",
-            productName: "LED Panel Light 60x60",
-            quantity: 3,
-            fromBranch: "Batangas",
-            toBranch: "Lucena",
-            userId: "user-456",
-            userName: "John Smith",
-          },
-          {
-            id: "14",
-            timestamp: new Date("2023-06-01T10:20:00"),
-            action: "REQUEST",
-            productId: "BULB-1122",
-            productName: "Smart Bulb RGB",
-            quantity: 8,
-            fromBranch: "Lucena",
-            toBranch: "Batangas",
-            userId: "user-101",
-            userName: "Alex Garcia",
-          },
-          {
-            id: "15",
-            timestamp: new Date("2023-05-31T15:10:00"),
-            action: "APPROVE",
-            productId: "BULB-1122",
-            productName: "Smart Bulb RGB",
-            quantity: 8,
-            fromBranch: "Lucena",
-            toBranch: "Batangas",
-            userId: "user-789",
-            userName: "Sarah Johnson",
-          },
-        ];
+        if (selectedAction !== "ALL") {
+          params.append("action", selectedAction);
+        }
+        if (selectedUser !== "ALL") {
+          params.append("user_id", selectedUser);
+        }
+        if (selectedEntityType !== "ALL") {
+          params.append("entity_type", selectedEntityType);
+        }
 
-        setLogs(mockLogs);
-        setFilteredLogs(mockLogs);
+        const response = await fetch(`http://localhost:5000/api/audit-logs?${params}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch audit logs");
+        }
+
+        const data = await response.json();
+        setLogs(data.logs || []);
+        setFilteredLogs(data.logs || []);
+        setTotalPages(data.pagination?.pages || 0);
+        setTotalItems(data.pagination?.total || 0);
       } catch (error) {
         console.error("Failed to fetch audit logs:", error);
+        setLogs([]);
+        setFilteredLogs([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLogs();
-  }, []);
+  }, [currentPage, itemsPerPage, selectedAction, selectedUser, selectedEntityType]);
 
-  // Apply filters and search
+  // Apply client-side search filter
   useEffect(() => {
-    let result = [...logs];
-
-    // Apply search
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (log) =>
-          log.productName.toLowerCase().includes(term) ||
-          log.productId.toLowerCase().includes(term) ||
-          log.userName.toLowerCase().includes(term) ||
-          log.fromBranch.toLowerCase().includes(term) ||
-          log.toBranch.toLowerCase().includes(term) ||
-          (log.notes && log.notes.toLowerCase().includes(term))
-      );
+    if (!searchTerm) {
+      setFilteredLogs(logs);
+      return;
     }
 
-    // Apply action filter
-    if (selectedAction !== "ALL") {
-      result = result.filter((log) => log.action === selectedAction);
-    }
-
-    // Apply branch filter
-    if (selectedBranch !== "ALL") {
-      result = result.filter(
-        (log) =>
-          log.fromBranch === selectedBranch || log.toBranch === selectedBranch
-      );
-    }
+    const term = searchTerm.toLowerCase();
+    const result = logs.filter(
+      (log) =>
+        log.description.toLowerCase().includes(term) ||
+        log.action.toLowerCase().includes(term) ||
+        log.user?.name?.toLowerCase().includes(term) ||
+        log.user?.email?.toLowerCase().includes(term) ||
+        log.entity_type?.toLowerCase().includes(term) ||
+        log.entity_id?.toLowerCase().includes(term) ||
+        (log.notes && log.notes.toLowerCase().includes(term))
+    );
 
     setFilteredLogs(result);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [logs, searchTerm, selectedAction, selectedBranch]);
+  }, [logs, searchTerm]);
 
   // Sort logs
   const sortedLogs = [...filteredLogs].sort((a, b) => {
@@ -252,11 +149,8 @@ const AuditLogsPage = () => {
     return 0;
   });
 
-  // Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = sortedLogs.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedLogs.length / itemsPerPage);
+  // Pagination logic - now handled server-side
+  const currentItems = sortedLogs;
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -269,44 +163,60 @@ const AuditLogsPage = () => {
   };
 
   const getActionColor = (action: string) => {
-    switch (action) {
-      case "REQUEST":
-        return "bg-blue-100 text-blue-800";
-      case "APPROVE":
-        return "bg-green-100 text-green-800";
-      case "REJECT":
-        return "bg-red-100 text-red-800";
-      case "TRANSFER":
-        return "bg-purple-100 text-purple-800";
-      case "RECEIVE":
-        return "bg-teal-100 text-teal-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    if (action.includes("LOGIN")) return "bg-blue-100 text-blue-800";
+    if (action.includes("SETUP")) return "bg-green-100 text-green-800";
+    if (action.includes("REQUEST_CREATED")) return "bg-yellow-100 text-yellow-800";
+    if (action.includes("APPROVED")) return "bg-green-100 text-green-800";
+    if (action.includes("DENIED")) return "bg-red-100 text-red-800";
+    if (action.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
+    if (action.includes("RECEIVE")) return "bg-teal-100 text-teal-800";
+    return "bg-gray-100 text-gray-800";
   };
 
   const getActionIcon = (action: string) => {
-    switch (action) {
-      case "REQUEST":
-        return <Package className="w-4 h-4" />;
-      case "APPROVE":
-        return <ChevronUp className="w-4 h-4" />;
-      case "REJECT":
-        return <ChevronDown className="w-4 h-4" />;
-      case "TRANSFER":
-        return <Building className="w-4 h-4" />;
-      case "RECEIVE":
-        return <Package className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
+    if (action.includes("LOGIN")) return <User className="w-4 h-4" />;
+    if (action.includes("SETUP")) return <ChevronUp className="w-4 h-4" />;
+    if (action.includes("REQUEST_CREATED")) return <Package className="w-4 h-4" />;
+    if (action.includes("APPROVED")) return <ChevronUp className="w-4 h-4" />;
+    if (action.includes("DENIED")) return <ChevronDown className="w-4 h-4" />;
+    if (action.includes("TRANSFER")) return <Building className="w-4 h-4" />;
+    if (action.includes("RECEIVE")) return <Package className="w-4 h-4" />;
+    return <Clock className="w-4 h-4" />;
   };
 
   const refreshLogs = async () => {
     setIsLoading(true);
-    // In a real app, you would fetch fresh data here
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setIsLoading(false);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+      });
+
+      if (selectedAction !== "ALL") {
+        params.append("action", selectedAction);
+      }
+      if (selectedUser !== "ALL") {
+        params.append("user_id", selectedUser);
+      }
+      if (selectedEntityType !== "ALL") {
+        params.append("entity_type", selectedEntityType);
+      }
+
+      const response = await fetch(`http://localhost:5000/api/audit-logs?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch audit logs");
+      }
+
+      const data = await response.json();
+      setLogs(data.logs || []);
+      setFilteredLogs(data.logs || []);
+      setTotalPages(data.pagination?.pages || 0);
+      setTotalItems(data.pagination?.total || 0);
+    } catch (error) {
+      console.error("Failed to refresh audit logs:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Generate page numbers for pagination
@@ -353,9 +263,8 @@ const AuditLogsPage = () => {
 
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
     >
       <div className="container mx-auto px-4 py-6 bg-white rounded-lg mb-3.5 shadow-md">
         {/* Header */}
@@ -410,7 +319,7 @@ const AuditLogsPage = () => {
 
         {/* Filters */}
         <div className="bg-white mt-2.5 p-4 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -436,28 +345,43 @@ const AuditLogsPage = () => {
                 onChange={(e) => setSelectedAction(e.target.value)}
               >
                 <option value="ALL">All Actions</option>
-                <option value="REQUEST">Request</option>
-                <option value="APPROVE">Approve</option>
-                <option value="REJECT">Reject</option>
-                <option value="TRANSFER">Transfer</option>
-                <option value="RECEIVE">Receive</option>
+                <option value="USER_LOGIN">Login</option>
+                <option value="USER_SETUP_COMPLETED">User Setup</option>
+                <option value="PRODUCT_REQUEST_CREATED">Request Created</option>
+                <option value="PRODUCT_REQUEST_APPROVED">Request Approved</option>
+                <option value="PRODUCT_REQUEST_DENIED">Request Denied</option>
               </select>
             </div>
 
-            {/* Branch Filter */}
+            {/* User Filter */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+              >
+                <option value="ALL">All Users</option>
+                {/* This would be populated from a users API call */}
+              </select>
+            </div>
+
+            {/* Entity Type Filter */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Building className="h-5 w-5 text-gray-400" />
               </div>
               <select
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={selectedBranch}
-                onChange={(e) => setSelectedBranch(e.target.value)}
+                value={selectedEntityType}
+                onChange={(e) => setSelectedEntityType(e.target.value)}
               >
-                <option value="ALL">All Branches</option>
-                <option value="Lucena">Lucena</option>
-                <option value="Batangas">Batangas</option>
-                <option value="Laguna">Laguna</option>
+                <option value="ALL">All Entities</option>
+                <option value="user">User</option>
+                <option value="product_requisition">Product Request</option>
+                <option value="centralized_product">Product</option>
               </select>
             </div>
           </div>
@@ -515,23 +439,23 @@ const AuditLogsPage = () => {
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        Product
+                        Description
                       </th>
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        Branches
+                        Entity
                       </th>
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                        onClick={() => requestSort("userName")}
+                        onClick={() => requestSort("user")}
                       >
                         <div className="flex items-center">
                           <User className="w-4 h-4 mr-2" />
                           User
-                          {sortConfig.key === "userName" &&
+                          {sortConfig.key === "user" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
                             ) : (
@@ -543,7 +467,7 @@ const AuditLogsPage = () => {
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
-                        Notes
+                        Details
                       </th>
                     </tr>
                   </thead>
@@ -552,10 +476,10 @@ const AuditLogsPage = () => {
                       <tr key={log.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {log.timestamp.toLocaleDateString()}
+                            {new Date(log.timestamp).toLocaleDateString()}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {log.timestamp.toLocaleTimeString()}
+                            {new Date(log.timestamp).toLocaleTimeString()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -566,39 +490,60 @@ const AuditLogsPage = () => {
                           >
                             <div className="flex items-center">
                               {getActionIcon(log.action)}
-                              <span className="ml-1">{log.action}</span>
+                              <span className="ml-1">{log.action.replace(/_/g, ' ')}</span>
                             </div>
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {log.productName}
+                          <div className="text-sm font-medium text-gray-900 max-w-xs">
+                            {log.description}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {log.productId} • Qty: {log.quantity}
-                          </div>
+                          {log.notes && (
+                            <div className="text-sm text-gray-500">
+                              Note: {log.notes}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900">
-                            <span className="font-medium">From:</span>{" "}
-                            {log.fromBranch}
+                            <span className="font-medium">Type:</span> {log.entity_type || "—"}
                           </div>
-                          <div className="text-sm text-gray-900">
-                            <span className="font-medium">To:</span>{" "}
-                            {log.toBranch}
+                          <div className="text-sm text-gray-500">
+                            <span className="font-medium">ID:</span> {log.entity_id || "—"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">
-                            {log.userName}
+                            {log.user?.name || "Unknown"}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {log.userId}
+                            {log.user?.email || log.user_id}
                           </div>
+                          {log.user?.role?.role_name && (
+                            <div className="text-xs text-blue-600">
+                              {log.user.role.role_name}
+                            </div>
+                          )}
+                          {log.user?.branch?.location && (
+                            <div className="text-xs text-gray-500">
+                              {log.user.branch.location}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500 max-w-xs truncate">
-                            {log.notes || "—"}
+                          <div className="text-sm text-gray-500 max-w-xs">
+                            {log.metadata && Object.keys(log.metadata).length > 0 ? (
+                              <details className="cursor-pointer">
+                                <summary className="text-blue-600 hover:text-blue-800">
+                                  View Details
+                                </summary>
+                                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                                  {JSON.stringify(log.metadata, null, 2)}
+                                </pre>
+                              </details>
+                            ) : (
+                              "—"
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -632,14 +577,14 @@ const AuditLogsPage = () => {
                     <p className="text-sm text-gray-700">
                       Showing{" "}
                       <span className="font-medium">
-                        {indexOfFirstItem + 1}
+                        {((currentPage - 1) * itemsPerPage) + 1}
                       </span>{" "}
                       to{" "}
                       <span className="font-medium">
-                        {Math.min(indexOfLastItem, sortedLogs.length)}
+                        {Math.min(currentPage * itemsPerPage, totalItems)}
                       </span>{" "}
                       of{" "}
-                      <span className="font-medium">{sortedLogs.length}</span>{" "}
+                      <span className="font-medium">{totalItems}</span>{" "}
                       results
                     </p>
                   </div>
@@ -677,11 +622,10 @@ const AuditLogsPage = () => {
                           <button
                             key={number}
                             onClick={() => paginate(number)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === number
-                                ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                            }`}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number
+                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                              }`}
                           >
                             {number}
                           </button>

@@ -30,6 +30,7 @@ import ProductTable from "./components/Branch/ProductTable";
 import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
 import AddBranchPage from "./components/Branch-Manager-SuperAdmin/AddBranchPage";
 import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
+import UserAuditLogsPage from "./components/AuditLogs/UserAuditLogsPage";
 import { ThemeProvider } from "./components/ThemeContext/ThemeContext";
 
 
@@ -60,6 +61,7 @@ const routeRoles: Record<string, UserRole[]> = {
   addUser: ["Super Admin", "Branch Manager"],
   userManagement: ["Super Admin", "Branch Manager"],
   auditlogs: ["Super Admin", "Branch Manager"],
+  myActivity: ["Admin", "Branch Manager", "Super Admin"],
 };
 
 // Layout component that includes the Sidebar
@@ -245,6 +247,17 @@ const App: React.FC = () => {
                 <ProtectedRoute allowedRoles={routeRoles.auditlogs}>
                   <Layout>
                     <AuditLogsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/my-activity"
+              element={
+                <ProtectedRoute allowedRoles={routeRoles.myActivity}>
+                  <Layout>
+                    <UserAuditLogsPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     ChevronLeft,
     ChevronRight,
     Filter,
     ArrowLeft,
-    Plus,
     Trash2,
     Package,
     MapPin,
@@ -21,7 +20,9 @@ import { toast } from 'react-hot-toast';
 interface Product {
     id: number;
     product_name: string;
-    quantity: number;
+    quantity: number; // Available quantity (total - reserved)
+    total_quantity: number; // Total quantity in inventory
+    reserved_quantity: number; // Currently reserved quantity
     price: number;
     category_name: string;
     status: string;
@@ -42,11 +43,6 @@ interface User {
     branch_id: number;
 }
 
-interface Branch {
-    id: number;
-    location: string;
-    address?: string;
-}
 
 export default function UnifiedProductRequest() {
     const { branchId } = useParams<{ branchId: string }>();
@@ -173,7 +169,7 @@ export default function UnifiedProductRequest() {
             product_id: product.id,
             product_name: product.product_name,
             quantity: 1,
-            available_quantity: product.quantity,
+            available_quantity: product.quantity, // Available quantity (total - reserved)
             price: product.price,
             category_name: product.category_name
         };
@@ -215,12 +211,26 @@ export default function UnifiedProductRequest() {
 
             // Find the branch manager of the selected branch
             const branchManagerResponse = await fetch(`http://localhost:5000/api/users?branch_id=${branchId}`);
-            if (!branchManagerResponse.ok) throw new Error('Failed to fetch users');
+
+            if (!branchManagerResponse.ok) {
+                throw new Error('Failed to fetch users');
+            }
 
             const users = await branchManagerResponse.json();
-            const branchManager = users.find((user: any) =>
+
+            // Get the role information for each user
+            const usersWithRoles = await Promise.all(users.map(async (user: any) => {
+                const { data: roleData } = await supabase
+                    .from('role')
+                    .select('role_name')
+                    .eq('id', user.role_id)
+                    .single();
+                return { ...user, role_name: roleData?.role_name };
+            }));
+
+            const branchManager = usersWithRoles.find((user: any) =>
                 user.branch_id === Number(branchId) &&
-                (user.role?.role_name === 'Branch Manager' || user.role?.role_name === 'BranchManager')
+                (user.role_name === 'Branch Manager' || user.role_name === 'BranchManager')
             );
 
             if (!branchManager) {
@@ -309,6 +319,12 @@ export default function UnifiedProductRequest() {
                                 <p className="text-gray-600 mt-1">
                                     Browse available products and add them to your request
                                 </p>
+                                <div className="mt-2 text-sm text-gray-500 bg-blue-50 p-2 rounded-md">
+                                    <strong>Inventory Legend:</strong>
+                                    <span className="text-green-600 ml-2">Available</span> = Ready to request,
+                                    <span className="text-orange-600 ml-2">Reserved</span> = Pending approval,
+                                    <span className="text-blue-600 ml-2">Total</span> = Complete inventory
+                                </div>
                             </div>
                         </div>
 
@@ -412,6 +428,12 @@ export default function UnifiedProductRequest() {
                                         Available
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Reserved
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Total
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Status
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -438,7 +460,13 @@ export default function UnifiedProductRequest() {
                                                     ₱{product.price.toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {product.quantity}
+                                                    <span className="font-medium text-green-600">{product.quantity}</span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span className="font-medium text-orange-600">{product.reserved_quantity || 0}</span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <span className="font-medium text-blue-600">{product.total_quantity || product.quantity}</span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === 'In Stock' ? 'bg-green-100 text-green-800' :
@@ -469,7 +497,7 @@ export default function UnifiedProductRequest() {
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                                        <td colSpan={9} className="px-6 py-4 text-center text-sm text-gray-500">
                                             No products found
                                         </td>
                                     </tr>
