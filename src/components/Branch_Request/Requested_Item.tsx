@@ -15,6 +15,7 @@ import {
 import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../Sidebar/SidebarContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface RequestItem {
   id: number;
@@ -41,24 +42,24 @@ interface SentRequest {
   items: RequestItem[];
 }
 
-interface User {
-  user_id: string;
-  name: string;
-  branch_id: number;
-}
 
 export default function Requested_Item() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [requests, setRequests] = useState<SentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<SentRequest | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
+  // Check authentication
   useEffect(() => {
-    loadCurrentUser();
-  }, []);
+    if (!isAuthenticated || !currentUser) {
+      console.error('User not authenticated or user data missing');
+      toast.error('Please log in to continue');
+      navigate('/login');
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   useEffect(() => {
     if (currentUser) {
@@ -66,28 +67,20 @@ export default function Requested_Item() {
     }
   }, [currentUser]);
 
-  const loadCurrentUser = async () => {
-    try {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
-      }
-    } catch (error) {
-      console.error('Error loading current user:', error);
-      toast.error('Failed to load user data');
-    }
-  };
-
   const loadSentRequests = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping loadSentRequests');
+      return;
+    }
 
     try {
+      console.log('Loading sent requests for user:', currentUser.user_id);
       setIsLoading(true);
       const response = await fetch(`http://localhost:5000/api/product-requests/sent/${currentUser.user_id}`);
       if (!response.ok) throw new Error('Failed to fetch sent requests');
 
       const data = await response.json();
+      console.log('Sent requests loaded:', data);
       setRequests(data);
     } catch (error) {
       console.error('Error loading sent requests:', error);
@@ -178,6 +171,9 @@ export default function Requested_Item() {
               <p className="text-gray-600 dark:text-gray-400 mt-1">
                 Track the status of your product requests to other branches
               </p>
+              <div className="mt-2 text-sm text-gray-500 bg-green-50 dark:bg-green-900/30 p-2 rounded-md">
+                <strong>📊 Request Status:</strong> Monitor your outgoing requests and see when they're approved, denied, or still pending review.
+              </div>
             </div>
           </div>
           <div className="flex justify-end mb-4">
@@ -196,7 +192,22 @@ export default function Requested_Item() {
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Sent Requests</h3>
-              <p className="text-gray-600 dark:text-gray-400">You haven't sent any product requests yet.</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">You haven't sent any product requests yet.</p>
+              <div className="text-sm text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md max-w-md mx-auto">
+                <strong>🚀 Ready to request products?</strong>
+                <ul className="mt-1 text-left space-y-1">
+                  <li>• Browse products from other branches</li>
+                  <li>• Add items to your request cart</li>
+                  <li>• Submit for Branch Manager approval</li>
+                  <li>• Track your requests here</li>
+                </ul>
+                <button
+                  onClick={() => navigate('/branch_location')}
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Browse Products
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

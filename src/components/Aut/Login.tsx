@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import { useAuth } from "../../contexts/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -10,40 +11,25 @@ function Login() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [sendingReset, setSendingReset] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated, isLoading } = useAuth();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setError("");
 
-    try {
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const result = await response.json();
+    const result = await login(email, password);
 
-      if (!response.ok) throw new Error(result.error || "Login failed");
-
-      const { user, role, branchId } = result;
-
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", role);
-      localStorage.setItem("user", JSON.stringify(user));
-      if (branchId) localStorage.setItem("branchId", branchId);
-
-      // Redirect based on role
-      switch (role) {
-        case "Branch Manager":
-        case "Super Admin":
-        default:
-          navigate("/dashboard");
-          break;
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err instanceof Error ? err.message : "Login failed");
+    if (!result.success) {
+      setError(result.error || "Login failed");
     }
+    // Navigation is handled by useEffect when isAuthenticated changes
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -51,22 +37,20 @@ function Login() {
     setSendingReset(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail }),
-      });
-      const result = await response.json();
+      // Import api here to avoid circular dependency
+      const { api } = await import("../../utils/apiClient");
+      const { error } = await api.forgotPassword(forgotEmail);
 
-      if (!response.ok) throw new Error(result.error || "Failed to send reset email");
+      if (error) {
+        toast.error(error);
+        return;
+      }
 
       toast.success("If an account with this email exists, a password reset link has been sent.");
       setShowForgotPassword(false);
       setForgotEmail("");
-
     } catch (err) {
-      console.error("Forgot password error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to send reset email");
+      toast.error("Failed to send reset email. Please try again.");
     } finally {
       setSendingReset(false);
     }
@@ -160,10 +144,11 @@ function Login() {
                   </div>
                   <div className="flex items-center justify-between">
                     <button
-                      className="bg-amber-500 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded focus:outline-none cursor-pointer focus:shadow-outline"
+                      className="bg-amber-500 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded focus:outline-none cursor-pointer focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
                       type="submit"
+                      disabled={isLoading}
                     >
-                      Sign In
+                      {isLoading ? "Signing In..." : "Sign In"}
                     </button>
                     <button
                       type="button"

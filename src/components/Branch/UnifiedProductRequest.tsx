@@ -14,8 +14,9 @@ import {
     XCircle
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { supabase } from '../../../backend/Server/Supabase/supabase';
+import { api } from '../../utils/apiClient';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Product {
     id: number;
@@ -37,21 +38,18 @@ interface RequestItem {
     category_name: string;
 }
 
-interface User {
-    user_id: string;
-    name: string;
-    branch_id: number;
-}
 
 
 export default function UnifiedProductRequest() {
     const { branchId } = useParams<{ branchId: string }>();
     const navigate = useNavigate();
+    const { user: currentUser, isAuthenticated } = useAuth();
 
     // State for products and branch info
     const [products, setProducts] = useState<Product[]>([]);
     const [branchName, setBranchName] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
+    const [branchLoading, setBranchLoading] = useState(true);
 
     // State for filtering and search
     const [searchTerm, setSearchTerm] = useState('');
@@ -66,67 +64,101 @@ export default function UnifiedProductRequest() {
     const [requestItems, setRequestItems] = useState<RequestItem[]>([]);
     const [notes, setNotes] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [showRequestSummary, setShowRequestSummary] = useState(false);
 
-    // Load current user
+    // Check authentication
     useEffect(() => {
-        const loadCurrentUser = async () => {
-            try {
-                const userData = localStorage.getItem('user');
-                if (userData) {
-                    const user = JSON.parse(userData);
-                    setCurrentUser(user);
-                }
-            } catch (error) {
-                console.error('Error loading current user:', error);
-                toast.error('Failed to load user data');
-            }
-        };
-        loadCurrentUser();
-    }, []);
+        if (!isAuthenticated || !currentUser) {
+            console.error('User not authenticated or user data missing');
+            toast.error('Please log in to continue');
+            navigate('/login');
+        }
+    }, [isAuthenticated, currentUser, navigate]);
 
     // Fetch branch info
     useEffect(() => {
         if (!branchId) return;
         const fetchBranch = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('branch')
-                    .select('location, address')
-                    .eq('id', branchId)
-                    .single();
+                setBranchLoading(true);
+                console.log('Fetching branch info for ID:', branchId, 'Type:', typeof branchId);
+                const { data, error } = await api.getBranches();
+                console.log('Branches API response:', { data, error });
 
-                if (!error && data) {
-                    setBranchName(data.location);
+                const branchData = Array.isArray(data) ? data.find((b: any) => b.id === Number(branchId)) : null;
+                console.log('Found branch data:', branchData);
+
+                if (!error && branchData) {
+                    setBranchName(branchData.location);
+                    console.log('Branch name set:', branchData.location);
+                } else {
+                    console.error('Branch not found for ID:', branchId, 'Available branches:', data);
                 }
             } catch (error) {
                 console.error('Error fetching branch:', error);
+            } finally {
+                setBranchLoading(false);
             }
         };
         fetchBranch();
     }, [branchId]);
 
-    // Fetch products
+    // Check if target branch has users before fetching products
     useEffect(() => {
         if (!branchId) return;
-        const fetchProducts = async () => {
+
+        const validateBranchUsers = async () => {
             try {
                 setIsLoading(true);
+
+                // First check if the target branch has any users
+                const { data: users, error: usersError } = await api.getUsers(Number(branchId));
+
+                if (usersError) {
+                    console.error('Error checking branch users:', usersError);
+                    toast.error('Failed to validate branch. Please try again.');
+                    navigate('/branch_location');
+                    return;
+                }
+
+                if (!users || !Array.isArray(users) || users.length === 0) {
+                    console.error('No users found in target branch:', branchId);
+                    toast.error('This branch has no registered users. Cannot proceed with requests.');
+                    navigate('/branch_location');
+                    return;
+                }
+
+                // Check if there's at least one Branch Manager
+                const hasBranchManager = users.some((user: any) => {
+                    const roleName = user.role?.role_name || user.role_name;
+                    return roleName === 'Branch Manager' || roleName === 'BranchManager';
+                });
+
+                if (!hasBranchManager) {
+                    console.error('No Branch Manager found in target branch:', branchId);
+                    toast.error('This branch has no Branch Manager. Cannot proceed with requests.');
+                    navigate('/branch_location');
+                    return;
+                }
+
+                // If validation passes, fetch products
                 const response = await fetch(`http://localhost:5000/api/branches/${branchId}/products`);
                 if (!response.ok) throw new Error('Failed to fetch products');
 
                 const data = await response.json();
                 setProducts(data);
+
             } catch (error) {
-                console.error('Error loading products:', error);
-                toast.error('Failed to load products');
+                console.error('Error validating branch or loading products:', error);
+                toast.error('Failed to load branch data');
+                navigate('/branch_location');
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchProducts();
-    }, [branchId]);
+
+        validateBranchUsers();
+    }, [branchId, navigate]);
 
     // Get unique categories for filter
     const categories = ['All', ...new Set(products.map(p => p.category_name))];
@@ -208,30 +240,43 @@ export default function UnifiedProductRequest() {
 
         try {
             setIsSubmitting(true);
+            console.log('Starting request submission...', { branchId, currentUser, requestItems });
 
-            // Find the branch manager of the selected branch
-            const branchManagerResponse = await fetch(`http://localhost:5000/api/users?branch_id=${branchId}`);
-
-            if (!branchManagerResponse.ok) {
-                throw new Error('Failed to fetch users');
+            // Validate current user exists in database
+            if (!currentUser?.user_id) {
+                throw new Error('Invalid user session. Please log in again.');
             }
 
-            const users = await branchManagerResponse.json();
+            // Find the branch manager of the selected branch
+            const { data: users, error: usersError } = await api.getUsers(Number(branchId));
+            console.log('Users response:', { users, usersError });
 
-            // Get the role information for each user
-            const usersWithRoles = await Promise.all(users.map(async (user: any) => {
-                const { data: roleData } = await supabase
-                    .from('role')
-                    .select('role_name')
-                    .eq('id', user.role_id)
-                    .single();
-                return { ...user, role_name: roleData?.role_name };
-            }));
+            if (usersError) {
+                throw new Error(usersError);
+            }
 
-            const branchManager = usersWithRoles.find((user: any) =>
-                user.branch_id === Number(branchId) &&
-                (user.role_name === 'Branch Manager' || user.role_name === 'BranchManager')
-            );
+            if (!users || !Array.isArray(users)) {
+                throw new Error('No users found for this branch');
+            }
+
+            // Validate that current user is from a different branch (makes sense for requests)
+            if (currentUser.branch_id === Number(branchId)) {
+                console.error('Current user is from the same branch as target branch');
+                toast.error('You cannot request products from your own branch. Please select a different branch.');
+                navigate('/branch_location');
+                return;
+            }
+
+            console.log('Target branch validation passed - branch has users and Branch Manager');
+
+            // Find the branch manager - users already have role information from the API
+            const branchManager = users.find((user: any) => {
+                const roleName = user.role?.role_name || user.role_name;
+                return user.branch_id === Number(branchId) &&
+                    (roleName === 'Branch Manager' || roleName === 'BranchManager');
+            });
+
+            console.log('Branch manager found:', branchManager);
 
             if (!branchManager) {
                 toast.error('No branch manager found for the selected branch');
@@ -248,22 +293,29 @@ export default function UnifiedProductRequest() {
                 notes: notes.trim() || null
             };
 
-            const response = await fetch('http://localhost:5000/api/product-requests', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData),
-            });
+            console.log('Request data:', requestData);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to submit request');
+            const { error: requestError } = await api.createProductRequest(requestData);
+            console.log('Request response:', { requestError });
+
+            if (requestError) {
+                throw new Error(requestError);
             }
 
-            await response.json();
+            // Enhanced success message with detailed information
+            const totalItems = requestItems.length;
+            const totalQuantity = requestItems.reduce((sum, item) => sum + item.quantity, 0);
+            const totalValue = requestItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            toast.success('Product request submitted successfully!');
+            toast.success(
+                `✅ Request submitted successfully!\n` +
+                `📦 ${totalItems} item${totalItems > 1 ? 's' : ''} • ` +
+                `🔢 ${totalQuantity} total quantity • ` +
+                `💰 ₱${totalValue.toFixed(2)} estimated value\n` +
+                `📋 Request ID: #${Date.now().toString().slice(-6)}\n` +
+                `⏳ Awaiting approval from ${branchName} Branch Manager`,
+                { duration: 6000 }
+            );
 
             // Reset form
             setRequestItems([]);
@@ -275,7 +327,17 @@ export default function UnifiedProductRequest() {
 
         } catch (error) {
             console.error('Error submitting request:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to submit request');
+
+            // Handle rate limiting specifically
+            if (error instanceof Error && error.message.includes('429')) {
+                toast.error('Too many requests. Please wait a moment and try again.');
+            } else if (error instanceof Error && error.message.includes('Too many')) {
+                toast.error('Rate limit exceeded. Please wait a moment and try again.');
+            } else {
+                const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
+                console.error('Request submission failed:', errorMessage);
+                toast.error(errorMessage);
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -314,16 +376,25 @@ export default function UnifiedProductRequest() {
                             <div>
                                 <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                                     <Package className="h-6 w-6 text-blue-600" />
-                                    {branchName} - Browse & Request Products
+                                    {branchLoading ? (
+                                        <span className="flex items-center gap-2">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                            Loading Branch...
+                                        </span>
+                                    ) : (
+                                        `${branchName || `Branch ${branchId}`} - Browse & Request Products`
+                                    )}
                                 </h1>
                                 <p className="text-gray-600 mt-1">
-                                    Browse available products and add them to your request
+                                    Browse available products from {branchLoading ? 'loading branch...' : (branchName || `Branch ${branchId}`)} and add them to your request
                                 </p>
-                                <div className="mt-2 text-sm text-gray-500 bg-blue-50 p-2 rounded-md">
-                                    <strong>Inventory Legend:</strong>
-                                    <span className="text-green-600 ml-2">Available</span> = Ready to request,
-                                    <span className="text-orange-600 ml-2">Reserved</span> = Pending approval,
-                                    <span className="text-blue-600 ml-2">Total</span> = Complete inventory
+                                <div className="mt-3 space-y-2">
+                                    <div className="text-sm text-gray-500 bg-green-50 p-2 rounded-md">
+                                        <strong>Inventory Legend:</strong>
+                                        <span className="text-green-600 ml-2">Available</span> = Ready to request,
+                                        <span className="text-orange-600 ml-2">Reserved</span> = Pending approval,
+                                        <span className="text-blue-600 ml-2">Total</span> = Complete inventory
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -587,11 +658,16 @@ export default function UnifiedProductRequest() {
                         </div>
 
                         {/* Branch Info */}
-                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                            <div className="flex items-center gap-2">
+                        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                            <div className="flex items-center gap-2 mb-2">
                                 <MapPin className="h-4 w-4 text-blue-600" />
                                 <span className="font-medium text-blue-900">Requesting from:</span>
                                 <span className="text-blue-700">{branchName}</span>
+                            </div>
+                            <div className="text-sm text-blue-600">
+                                <p>• Products will be reserved until approval</p>
+                                <p>• Branch Manager will review your request</p>
+                                <p>• You'll be notified of the decision</p>
                             </div>
                         </div>
 
@@ -665,19 +741,33 @@ export default function UnifiedProductRequest() {
 
                         {/* Summary */}
                         <div className="mb-6 p-4 bg-gray-50 rounded-md">
+                            <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                                <Package className="h-4 w-4" />
+                                Request Summary
+                            </h4>
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <span className="font-medium text-gray-700">Total Items:</span>
-                                    <p className="text-gray-600">{requestItems.length}</p>
+                                    <p className="text-gray-600">{requestItems.length} product{requestItems.length > 1 ? 's' : ''}</p>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Total Quantity:</span>
-                                    <p className="text-gray-600">{requestItems.reduce((sum, item) => sum + item.quantity, 0)}</p>
+                                    <p className="text-gray-600">{requestItems.reduce((sum, item) => sum + item.quantity, 0)} units</p>
                                 </div>
                                 <div>
                                     <span className="font-medium text-gray-700">Estimated Value:</span>
-                                    <p className="text-gray-600">₱{requestItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</p>
+                                    <p className="text-gray-600 font-semibold">₱{requestItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</p>
                                 </div>
+                                <div>
+                                    <span className="font-medium text-gray-700">Request Status:</span>
+                                    <p className="text-yellow-600 font-medium">Pending Approval</p>
+                                </div>
+                            </div>
+                            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                <p className="text-sm text-yellow-800">
+                                    <strong>Note:</strong> This request will be sent to the Branch Manager of {branchName} for review.
+                                    You will receive a notification once the request is processed.
+                                </p>
                             </div>
                         </div>
 

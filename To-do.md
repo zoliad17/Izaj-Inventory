@@ -9,21 +9,21 @@
 - [ ] CRUD Category
 - [x] Crud Branches and Update Database for input fields
 - [ ] Picture or Excel extractor to pass to supabase
-- [ ] Add a pending where it deducts the product temporarily then if its not approved its just goes back to the original value to avoid collision
+- [x] Add a pending where it deducts the product temporarily then if its not approved its just goes back to the original value to avoid collision
 
 ## Product Request System Improvements
 
 ### Priority 1 (Critical)
 - [x] Fix schema issues: Rename `audit logs` table to `audit_logs` (remove space)
 - [ ] Add database indexes for frequently queried columns (user_id, branch_id, status, created_at)
-- [ ] Add inventory transfer logic when requests are approved (move products between branches)
+- [x] Add inventory transfer logic when requests are approved (move products between branches)
 - [ ] Add stock validation to prevent over-requesting (check available quantity before approval)
-- [ ] Add proper constraints for status values (pending, approved, denied)
+- [x] Add proper constraints for status values (pending, approved, denied)
 
 ### Priority 2 (Important)
-- [ ] Add bulk approve/deny functionality for multiple requests
+- [x] Add bulk approve/deny functionality for multiple requests
 - [ ] Add request expiration system (auto-expire old pending requests)
-- [ ] Improve error handling and input validation
+- [x] Improve error handling and input validation
 - [ ] Add low stock alerts when products are running low
 - [ ] Add request priorities (urgent, normal, low)
 
@@ -64,4 +64,29 @@
 - [ ] **Sales analytics** - Sales.tsx has charts but no real data
 - [ ] **Transfer tracking** - Transffered.tsx shows mock transfer data
 
+
+🎯 Priority Action Plan
+Phase 1: Cleanup (Week 1)
+Remove all mock data from components
+Implement real API integration
+Consolidate duplicate interfaces
+Fix direct fetch calls to use apiClient
+
+Phase 2: Optimization (Week 2)
+Add memoization to expensive components
+Implement proper pagination
+Optimize bundle size
+Add loading states consistently
+
+Phase 3: Enhancement (Week 3)
+Add real-time features
+Implement export functionality
+Add comprehensive error boundaries
+Improve mobile responsiveness
+
+Phase 4: Testing & Polish (Week 4)
+Add unit tests for critical components
+Add integration tests for API flows
+Performance testing and optimization
+User acceptance testing
 

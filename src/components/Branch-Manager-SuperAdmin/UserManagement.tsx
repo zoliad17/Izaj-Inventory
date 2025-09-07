@@ -11,8 +11,6 @@ import {
   Edit,
   Trash2Icon,
 } from "lucide-react";
-import { supabase } from "../../../backend/Server/Supabase/supabase";
-// import { use } from "echarts/types/src/extension.js";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
 
@@ -41,6 +39,7 @@ function UserManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isAddingUser, setIsAddingUser] = useState<boolean>(false);
   const [editedUser, setEditedUser] = useState<Partial<User>>({});
   const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -72,37 +71,26 @@ function UserManagement() {
       if (!response.ok) throw new Error("Failed to fetch users");
       const data = await response.json();
 
+      // Get branch and role information separately
+      const [branchesResponse, rolesResponse] = await Promise.all([
+        fetch("http://localhost:5000/api/branches"),
+        fetch("http://localhost:5000/api/roles")
+      ]);
+
+      const branchesData = branchesResponse.ok ? await branchesResponse.json() : [];
+      const rolesData = rolesResponse.ok ? await rolesResponse.json() : [];
+
       // Join user data with branch and role information
-      const usersWithInfo = await Promise.all(
-        data.map(async (user: User) => {
-          // Get branch information
-          const { data: branchData, error: branchError } = await supabase
-            .from("branch")
-            .select("location")
-            .eq("id", user.branch_id)
-            .single();
+      const usersWithInfo = data.map((user: User) => {
+        const branch = branchesData.find((b: any) => b.id === user.branch_id);
+        const role = rolesData.find((r: any) => r.id === user.role_id);
 
-          // Get role information
-          const { data: roleData, error: roleError } = await supabase
-            .from("role")
-            .select("role_name")
-            .eq("id", user.role_id)
-            .single();
-
-          if (branchError) {
-            console.error("Error fetching branch:", branchError);
-          }
-          if (roleError) {
-            console.error("Error fetching role:", roleError);
-          }
-
-          return {
-            ...user,
-            branch_name: branchData?.location || "N/A",
-            role_name: roleData?.role_name || "N/A",
-          };
-        })
-      );
+        return {
+          ...user,
+          branch_name: branch?.location || "N/A",
+          role_name: role?.role_name || "N/A",
+        };
+      });
 
       setUsers(usersWithInfo);
     } catch (error) {
@@ -111,18 +99,20 @@ function UserManagement() {
     }
   };
 
-  // Fetch roles from Supabase
+  // Fetch roles from API
   useEffect(() => {
     async function fetchRoles() {
-      const { data, error } = await supabase
-        .from("role")
-        .select("id, role_name");
-      if (error) console.error("Failed to fetch roles:", error);
-      else {
-        setRoles(data || []);
-        if (data && data.length > 0) {
-          setNewUser((prev) => ({ ...prev, role_id: data[0].id }));
+      try {
+        const response = await fetch("http://localhost:5000/api/roles");
+        if (response.ok) {
+          const data = await response.json();
+          setRoles(data || []);
+          if (data && data.length > 0) {
+            setNewUser((prev) => ({ ...prev, role_id: data[0].id }));
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch roles:", error);
       }
     }
     fetchRoles();
@@ -130,15 +120,17 @@ function UserManagement() {
 
   useEffect(() => {
     async function fetchBranches() {
-      const { data, error } = await supabase
-        .from("branch")
-        .select("id, location");
-      if (error) console.error("Failed to fetch branches:", error);
-      else {
-        setBranches(data || []);
-        if (data && data.length > 0) {
-          setNewUser((prev) => ({ ...prev, branch_id: data[0].id }));
+      try {
+        const response = await fetch("http://localhost:5000/api/branches");
+        if (response.ok) {
+          const data = await response.json();
+          setBranches(data || []);
+          if (data && data.length > 0) {
+            setNewUser((prev) => ({ ...prev, branch_id: data[0].id }));
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch branches:", error);
       }
     }
     fetchBranches();
@@ -281,7 +273,12 @@ function UserManagement() {
       toast.error("Contact number must be exactly 11 digits");
       return;
     }
+    if (!/^09\d{9}$/.test(cleanContact)) {
+      toast.error("Contact number must start with 09");
+      return;
+    }
 
+    setIsAddingUser(true);
     try {
       const userData = {
         name: newUser.name,
@@ -345,6 +342,8 @@ function UserManagement() {
           ? error.message
           : "Failed to create pending user";
       toast.error(errorMessage);
+    } finally {
+      setIsAddingUser(false);
     }
   };
 
@@ -596,8 +595,8 @@ function UserManagement() {
                         ) : (
                           <span
                             className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
-                                ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
-                                : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                              ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
+                              : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
                               }`}
                           >
                             {user.status || "Active"}
@@ -692,8 +691,8 @@ function UserManagement() {
                       }
                       disabled={currentPage === 1}
                       className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === 1
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                          : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                        : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                         }`}
                     >
                       Previous
@@ -704,8 +703,8 @@ function UserManagement() {
                           key={pageNum}
                           onClick={() => setCurrentPage(pageNum)}
                           className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-200"
-                              : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-200"
+                            : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                             }`}
                         >
                           {pageNum}
@@ -718,8 +717,8 @@ function UserManagement() {
                       }
                       disabled={currentPage === totalPages}
                       className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === totalPages
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                          : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                        : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                         }`}
                     >
                       Next
@@ -786,7 +785,8 @@ function UserManagement() {
                     placeholder="Name *"
                     value={newUser.name}
                     onChange={(e) => handleInputChange(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -801,7 +801,8 @@ function UserManagement() {
                     placeholder="Email *"
                     value={newUser.email}
                     onChange={(e) => handleInputChange(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -818,7 +819,8 @@ function UserManagement() {
                     value={newUser.contact}
                     onChange={handleContactChange}
                     placeholder="Enter 11-digit contact number"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -834,7 +836,8 @@ function UserManagement() {
                     name="branch_id"
                     value={newUser.branch_id}
                     onChange={(e) => handleInputChange(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="" disabled>
@@ -856,7 +859,8 @@ function UserManagement() {
                     name="role_id"
                     value={newUser.role_id}
                     onChange={(e) => handleInputChange(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="" disabled>
@@ -878,7 +882,8 @@ function UserManagement() {
                     name="status"
                     value={newUser.status}
                     onChange={(e) => handleInputChange(e)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    disabled={isAddingUser}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -890,17 +895,34 @@ function UserManagement() {
             <div className="flex justify-end space-x-4 mt-6">
               <button
                 onClick={() => {
-                  setIsAddModalOpen(false);
+                  if (!isAddingUser) {
+                    setIsAddModalOpen(false);
+                  }
                 }}
-                className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300"
+                disabled={isAddingUser}
+                className={`py-2 px-4 rounded-lg transition duration-300 ${isAddingUser
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-gray-500 hover:bg-gray-600"
+                  } text-white`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddUser}
-                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+                disabled={isAddingUser}
+                className={`flex items-center gap-2 py-2 px-4 rounded-lg transition duration-300 ${isAddingUser
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+                  } text-white`}
               >
-                Add User
+                {isAddingUser ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Adding...
+                  </>
+                ) : (
+                  "Add User"
+                )}
               </button>
             </div>
           </div>

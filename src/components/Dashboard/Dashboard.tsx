@@ -2,11 +2,14 @@ import { useSidebar } from "../Sidebar/SidebarContext";
 import {
   Package,
   Lightbulb,
-  //   AlertCircle,
+  AlertCircle,
   Clock,
   Plus,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
 
 // Define types for the product data
 interface Product {
@@ -160,6 +163,12 @@ function Dashboard() {
   const userRole = localStorage.getItem("userRole");
   const isSuperAdmin = userRole === "Super Admin";
 
+  // Fetch dashboard statistics
+  const { stats, isLoading, error, refetch } = useDashboardStats({
+    refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
+    enabled: true
+  });
+
   // Product data
   const products: Product[] = [
     {
@@ -221,106 +230,214 @@ function Dashboard() {
   });
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 `}
     >
       <div className="mt-1.5 mb-6">
         <div
-          className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${
-            isSuperAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
-          }`}
+          className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${isSuperAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
+            }`}
         >
           {/* Total Stock Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                <Package
-                  className="text-amber-600 dark:text-amber-400"
-                  size={20}
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                  <Package
+                    className="text-amber-600 dark:text-amber-400"
+                    size={20}
+                  />
+                </div>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Total Stock
+                </h5>
               </div>
-              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                Total Stock
-              </h5>
+              {isLoading && (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+              )}
             </div>
             <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
-              450
+              {isLoading ? "..." : error ? "Error" : stats?.totalStock?.toLocaleString() || "0"}
             </h6>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
           </div>
 
           {/* Products Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                <Lightbulb
-                  className="text-blue-600 dark:text-blue-400"
-                  size={20}
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                  <Lightbulb
+                    className="text-blue-600 dark:text-blue-400"
+                    size={20}
+                  />
+                </div>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Products
+                </h5>
               </div>
-              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                Products
-              </h5>
+              {isLoading && (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+              )}
             </div>
             <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
-              50
+              {isLoading ? "..." : error ? "Error" : stats?.totalProducts || "0"}
             </h6>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
           </div>
 
           {/* Categories Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                <Lightbulb
-                  className="text-green-600 dark:text-green-400"
-                  size={20}
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                  <Lightbulb
+                    className="text-green-600 dark:text-green-400"
+                    size={20}
+                  />
+                </div>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Categories
+                </h5>
               </div>
-              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                Categories
-              </h5>
+              <div className="flex items-center gap-2">
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                )}
+                <button
+                  onClick={() => navigate("/categories/add")}
+                  className="p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
+                  title="Add Category"
+                >
+                  <Plus className="text-green-600 dark:text-green-400" size={16} />
+                </button>
+              </div>
             </div>
             <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
-              12
+              {isLoading ? "..." : error ? "Error" : stats?.totalCategories || "0"}
             </h6>
-            <button
-              onClick={() => navigate("/categories/add")}
-              className="absolute top-4 right-4 p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-              title="Add Category"
-            >
-              <Plus className="text-green-600 dark:text-green-400" size={16} />
-            </button>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
           </div>
 
           {/* Branches Card - Only visible to Super Admin */}
           {isSuperAdmin && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <Lightbulb
+                      className="text-purple-600 dark:text-purple-400"
+                      size={20}
+                    />
+                  </div>
+                  <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                    Branches
+                  </h5>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                  )}
+                </div>
+              </div>
+              <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+                {isLoading ? "..." : error ? "Error" : stats?.totalBranches || "0"}
+              </h6>
+              {error && (
+                <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Additional Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {/* Low Stock Alert Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                  <Lightbulb
-                    className="text-purple-600 dark:text-purple-400"
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
+                  <AlertCircle
+                    className="text-yellow-600 dark:text-yellow-400"
                     size={20}
                   />
                 </div>
                 <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                  Branches
+                  Low Stock
                 </h5>
               </div>
-              <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
-                8
-              </h6>
-              <button
-                onClick={() => navigate("/branches/add")}
-                className="absolute top-4 right-4 p-1.5 cursor-pointer bg-purple-100 dark:bg-purple-900/30 rounded-full hover:bg-purple-200 dark:hover:bg-purple-800/50 transition-colors"
-                title="Add Branch"
-              >
-                <Plus
-                  className="text-purple-600 dark:text-purple-400"
-                  size={16}
-                />
-              </button>
+              {isLoading && (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+              )}
             </div>
-          )}
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              {isLoading ? "..." : error ? "Error" : stats?.lowStockCount || "0"}
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Products with less than 20 units</p>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
+          </div>
+
+          {/* Out of Stock Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                  <AlertCircle
+                    className="text-red-600 dark:text-red-400"
+                    size={20}
+                  />
+                </div>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Out of Stock
+                </h5>
+              </div>
+              {isLoading && (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+              )}
+            </div>
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              {isLoading ? "..." : error ? "Error" : stats?.outOfStockCount || "0"}
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Products with zero units</p>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
+          </div>
+
+          {/* Recent Activity Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                  <TrendingUp
+                    className="text-blue-600 dark:text-blue-400"
+                    size={20}
+                  />
+                </div>
+                <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  Recent Activity
+                </h5>
+              </div>
+              {isLoading && (
+                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+              )}
+            </div>
+            <h6 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">
+              {isLoading ? "..." : error ? "Error" : stats?.recentActivity || "0"}
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Actions in the last 7 days</p>
+            {error && (
+              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
+          </div>
         </div>
       </div>
       {/* Line Chart Card */}
@@ -491,19 +608,18 @@ function Dashboard() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          product.status === "in-stock"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : product.status === "low-stock"
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === "in-stock"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : product.status === "low-stock"
                             ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                             : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                        }`}
+                          }`}
                       >
                         {product.status === "in-stock"
                           ? "In Stock"
                           : product.status === "low-stock"
-                          ? "Low Stock"
-                          : "Out of Stock"}
+                            ? "Low Stock"
+                            : "Out of Stock"}
                       </span>
                     </td>
                   </tr>
@@ -513,9 +629,24 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <Clock size={16} className="text-gray-400 dark:text-gray-500" />
-          <span>Last updated 3 mins ago</span>
+        <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-gray-400 dark:text-gray-500" />
+            <span>
+              {isLoading ? "Loading..." : error ? "Error loading data" :
+                stats?.lastUpdated ? `Last updated ${new Date(stats.lastUpdated).toLocaleTimeString()}` :
+                  "Last updated 3 mins ago"}
+            </span>
+          </div>
+          <button
+            onClick={refetch}
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            disabled={isLoading}
+            title="Refresh data (minimum 30 seconds between requests)"
+          >
+            <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
       </Card>
     </div>

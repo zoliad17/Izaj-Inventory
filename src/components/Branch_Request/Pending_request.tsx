@@ -13,6 +13,7 @@ import {
 import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../Sidebar/SidebarContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface RequestItem {
   id: number;
@@ -38,27 +39,27 @@ interface PendingRequest {
   items: RequestItem[];
 }
 
-interface User {
-  user_id: string;
-  name: string;
-  branch_id: number;
-}
 
 export default function PendingRequest() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+  const { user: currentUser, isAuthenticated } = useAuth();
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState<number | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<PendingRequest | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewAction, setReviewAction] = useState<'approved' | 'denied' | null>(null);
 
+  // Check authentication
   useEffect(() => {
-    loadCurrentUser();
-  }, []);
+    if (!isAuthenticated || !currentUser) {
+      console.error('User not authenticated or user data missing');
+      toast.error('Please log in to continue');
+      navigate('/login');
+    }
+  }, [isAuthenticated, currentUser, navigate]);
 
   useEffect(() => {
     if (currentUser) {
@@ -66,28 +67,20 @@ export default function PendingRequest() {
     }
   }, [currentUser]);
 
-  const loadCurrentUser = async () => {
-    try {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        setCurrentUser(user);
-      }
-    } catch (error) {
-      console.error('Error loading current user:', error);
-      toast.error('Failed to load user data');
-    }
-  };
-
   const loadPendingRequests = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      console.log('No current user, skipping loadPendingRequests');
+      return;
+    }
 
     try {
+      console.log('Loading pending requests for user:', currentUser.user_id);
       setIsLoading(true);
       const response = await fetch(`http://localhost:5000/api/product-requests/pending/${currentUser.user_id}`);
       if (!response.ok) throw new Error('Failed to fetch pending requests');
 
       const data = await response.json();
+      console.log('Pending requests loaded:', data);
       setRequests(data);
     } catch (error) {
       console.error('Error loading pending requests:', error);
@@ -212,6 +205,10 @@ export default function PendingRequest() {
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Review and approve/deny product requests from other branches
                 </p>
+                <div className="mt-2 text-sm text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">
+                  <strong>📋 Review Process:</strong> As a Branch Manager, you can approve or deny incoming product requests.
+                  Approved requests will transfer inventory to the requesting branch.
+                </div>
               </div>
             </div>
             <button
@@ -228,8 +225,18 @@ export default function PendingRequest() {
           {requests.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Requests</h3>
-              <p className="text-gray-600">You don't have any pending product requests at the moment.</p>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Pending Requests</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                You don't have any pending product requests at the moment.
+              </p>
+              <div className="text-sm text-gray-500 bg-gray-50 dark:bg-gray-800 p-3 rounded-md max-w-md mx-auto">
+                <strong>💡 What happens next?</strong>
+                <ul className="mt-1 text-left space-y-1">
+                  <li>• Other branches can request products from your inventory</li>
+                  <li>• You'll receive notifications when new requests arrive</li>
+                  <li>• Review and approve/deny requests as needed</li>
+                </ul>
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

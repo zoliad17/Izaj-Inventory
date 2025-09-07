@@ -2,8 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { LocationMarkerIcon } from "@heroicons/react/outline";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../backend/Server/Supabase/supabase";
+import { api } from "../../utils/apiClient";
 import { ArrowLeft } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Define interface for Branch data
 interface Branch {
@@ -16,63 +17,123 @@ interface Branch {
   description: string | null;
 }
 
-// Define type for the user object (matching your sidebar)
-interface User {
-  email?: string;
-  username?: string;
-  role?: { role_name: string };
-  branch_id?: number;
-}
 
 function BranchLocation() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
-
-  // Get user data from localStorage (same as in sidebar)
-  const userString = localStorage.getItem("user");
-  const user: User | null = userString ? JSON.parse(userString) : null;
+  const { user, isAuthenticated } = useAuth();
 
   // State for branches
   const [branches, setBranches] = useState<Branch[]>([]);
   const [filteredBranches, setFilteredBranches] = useState<Branch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      console.error('User not authenticated or user data missing');
+      navigate('/login');
+    }
+  }, [isAuthenticated, user, navigate]);
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      const { data, error } = await supabase
-        .from("branch")
-        .select("id, location, address");
+    const fetchBranchesWithUsers = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await api.getBranches();
 
-      if (error) {
-        console.error("Failed to fetch branches:", error);
+        if (error) {
+          console.error("Failed to fetch branches:", error);
+          setBranches([]);
+          setFilteredBranches([]);
+          return;
+        }
+
+        if (!Array.isArray(data)) {
+          setBranches([]);
+          setFilteredBranches([]);
+          return;
+        }
+
+        // Check each branch for users and filter out branches without users
+        const branchesWithUsers = await Promise.all(
+          data.map(async (b: any) => {
+            try {
+              // Check if this branch has users
+              const { data: users, error: usersError } = await api.getUsers(b.id);
+
+              if (usersError || !users || !Array.isArray(users) || users.length === 0) {
+                console.log(`Branch ${b.location} has no users, skipping`);
+                return null;
+              }
+
+              // Check if there's at least one Branch Manager
+              const hasBranchManager = users.some((user: any) => {
+                const roleName = user.role?.role_name || user.role_name;
+                return roleName === 'Branch Manager' || roleName === 'BranchManager';
+              });
+
+              if (!hasBranchManager) {
+                console.log(`Branch ${b.location} has no Branch Manager, skipping`);
+                return null;
+              }
+
+              // Return branch data if it has valid users
+              return {
+                id: b.id,
+                name: b.name || null,
+                image: b.image || null,
+                location: b.location,
+                contact: b.contact || null,
+                description: b.description || null,
+                address: b.address || null,
+              };
+            } catch (error) {
+              console.error(`Error checking users for branch ${b.location}:`, error);
+              return null;
+            }
+          })
+        );
+
+        // Filter out null values (branches without users)
+        const validBranches = branchesWithUsers.filter((branch): branch is Branch => branch !== null);
+        setBranches(validBranches);
+
+      } catch (error) {
+        console.error("Error fetching branches with users:", error);
         setBranches([]);
         setFilteredBranches([]);
-      } else {
-        // Map to Branch interface
-        const branchData: Branch[] = (data || []).map((b: any) => ({
-          id: b.id,
-          name: b.name || null,
-          image: b.image || null,
-          location: b.location,
-          contact: b.contact || null,
-          description: b.description || null,
-          address: b.address || null,
-        }));
-
-        setBranches(branchData);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchBranches();
+    fetchBranchesWithUsers();
   }, []);
 
   // Filter branches based on user's branch_id
   useEffect(() => {
     if (branches.length > 0) {
+      console.log('Filtering branches...', {
+        totalBranches: branches.length,
+        userBranchId: user?.branch_id,
+        user: user
+      });
+
       let filtered = branches;
 
       // If user has a branch_id, filter out their own branch
       if (user?.branch_id) {
-        filtered = branches.filter((branch) => branch.id !== user.branch_id);
+        const beforeFilter = filtered.length;
+        filtered = branches.filter((branch) => {
+          const shouldExclude = branch.id === user.branch_id;
+          console.log(`Branch ${branch.location} (ID: ${branch.id}) - User branch: ${user.branch_id} - Exclude: ${shouldExclude}`);
+          return !shouldExclude;
+        });
+
+        console.log(`Filtered out user's own branch. Before: ${beforeFilter}, After: ${filtered.length}`);
+      } else {
+        console.log('No user branch_id found, showing all branches');
       }
 
       setFilteredBranches(filtered);
@@ -99,15 +160,29 @@ function BranchLocation() {
         </div>
         {user?.branch_id && (
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 sm:mt-0">
-            Showing branches available for transfer
+            Showing other branches available for requests (excluding your branch)
           </p>
         )}
       </div>
 
-      {/* Show message if no branches available */}
-      {filteredBranches.length === 0 ? (
+      {/* Show loading state */}
+      {isLoading ? (
+        <div className="mt-5 p-6 text-center">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600 dark:text-gray-400">Loading branches...</span>
+          </div>
+        </div>
+      ) : filteredBranches.length === 0 ? (
         <div className="mt-5 p-6 text-center text-gray-500 dark:text-gray-400">
-          <p>No other branches available to view.</p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <p className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
+              No branches available for requests
+            </p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              Other branches either have no registered users or no Branch Manager assigned.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
@@ -147,6 +222,9 @@ function BranchLocation() {
                   >
                     Browse & Request Products
                   </button>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
+                    ✓ Branch has registered users
+                  </p>
                 </div>
               </div>
             </div>

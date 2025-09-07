@@ -12,7 +12,7 @@ import {
 } from "@heroicons/react/outline";
 import { useSidebar } from "./SidebarContext";
 import { LogOutIcon, MenuIcon } from "lucide-react";
-import { supabase } from "../../../backend/Server/Supabase/supabase";
+import { useAuth, useRole } from "../../contexts/AuthContext";
 
 // theme
 import { useTheme } from "../ThemeContext/ThemeContext";
@@ -34,14 +34,7 @@ interface SubItem {
   allowedRoles?: string[];
 }
 
-// Define type for the user object
-interface User {
-  email?: string;
-  username?: string;
-  name?: string;
-  role?: { role_name: string };
-  branch_id?: number;
-}
+// User type is imported from AuthContext
 
 interface Branch {
   id: number;
@@ -50,25 +43,32 @@ interface Branch {
 
 function Sidebar() {
   const navigate = useNavigate();
-  const userString = localStorage.getItem("user");
-  const user: User | null = userString ? JSON.parse(userString) : null;
+  const { user, isAuthenticated } = useAuth();
+  const { hasRole } = useRole();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const userRole = user?.role?.role_name || localStorage.getItem("userRole");
+  // Branches will be fetched via API
+
+  // Don't render if not authenticated
+  if (!isAuthenticated || !user) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchBranches = async () => {
-      const { data, error } = await supabase
-        .from("branch")
-        .select("id, location");
-      if (error) {
-        console.error("Error fetching branches:", error);
-      } else {
-        setBranches(data);
+      try {
+        const response = await fetch('http://localhost:5000/api/branches');
+        if (!response.ok) {
+          throw new Error('Failed to fetch branches');
+        }
+        const data = await response.json();
+        setBranches(data || []);
+      } catch (err) {
+        console.error("Error fetching branches:", err);
       }
     };
 
@@ -78,10 +78,10 @@ function Sidebar() {
   // Define type for user branch
   const [branches, setBranches] = useState<Branch[]>([]);
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
+    logout();
     navigate("/");
   };
 
@@ -155,8 +155,14 @@ function Sidebar() {
       allowedRoles: ["Super Admin"],
     },
     {
+      icon: LocationMarkerIcon,
+      label: "Branches",
+      path: "/branch-management",
+      allowedRoles: ["Super Admin", "Admin"],
+    },
+    {
       icon: UserCircleIcon,
-      label: "AuditLogs",
+      label: "Audit Logs",
       path: "/auditlogs",
       allowedRoles: ["Super Admin"],
     },
@@ -172,10 +178,8 @@ function Sidebar() {
   const filteredNavItems = navItems.filter((item) => {
     // If no allowedRoles specified, show to all
     if (!item.allowedRoles) return true;
-    // If user has no role, hide
-    if (!userRole) return false;
-    // Check if user role is in allowedRoles
-    return item.allowedRoles.includes(userRole);
+    // Check if user has required role
+    return hasRole(item.allowedRoles);
   });
 
   // Filter subItems based on user role
@@ -186,10 +190,8 @@ function Sidebar() {
       const filteredSubItems = item.subItems.filter((subItem) => {
         // If no allowedRoles specified, show to all
         if (!subItem.allowedRoles) return true;
-        // If user has no role, hide
-        if (!userRole) return false;
-        // Check if user role is in allowedRoles
-        return subItem.allowedRoles.includes(userRole);
+        // Check if user has required role
+        return hasRole(subItem.allowedRoles);
       });
 
       // Only keep the parent item if it has subItems (if it's a dropdown)
@@ -378,16 +380,16 @@ function Sidebar() {
                   {/* User Avatar */}
                   <div className="flex items-center mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                      {(user.name || user.email || user.username || "U")
+                      {(user.name || user.email || "U")
                         .charAt(0)
                         .toUpperCase()}
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
                       <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                        {user.name || user.email || user.username}
+                        {user.name || user.email}
                       </h4>
                       <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {user.role?.role_name || "User"}
+                        User
                       </p>
                     </div>
                   </div>
@@ -409,7 +411,7 @@ function Sidebar() {
               ) : (
                 <div className="flex justify-center mb-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {(user.name || user.email || user.username || "U")
+                    {(user.name || user.email || "U")
                       .charAt(0)
                       .toUpperCase()}
                   </div>

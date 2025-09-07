@@ -10,8 +10,8 @@ app.use(cors());
 
 // Initialize Supabase client
 const supabase = createClient(
-  "https://phhbjvlrwrtiokfbjorb.supabase.co", // 🔁 Replace this with your actual Supabase URL
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaGJqdmxyd3J0aW9rZmJqb3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTg4MjIsImV4cCI6MjA1ODQ5NDgyMn0.6xja3RGLYxT5ZjepH-wnucvA3GBHNolD_jtFXiWzf4Y" // 🔁 Replace this with your actual Supabase key
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_ANON_KEY
 );
 
 // GET users route

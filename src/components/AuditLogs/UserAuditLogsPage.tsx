@@ -16,9 +16,12 @@ import {
     ChevronsLeft,
     ChevronsRight,
     ArrowLeft,
+    CheckCircle2,
+    XCircle,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface AuditLog {
     id: number;
@@ -50,6 +53,7 @@ interface AuditLog {
 const UserAuditLogsPage = () => {
     const { isCollapsed } = useSidebar();
     const navigate = useNavigate();
+    const { user, isAuthenticated } = useAuth();
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -70,15 +74,28 @@ const UserAuditLogsPage = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [totalItems, setTotalItems] = useState(0);
 
-    // Get current user ID from localStorage
-    const userData = localStorage.getItem("user");
-    const currentUserId = userData ? JSON.parse(userData).user_id : null;
+    // Get current user ID from AuthContext
+    const currentUserId = user?.user_id;
+
+    // Check authentication
+    useEffect(() => {
+        if (!isAuthenticated || !user) {
+            console.error('User not authenticated or user data missing');
+            navigate('/login');
+        }
+    }, [isAuthenticated, user, navigate]);
 
     // Fetch user's audit logs from API
     useEffect(() => {
         const fetchUserLogs = async () => {
+            console.log('UserAuditLogsPage - fetchUserLogs called', {
+                currentUserId,
+                user,
+                isAuthenticated
+            });
+
             if (!currentUserId) {
-                console.error("No user ID found");
+                console.error("No user ID found", { currentUserId, user, isAuthenticated });
                 setIsLoading(false);
                 return;
             }
@@ -175,6 +192,8 @@ const UserAuditLogsPage = () => {
         if (action.includes("DENIED")) return "bg-red-100 text-red-800";
         if (action.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
         if (action.includes("RECEIVE")) return "bg-teal-100 text-teal-800";
+        if (action.includes("INVENTORY")) return "bg-indigo-100 text-indigo-800";
+        if (action.includes("PRODUCT")) return "bg-orange-100 text-orange-800";
         return "bg-gray-100 text-gray-800";
     };
 
@@ -182,11 +201,32 @@ const UserAuditLogsPage = () => {
         if (action.includes("LOGIN")) return <User className="w-4 h-4" />;
         if (action.includes("SETUP")) return <ChevronUp className="w-4 h-4" />;
         if (action.includes("REQUEST_CREATED")) return <Package className="w-4 h-4" />;
-        if (action.includes("APPROVED")) return <ChevronUp className="w-4 h-4" />;
-        if (action.includes("DENIED")) return <ChevronDown className="w-4 h-4" />;
+        if (action.includes("APPROVED")) return <CheckCircle2 className="w-4 h-4" />;
+        if (action.includes("DENIED")) return <XCircle className="w-4 h-4" />;
         if (action.includes("TRANSFER")) return <Building className="w-4 h-4" />;
         if (action.includes("RECEIVE")) return <Package className="w-4 h-4" />;
+        if (action.includes("INVENTORY")) return <Package className="w-4 h-4" />;
+        if (action.includes("PRODUCT")) return <Package className="w-4 h-4" />;
         return <Clock className="w-4 h-4" />;
+    };
+
+    const getActionDisplayName = (action: string) => {
+        const actionMap: { [key: string]: string } = {
+            "USER_LOGIN": "Login",
+            "USER_SETUP_COMPLETED": "Account Setup",
+            "PRODUCT_REQUEST_CREATED": "Request Created",
+            "PRODUCT_REQUEST_APPROVED": "Request Approved",
+            "PRODUCT_REQUEST_DENIED": "Request Denied",
+            "INVENTORY_TRANSFER": "Inventory Transfer",
+            "PRODUCT_ADDED": "Product Added",
+            "PRODUCT_UPDATED": "Product Updated",
+            "PRODUCT_DELETED": "Product Deleted",
+            "USER_CREATED": "User Created",
+            "USER_UPDATED": "User Updated",
+            "BRANCH_CREATED": "Branch Created",
+            "BRANCH_UPDATED": "Branch Updated",
+        };
+        return actionMap[action] || action.replace(/_/g, ' ');
     };
 
     const refreshLogs = async () => {
@@ -293,7 +333,13 @@ const UserAuditLogsPage = () => {
                             >
                                 <ArrowLeft size={20} className="mr-1" />
                             </button>
-                            <h5 className="text-2xl font-bold text-gray-800">My Activity Log</h5>
+                            <h5 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                                <Clock className="h-6 w-6 text-blue-600" />
+                                My Activity Log
+                            </h5>
+                            <p className="text-sm text-gray-600 mt-1">
+                                Track all your actions and system interactions in real-time
+                            </p>
                         </div>
                     </div>
 
@@ -396,7 +442,26 @@ const UserAuditLogsPage = () => {
                         </div>
                     ) : sortedLogs.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-500">No activity logs found</p>
+                            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">No Activity Found</h3>
+                            <p className="text-gray-500 mb-4">
+                                {searchTerm || selectedAction !== "ALL" || selectedEntityType !== "ALL"
+                                    ? "No activity logs match your current filters. Try adjusting your search criteria."
+                                    : "You haven't performed any actions yet. Your activity will appear here as you use the system."
+                                }
+                            </p>
+                            {(searchTerm || selectedAction !== "ALL" || selectedEntityType !== "ALL") && (
+                                <button
+                                    onClick={() => {
+                                        setSearchTerm("");
+                                        setSelectedAction("ALL");
+                                        setSelectedEntityType("ALL");
+                                    }}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    Clear Filters
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <>
@@ -475,7 +540,7 @@ const UserAuditLogsPage = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             {getActionIcon(log.action)}
-                                                            <span className="ml-1">{log.action.replace(/_/g, ' ')}</span>
+                                                            <span className="ml-1">{getActionDisplayName(log.action)}</span>
                                                         </div>
                                                     </span>
                                                 </td>

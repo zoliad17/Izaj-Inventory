@@ -1,9 +1,10 @@
-// backend/Server/Supabase/supabase.js
+// backend/Server/supabase.node.js
 const { createClient } = require("@supabase/supabase-js");
+const { config } = require("dotenv");
+config({ path: "../../.env.local" });
 
-const supabaseUrl = "https://phhbjvlrwrtiokfbjorb.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBoaGJqdmxyd3J0aW9rZmJqb3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MTg4MjIsImV4cCI6MjA1ODQ5NDgyMn0.6xja3RGLYxT5ZjepH-wnucvA3GBHNolD_jtFXiWzf4Y";
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 

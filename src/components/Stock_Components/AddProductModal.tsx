@@ -32,6 +32,7 @@ const AddProductModal = ({
     stock: "",
     status: "In Stock" as const,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -45,26 +46,68 @@ const AddProductModal = ({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Pass branch_id as a second argument if available
-    let branchId = localStorage.getItem("branchId");
-    if (branchId) {
-      branchId = String(Number(branchId)); // Always save as number string
-      localStorage.setItem("branchId", branchId); // Overwrite with number string
-      onAddProduct({ ...newProduct }, Number(branchId));
-    } else {
-      onAddProduct(newProduct);
+    
+    if (isSubmitting) {
+      return; // Prevent double submission
     }
-    onClose();
-    // Reset form
-    setNewProduct({
-      name: "",
-      category: 0,
-      price: "",
-      stock: "",
-      status: "In Stock",
-    });
+    
+    // Debug logging
+    console.log("Form submitted with data:", newProduct);
+    
+    // Validate required fields
+    if (!newProduct.name.trim()) {
+      alert("Product name is required");
+      return;
+    }
+    
+    if (newProduct.category === 0) {
+      alert("Please select a category");
+      return;
+    }
+    
+    if (!newProduct.price || Number(newProduct.price) <= 0) {
+      alert("Please enter a valid price");
+      return;
+    }
+    
+    if (!newProduct.stock || Number(newProduct.stock) < 0) {
+      alert("Please enter a valid stock quantity");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Pass branch_id as a second argument if available
+      let branchId = localStorage.getItem("branchId");
+      console.log("Branch ID from localStorage:", branchId);
+      
+      if (branchId) {
+        branchId = String(Number(branchId)); // Always save as number string
+        localStorage.setItem("branchId", branchId); // Overwrite with number string
+        console.log("Calling onAddProduct with:", { ...newProduct }, "and branchId:", Number(branchId));
+        await onAddProduct({ ...newProduct }, Number(branchId));
+      } else {
+        console.log("Calling onAddProduct with:", newProduct);
+        await onAddProduct(newProduct);
+      }
+      
+      onClose();
+      // Reset form
+      setNewProduct({
+        name: "",
+        category: 0,
+        price: "",
+        stock: "",
+        status: "In Stock",
+      });
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -97,6 +140,7 @@ const AddProductModal = ({
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
                 required
+                placeholder="Enter product name"
               />
             </div>
 
@@ -186,9 +230,10 @@ const AddProductModal = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Product
+              {isSubmitting ? "Adding..." : "Add Product"}
             </button>
           </div>
         </form>

@@ -16,9 +16,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ArrowLeft,
+  Eye,
+  AlertTriangle,
+  Info,
+  CheckCircle,
+  Activity,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useNavigate } from "react-router-dom";
+import AuditLogDetailView from "./AuditLogDetailView";
 
 interface AuditLog {
   id: number;
@@ -35,6 +41,16 @@ interface AuditLog {
   notes?: string;
   timestamp: string;
   created_at: string;
+  user_name?: string;
+  user_email?: string;
+  user_status?: string;
+  role_name?: string;
+  branch_location?: string;
+  branch_address?: string;
+  action_category?: string;
+  severity_level?: string;
+  seconds_ago?: number;
+  time_period?: string;
   user?: {
     name: string;
     email: string;
@@ -70,6 +86,10 @@ const AuditLogsPage = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
+
+  // Detail view state
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [showDetailView, setShowDetailView] = useState(false);
 
   // Fetch audit logs from API
   useEffect(() => {
@@ -127,6 +147,11 @@ const AuditLogsPage = () => {
         log.action.toLowerCase().includes(term) ||
         log.user?.name?.toLowerCase().includes(term) ||
         log.user?.email?.toLowerCase().includes(term) ||
+        log.user_name?.toLowerCase().includes(term) ||
+        log.user_email?.toLowerCase().includes(term) ||
+        log.role_name?.toLowerCase().includes(term) ||
+        log.branch_location?.toLowerCase().includes(term) ||
+        log.action_category?.toLowerCase().includes(term) ||
         log.entity_type?.toLowerCase().includes(term) ||
         log.entity_id?.toLowerCase().includes(term) ||
         (log.notes && log.notes.toLowerCase().includes(term))
@@ -148,6 +173,48 @@ const AuditLogsPage = () => {
     }
     return 0;
   });
+
+  // Detail view functions
+  const handleViewDetails = (log: AuditLog) => {
+    setSelectedLog(log);
+    setShowDetailView(true);
+  };
+
+  const handleCloseDetailView = () => {
+    setShowDetailView(false);
+    setSelectedLog(null);
+  };
+
+  // Get severity icon and color
+  const getSeverityIcon = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'high':
+        return <AlertTriangle className="w-4 h-4 text-red-500" />;
+      case 'medium':
+        return <Info className="w-4 h-4 text-yellow-500" />;
+      case 'low':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'info':
+        return <Info className="w-4 h-4 text-blue-500" />;
+      default:
+        return <Activity className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getSeverityColor = (level: string) => {
+    switch (level?.toLowerCase()) {
+      case 'high':
+        return 'bg-red-50 border-red-200 text-red-800';
+      case 'medium':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'low':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'info':
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
 
   // Pagination logic - now handled server-side
   const currentItems = sortedLogs;
@@ -531,19 +598,30 @@ const AuditLogsPage = () => {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500 max-w-xs">
-                            {log.metadata && Object.keys(log.metadata).length > 0 ? (
-                              <details className="cursor-pointer">
-                                <summary className="text-blue-600 hover:text-blue-800">
-                                  View Details
-                                </summary>
-                                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
-                                  {JSON.stringify(log.metadata, null, 2)}
-                                </pre>
-                              </details>
-                            ) : (
-                              "—"
+                          <div className="flex items-center space-x-2">
+                            {/* Severity Badge */}
+                            {log.severity_level && (
+                              <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(log.severity_level)}`}>
+                                {getSeverityIcon(log.severity_level)}
+                                <span className="ml-1">{log.severity_level}</span>
+                              </div>
                             )}
+
+                            {/* Action Category */}
+                            {log.action_category && (
+                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                                {log.action_category}
+                              </div>
+                            )}
+
+                            {/* View Details Button */}
+                            <button
+                              onClick={() => handleViewDetails(log)}
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View Details
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -658,6 +736,14 @@ const AuditLogsPage = () => {
           )}
         </div>
       </div>
+
+      {/* Detail View Modal */}
+      {showDetailView && selectedLog && (
+        <AuditLogDetailView
+          log={selectedLog}
+          onClose={handleCloseDetailView}
+        />
+      )}
     </div>
   );
 };

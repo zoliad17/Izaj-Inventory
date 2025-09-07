@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { useAuth, useRole } from "../../contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,19 +12,27 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
 }) => {
   const location = useLocation();
+  const { isAuthenticated, isLoading } = useAuth();
+  const { hasRole } = useRole();
 
-  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-  const userRole = localStorage.getItem("userRole");
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(userRole as string)) {
+  if (allowedRoles && !hasRole(allowedRoles)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

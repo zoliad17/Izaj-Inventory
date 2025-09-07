@@ -26,7 +26,7 @@ This guide explains how to modify the Excel template for importing products into
 ## 🔧 How to Modify the Template
 
 ### 1. **Change Column Names**
-To modify column names, update the `requiredColumns` array in `All_Stock.tsx`:
+To modify column names, update the `requiredColumns` array in `OptimizedAll_Stock.tsx`:
 
 ```typescript
 // Current (line ~307)
