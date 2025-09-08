@@ -144,6 +144,9 @@ export const api = {
     deleteProduct: (id: number, userId: string) =>
         apiClient.delete(`/products/${id}?user_id=${userId}`),
 
+    bulkImportProducts: (products: any[], userId: string) =>
+        apiClient.post('/products/bulk-import', { products, user_id: userId }),
+
     // Categories
     getCategories: () =>
         apiClient.get('/categories'),

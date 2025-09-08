@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../utils/apiClient';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import SuccessNotification from '../ui/SuccessNotification';
 
 interface Product {
     id: number;
@@ -65,6 +66,16 @@ export default function UnifiedProductRequest() {
     const [notes, setNotes] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showRequestSummary, setShowRequestSummary] = useState(false);
+
+    // State for success notification
+    const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+    const [successData, setSuccessData] = useState<{
+        totalItems: number;
+        totalQuantity: number;
+        totalValue: number;
+        requestId: string;
+        branchName: string;
+    } | null>(null);
 
     // Check authentication
     useEffect(() => {
@@ -306,24 +317,22 @@ export default function UnifiedProductRequest() {
             const totalItems = requestItems.length;
             const totalQuantity = requestItems.reduce((sum, item) => sum + item.quantity, 0);
             const totalValue = requestItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const requestId = Date.now().toString().slice(-6);
 
-            toast.success(
-                `✅ Request submitted successfully!\n` +
-                `📦 ${totalItems} item${totalItems > 1 ? 's' : ''} • ` +
-                `🔢 ${totalQuantity} total quantity • ` +
-                `💰 ₱${totalValue.toFixed(2)} estimated value\n` +
-                `📋 Request ID: #${Date.now().toString().slice(-6)}\n` +
-                `⏳ Awaiting approval from ${branchName} Branch Manager`,
-                { duration: 6000 }
-            );
+            // Set success data and show notification
+            setSuccessData({
+                totalItems,
+                totalQuantity,
+                totalValue,
+                requestId,
+                branchName
+            });
+            setShowSuccessNotification(true);
 
             // Reset form
             setRequestItems([]);
             setNotes('');
             setShowRequestSummary(false);
-
-            // Navigate back to branch location
-            navigate('/branch_location');
 
         } catch (error) {
             console.error('Error submitting request:', error);
@@ -799,6 +808,22 @@ export default function UnifiedProductRequest() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Success Notification Modal */}
+            {showSuccessNotification && successData && (
+                <SuccessNotification
+                    totalItems={successData.totalItems}
+                    totalQuantity={successData.totalQuantity}
+                    totalValue={successData.totalValue}
+                    requestId={successData.requestId}
+                    branchName={successData.branchName}
+                    onClose={() => {
+                        setShowSuccessNotification(false);
+                        setSuccessData(null);
+                        navigate('/branch_location');
+                    }}
+                />
             )}
         </div>
     );

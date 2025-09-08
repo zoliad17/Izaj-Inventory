@@ -24,11 +24,12 @@ export interface NewUser {
 // Product related types
 export interface Product {
     id: number;
-    product_name: string;
+    product_name?: string;
     name?: string; // For backward compatibility
-    quantity: number;
+    quantity?: number;
     total_quantity?: number;
     reserved_quantity?: number;
+    stock?: number; // Alternative to quantity for UI components
     price: number | string;
     status: "In Stock" | "Out of Stock" | "Low Stock" | "in-stock" | "low-stock" | "out-of-stock";
     category_id?: number;
@@ -37,6 +38,12 @@ export interface Product {
     branch_id: number;
     created_at?: string;
     updated_at?: string;
+    // Additional UI-specific properties
+    detailsPage?: string;
+    source?: "Local" | "Transferred";
+    transferred_from?: string;
+    transferred_at?: string;
+    request_id?: number;
 }
 
 // Branch related types

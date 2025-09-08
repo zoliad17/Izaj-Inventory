@@ -83,7 +83,7 @@ processedData.push({
   price: price,
   quantity: quantity,
   // status: row['Status'], // Remove this line
-  branch_id: branchId
+  bran ch_id: branchId
 });
 ```
 

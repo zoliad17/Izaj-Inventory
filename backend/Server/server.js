@@ -224,6 +224,196 @@ app.put("/api/products/:id", authenticateUser, async (req, res) => {
   res.json(data[0]);
 });
 
+// POST bulk import/upsert products (with authentication)
+app.post("/api/products/bulk-import", rateLimits.productOps, authenticateUser, async (req, res) => {
+  try {
+    const { products, user_id } = req.body;
+    const user = req.user; // Get authenticated user from middleware
+
+    if (!products || !Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products array is required and cannot be empty" });
+    }
+
+    console.log(`Bulk importing ${products.length} products by user: ${user.name} (${user.email})`);
+
+    const results = {
+      created: 0,
+      updated: 0,
+      errors: [],
+      total: products.length
+    };
+
+    // Log zero quantity products for debugging
+    const zeroQuantityProducts = products.filter(p => p.stock === 0);
+    if (zeroQuantityProducts.length > 0) {
+      console.log(`Found ${zeroQuantityProducts.length} products with zero quantity:`,
+        zeroQuantityProducts.map(p => p.name));
+    }
+
+    // Process products in batches to avoid overwhelming the database
+    const batchSize = 10;
+    for (let i = 0; i < products.length; i += batchSize) {
+      const batch = products.slice(i, i + batchSize);
+
+      for (const product of batch) {
+        try {
+          // Check if product exists in the same branch
+          const { data: existingProduct, error: checkError } = await supabase
+            .from("centralized_product")
+            .select("id, quantity, product_name, price, category_id, status")
+            .eq("product_name", product.name)
+            .eq("branch_id", product.branch_id)
+            .single();
+
+          if (checkError && checkError.code !== 'PGRST116') {
+            results.errors.push(`Error checking product "${product.name}": ${checkError.message}`);
+            continue;
+          }
+
+          if (existingProduct) {
+            // Update existing product - add to existing quantity
+            const newQuantity = existingProduct.quantity + product.stock;
+            const newStatus = newQuantity === 0 ? 'Out of Stock' :
+              newQuantity < 20 ? 'Low Stock' : 'In Stock';
+
+            const { error: updateError } = await supabase
+              .from("centralized_product")
+              .update({
+                quantity: newQuantity,
+                price: Number(product.price),
+                status: newStatus,
+                category_id: product.category
+              })
+              .eq("id", existingProduct.id);
+
+            if (updateError) {
+              results.errors.push(`Error updating product "${product.name}": ${updateError.message}`);
+            } else {
+              results.updated++;
+
+              // Log update in audit trail
+              await supabase
+                .from("audit_logs")
+                .insert([{
+                  user_id: user.user_id,
+                  action: "PRODUCT_UPDATED",
+                  description: `Product "${product.name}" updated via bulk import by ${user.name}`,
+                  entity_type: "centralized_product",
+                  entity_id: existingProduct.id.toString(),
+                  metadata: {
+                    product_name: product.name,
+                    category_id: product.category,
+                    price: Number(product.price),
+                    quantity_added: product.stock,
+                    new_quantity: newQuantity,
+                    new_status: newStatus,
+                    branch_id: product.branch_id,
+                    updated_by: user.name,
+                    updated_by_email: user.email,
+                    import_source: "bulk_excel_import"
+                  },
+                  new_values: {
+                    quantity: newQuantity,
+                    price: Number(product.price),
+                    status: newStatus,
+                    category_id: product.category
+                  }
+                }]);
+            }
+          } else {
+            // Create new product
+            const status = product.stock === 0 ? 'Out of Stock' :
+              product.stock < 20 ? 'Low Stock' : 'In Stock';
+
+            const { data: newProduct, error: createError } = await supabase
+              .from("centralized_product")
+              .insert([{
+                product_name: product.name,
+                category_id: product.category,
+                price: Number(product.price),
+                quantity: product.stock,
+                status: status,
+                branch_id: product.branch_id,
+                reserved_quantity: 0
+              }])
+              .select()
+              .single();
+
+            if (createError) {
+              results.errors.push(`Error creating product "${product.name}": ${createError.message}`);
+            } else {
+              results.created++;
+
+              // Log creation in audit trail
+              await supabase
+                .from("audit_logs")
+                .insert([{
+                  user_id: user.user_id,
+                  action: "PRODUCT_CREATED",
+                  description: `Product "${product.name}" created via bulk import by ${user.name}`,
+                  entity_type: "centralized_product",
+                  entity_id: newProduct.id.toString(),
+                  metadata: {
+                    product_name: product.name,
+                    category_id: product.category,
+                    price: Number(product.price),
+                    quantity: product.stock,
+                    status: status,
+                    branch_id: product.branch_id,
+                    created_by: user.name,
+                    created_by_email: user.email,
+                    import_source: "bulk_excel_import"
+                  },
+                  new_values: {
+                    product_name: product.name,
+                    category_id: product.category,
+                    price: Number(product.price),
+                    quantity: product.stock,
+                    status: status,
+                    branch_id: product.branch_id
+                  }
+                }]);
+            }
+          }
+        } catch (error) {
+          results.errors.push(`Error processing product "${product.name}": ${error.message}`);
+        }
+      }
+    }
+
+    // Log bulk import summary
+    await supabase
+      .from("audit_logs")
+      .insert([{
+        user_id: user.user_id,
+        action: "BULK_IMPORT_COMPLETED",
+        description: `Bulk import completed: ${results.created} created, ${results.updated} updated, ${results.errors.length} errors`,
+        entity_type: "bulk_operation",
+        entity_id: "bulk_import_" + Date.now(),
+        metadata: {
+          total_products: results.total,
+          created_count: results.created,
+          updated_count: results.updated,
+          error_count: results.errors.length,
+          errors: results.errors.slice(0, 10), // Limit to first 10 errors
+          branch_id: products[0]?.branch_id,
+          imported_by: user.name,
+          imported_by_email: user.email
+        }
+      }]);
+
+    res.json({
+      success: true,
+      message: `Bulk import completed: ${results.created} created, ${results.updated} updated, ${results.errors.length} errors`,
+      results
+    });
+
+  } catch (error) {
+    console.error("Error in bulk import:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // DELETE product from Supabase (with authentication and cascading delete)
 app.delete("/api/products/:id", authenticateUser, async (req, res) => {
   const { id } = req.params;
@@ -577,17 +767,21 @@ app.post("/api/product-requests", rateLimits.productRequests, validateRequest(sc
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Check and reserve inventory for each item
-    const reservationResults = [];
-    for (const item of items) {
-      // Check current available quantity (total - reserved)
-      const { data: productData, error: productError } = await supabase
-        .from("centralized_product")
-        .select("quantity, reserved_quantity")
-        .eq("id", item.product_id)
-        .single();
+    // Check and reserve inventory for all items in one query
+    const productIds = items.map(item => item.product_id);
+    const { data: productsData, error: fetchError } = await supabase
+      .from("centralized_product")
+      .select("id, quantity, reserved_quantity")
+      .in("id", productIds);
 
-      if (productError) throw productError;
+    if (fetchError) throw fetchError;
+
+    // Create a map for quick lookup
+    const productMap = new Map(productsData.map(p => [p.id, p]));
+
+    // Validate inventory for each item
+    for (const item of items) {
+      const productData = productMap.get(item.product_id);
       if (!productData) {
         throw new Error(`Product with ID ${item.product_id} not found`);
       }
@@ -599,12 +793,6 @@ app.post("/api/product-requests", rateLimits.productRequests, validateRequest(sc
           error: `Insufficient inventory for product ID ${item.product_id}. Available: ${availableQuantity}, Requested: ${item.quantity}`
         });
       }
-
-      reservationResults.push({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        available_quantity: availableQuantity
-      });
     }
 
     // Create the main request
@@ -634,26 +822,14 @@ app.post("/api/product-requests", rateLimits.productRequests, validateRequest(sc
 
     if (itemsError) throw itemsError;
 
-    // Reserve inventory by updating reserved_quantity (optimized batch update)
-    const productIds = items.map(item => item.product_id);
-
-    // Get all products in one query
-    const { data: productsData, error: fetchError } = await supabase
-      .from("centralized_product")
-      .select("id, reserved_quantity")
-      .in("id", productIds);
-
-    if (fetchError) {
-      console.error("Error fetching product data:", fetchError);
-      throw new Error("Failed to fetch product data");
-    }
-
-    // Create a map for quick lookup
-    const productMap = new Map(productsData.map(p => [p.id, p.reserved_quantity || 0]));
+    // Reserve inventory by updating reserved_quantity ONLY (lean approach)
+    // This stores the requested amount in reserved_quantity without changing quantity
+    // Use the product data we already fetched for validation
 
     // Prepare batch updates
     const updates = items.map(item => {
-      const currentReserved = productMap.get(item.product_id) || 0;
+      const productData = productMap.get(item.product_id);
+      const currentReserved = productData?.reserved_quantity || 0;
       const newReservedQuantity = currentReserved + item.quantity;
       return {
         id: item.product_id,
@@ -913,7 +1089,7 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
         return res.status(500).json({ error: "Failed to fetch requester information" });
       }
 
-      // For approved requests: permanently deduct from source inventory and add to requester's inventory
+      // For approved requests: deduct reserved amount from quantity, reset reserved_quantity to 0, add to requester
       for (const item of requestData.items) {
         // First get current values from source branch
         const { data: productData, error: fetchError } = await supabase
@@ -928,8 +1104,11 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
         }
 
         // Calculate new values for source branch
-        const newQuantity = Math.max(0, productData.quantity - item.quantity);
-        const newReservedQuantity = Math.max(0, (productData.reserved_quantity || 0) - item.quantity);
+        // Deduct the reserved amount from quantity and reset reserved_quantity to 0
+        // Flow: reserved_quantity → quantity deduction → requester transfer
+        const reservedAmount = item.quantity; // This is the amount that was reserved
+        const newQuantity = Math.max(0, productData.quantity - reservedAmount);
+        const newReservedQuantity = Math.max(0, (productData.reserved_quantity || 0) - reservedAmount);
 
         // Update source branch inventory
         const { error: updateError } = await supabase
@@ -964,14 +1143,12 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
           const { error: updateRequesterError } = await supabase
             .from("centralized_product")
             .update({
-              quantity: existingProduct.quantity + item.quantity
+              quantity: existingProduct.quantity + reservedAmount
             })
             .eq("id", existingProduct.id);
 
           if (updateRequesterError) {
             console.error("Error updating product in requester's branch:", updateRequesterError);
-          } else {
-            console.log(`Added ${item.quantity} units of ${productData.product_name} to requester's branch`);
           }
         } else {
           // Product doesn't exist in requester's branch - create new entry
@@ -979,7 +1156,7 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
             .from("centralized_product")
             .insert({
               product_name: productData.product_name,
-              quantity: item.quantity,
+              quantity: reservedAmount,
               price: productData.price,
               category_id: productData.category_id,
               status: productData.status,
@@ -989,8 +1166,6 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
 
           if (createError) {
             console.error("Error creating product in requester's branch:", createError);
-          } else {
-            console.log(`Created new product ${productData.product_name} in requester's branch with quantity ${item.quantity}`);
           }
         }
       }
@@ -1019,7 +1194,7 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
         console.error("Error logging inventory transfer:", transferAuditError);
       }
     } else if (action === 'denied') {
-      // For denied requests: restore reserved quantity back to available inventory
+      // For denied requests: simply reset reserved_quantity to 0 without altering quantity
       for (const item of requestData.items) {
         // First get current values
         const { data: productData, error: fetchError } = await supabase
@@ -1033,15 +1208,14 @@ app.put("/api/product-requests/:requestId/review", rateLimits.productRequests, a
           continue;
         }
 
-        // Calculate new values - restore reserved quantity to available
-        const newQuantity = productData.quantity + item.quantity;
-        const newReservedQuantity = Math.max(0, (productData.reserved_quantity || 0) - item.quantity);
+        // Calculate new values - only reset reserved_quantity to 0
+        // Do NOT alter quantity field - this avoids double-counting
+        const newReservedQuantity = 0; // Simply reset to 0, don't subtract
 
-        // Update with calculated values
+        // Update with calculated values - only update reserved_quantity
         const { error: restoreError } = await supabase
           .from("centralized_product")
           .update({
-            quantity: newQuantity,
             reserved_quantity: newReservedQuantity
           })
           .eq("id", item.product_id);

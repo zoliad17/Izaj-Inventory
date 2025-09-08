@@ -585,10 +585,15 @@ function OptimizedAllStock() {
         setIsBulkDeleteModalOpen(true);
     }, []);
 
-    // Excel handlers (memoized)
+    // Enhanced Excel import with upsert functionality (memoized)
     const handleImportExcel = useCallback(() => {
         if (categories.length === 0) {
             toast.error('Categories not loaded yet. Please try again in a moment.');
+            return;
+        }
+
+        if (!branchId) {
+            toast.error('Branch ID not available. Please try again.');
             return;
         }
 
@@ -632,7 +637,7 @@ function OptimizedAllStock() {
                     const rowNum = i + 2; // Excel row number (accounting for header)
 
                     // Validate required fields
-                    if (!row['Product Name'] || !row['Category'] || !row['Price'] || !row['Quantity']) {
+                    if (!row['Product Name'] || !row['Category'] || !row['Price'] || row['Quantity'] === undefined) {
                         errors.push(`Row ${rowNum}: Missing required fields`);
                         continue;
                     }
@@ -692,10 +697,15 @@ function OptimizedAllStock() {
                         name: row['Product Name'],
                         category: category.id,
                         price: price,
-                        stock: quantity,
+                        stock: quantity, // This will be added to existing quantity for updates
                         status: row['Status'],
                         branch_id: branchId
                     });
+
+                    // Log zero quantity products for debugging
+                    if (quantity === 0) {
+                        console.log(`Processing zero quantity product: ${row['Product Name']} - will be marked as "Out of Stock"`);
+                    }
                 }
 
                 if (errors.length > 0) {
@@ -710,44 +720,39 @@ function OptimizedAllStock() {
                     return;
                 }
 
-                // Import to database using API client
+                // Import to database using bulk import endpoint
                 try {
-                    // Since we don't have a bulk import endpoint, we'll import one by one
-                    let successCount = 0;
-                    let errorCount = 0;
-
-                    for (const product of processedData) {
-                        try {
-                            if (!currentUser) {
-                                console.error('User not authenticated during import');
-                                errorCount++;
-                                continue;
-                            }
-
-                            const { error } = await api.createProduct(product, currentUser.user_id);
-                            if (error) {
-                                console.error('Error importing product:', product.name, error);
-                                errorCount++;
-                            } else {
-                                successCount++;
-                            }
-                        } catch (err) {
-                            console.error('Error importing product:', product.name, err);
-                            errorCount++;
-                        }
+                    if (!currentUser) {
+                        toast.error('User not authenticated');
+                        return;
                     }
 
-                    if (successCount > 0) {
-                        toast.success(`Successfully imported ${successCount} products${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
-                        refetchProducts();
-                    } else {
-                        toast.error('Failed to import any products');
+                    const { data: result, error } = await api.bulkImportProducts(processedData, currentUser.user_id);
+
+                    if (error) {
+                        toast.error(`Import failed: ${error}`);
                         return;
+                    }
+
+                    if (result) {
+                        const { created, updated, errors: importErrors } = (result as any).results;
+
+                        if (importErrors.length > 0) {
+                            toast.error(`Import completed with ${importErrors.length} errors. Check console for details.`);
+                            console.error('Import errors:', importErrors);
+                        } else {
+                            toast.success(`Import successful: ${created} created, ${updated} updated`);
+                        }
+
+                        // Optimize state update - merge new/updated products without full refetch
+                        if (created > 0 || updated > 0) {
+                            // Only refetch if we have changes
+                            refetchProducts();
+                        }
                     }
                 } catch (error) {
                     console.error('Import error:', error);
                     toast.error('Failed to import data to database');
-                    return;
                 }
 
             } catch (error) {
@@ -756,7 +761,7 @@ function OptimizedAllStock() {
             }
         };
         input.click();
-    }, [categories, branchId, refetchProducts, handleError]);
+    }, [categories, branchId, currentUser, refetchProducts, handleError]);
 
     const handleExportExcel = useCallback(() => {
         try {
@@ -814,6 +819,13 @@ function OptimizedAllStock() {
                     'Price': 4999.99,
                     'Quantity': 5,
                     'Status': 'Low Stock'
+                },
+                {
+                    'Product Name': 'Discontinued Lamp',
+                    'Category': categories[0]?.category_name || 'Sample Category',
+                    'Price': 199.99,
+                    'Quantity': 0,
+                    'Status': 'Out of Stock'
                 }
             ];
 
