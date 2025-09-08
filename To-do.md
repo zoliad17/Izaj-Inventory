@@ -44,14 +44,14 @@
 ### Pages with Mock Data (Still Present but Not Functional)
 - [ ] **AuditLogsPage.tsx** - Uses mock audit log data, needs real API integration
 - [ ] **Sales.tsx** - Uses mock sales data and charts, needs real sales API
-- [ ] **Transffered.tsx** - Uses mock transferred products data, needs real transfer API
+- [x] **Transffered.tsx** - Uses mock transferred products data, needs real transfer API
 - [ ] **Request_product.tsx** - Uses static product data, needs dynamic product loading
-- [ ] **ProductTable.tsx** - Has mock export functionality, needs real export API
+- [x] **ProductTable.tsx** - Has mock export functionality, needs real export API
 
 ### Mock Data to Remove Later
 - [ ] **AuditLogsPage.tsx** - Remove mockLogs array (lines 66-191), replace with real API call
 - [ ] **Sales.tsx** - Remove mock product data (lines 167-208), replace with real sales data
-- [ ] **Transffered.tsx** - Remove mock products array (lines 22-86), replace with real transfer data
+- [x] **Transffered.tsx** - Remove mock products array (lines 22-86), replace with real transfer data
 - [ ] **Request_product.tsx** - Remove static initialProduct (lines 23-33), make dynamic
 - [ ] **ProductTable.tsx** - Remove mockExport function (lines 198-203), implement real export
 - [ ] **All_Stock.tsx** - Remove handleImportExcel stub (lines 285-287), implement real import

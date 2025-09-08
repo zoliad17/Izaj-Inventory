@@ -1,5 +1,5 @@
 // API Client with proper error handling and retry logic
-import { errorHandler, handleAsync, ApiError } from './errorHandler';
+import { errorHandler } from './errorHandler';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
