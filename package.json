@@ -8,10 +8,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "start": "cd backend/Server && bun start",
+    "start:bun": "cd backend/Server && bun start",
+    "start:npm": "cd backend/Server && npm start",
     "create:superadmin": "cd backend/Server && node scripts/create-superadmin.js",
-    "optimize:db": "cd backend/Server && node scripts/apply-database-optimization.js",
-    "install:backend": "cd backend/Server && bun install"
+    "install:backend:bun": "cd backend/Server && bun install",
+    "install:backend:npm": "cd backend/Server && npm install"
   },
   "dependencies": {
     "@heroicons/react": "^1.0.6",
