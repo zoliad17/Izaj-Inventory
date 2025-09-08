@@ -4,7 +4,6 @@ import { ArrowLeft, FileSearch } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { api } from "../../utils/apiClient";
 import { useErrorHandler } from "../../utils/errorHandler";
 
 // Define interface for Transferred Product data
@@ -16,6 +15,7 @@ interface TransferredProduct {
   price: number;
   quantity: number;
   status: "In Stock" | "Low Stock" | "Out of Stock";
+  arrived_at?: string;
   transferred_from: string;
   transferred_at: string;
   request_id: number;
@@ -53,368 +53,59 @@ const Transferred = memo(() => {
   const itemsPerPage = 5;
 
   // Fetch transferred products
-  const fetchTransferredProducts = useCallback(async () => {
-    if (!currentUser?.user_id || !currentUser?.branch_id || isFetchingRef.current) return;
+const fetchTransferredProducts = useCallback(async () => {
+  if (!currentUser?.user_id || !currentUser?.branch_id || isFetchingRef.current) return;
 
-    try {
-      isFetchingRef.current = true;
-      setIsLoading(true);
-      setError(null);
+  try {
+    isFetchingRef.current = true;
+    setIsLoading(true);
+    setError(null);
 
-      console.log('Fetching transferred products for user:', currentUser.user_id, 'branch:', currentUser.branch_id);
-
-      // Get audit logs to find products that were transferred to this branch
-      // We specifically look for INVENTORY_TRANSFER actions where the requester_branch_id matches current user's branch
-      const { data: auditLogs, error: auditError } = await api.getAuditLogs({
-        entity_type: 'centralized_product',
-        action: 'INVENTORY_TRANSFER',
-        page: 1,
-        limit: 1000 // Get all transfer logs
-      });
-
-      // Also get the request details to help identify source branches
-      let requestDetails = null;
-      try {
-        const { data: requests, error: requestError } = await api.getProductRequests();
-        if (!requestError && requests) {
-          requestDetails = requests;
-          console.log('Request details fetched for source branch lookup:', requests.length);
-          console.log('Sample request:', requests[0]);
-        }
-      } catch (err) {
-        console.warn('Could not fetch request details:', err);
+    const response = await fetch(`http://localhost:5000/api/transfers/${currentUser.branch_id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
       }
+    });
 
-      // Also try to get all requests to find the source
-      let allRequests = null;
-      try {
-        const { data: allReqs, error: allReqsError } = await api.getAllProductRequests();
-        if (!allReqsError && allReqs) {
-          allRequests = allReqs;
-          console.log('All requests fetched for source branch lookup:', allReqs.length);
-        }
-      } catch (err) {
-        console.warn('Could not fetch all requests:', err);
-      }
-
-      // Get all branches for better source detection
-      let allBranches = null;
-      try {
-        const { data: branches, error: branchesError } = await api.getBranches();
-        if (!branchesError && branches) {
-          allBranches = branches;
-          console.log('All branches fetched for source detection:', branches.length);
-        }
-      } catch (err) {
-        console.warn('Could not fetch branches:', err);
-      }
-
-      console.log('All audit logs fetched:', auditLogs?.logs?.length || 0);
-      console.log('Current user branch ID:', currentUser.branch_id);
-
-      if (auditError) {
-        console.warn('Could not fetch transfer history:', auditError);
-        // Fallback: show empty state instead of all products
-        setProducts([]);
-        return;
-      }
-
-      // Filter audit logs for transfers TO this branch
-      // We look for INVENTORY_TRANSFER actions where the requester_branch_id matches current user's branch
-      // This ensures we only show products transferred TO the current user's branch
-      const transferLogs = auditLogs?.logs?.filter((log: any) => {
-        const isTransferAction = log.action === 'INVENTORY_TRANSFER';
-        const isToCurrentBranch = log.metadata?.requester_branch_id === currentUser.branch_id;
-        const hasTransferredItems = log.metadata?.items_transferred && log.metadata.items_transferred.length > 0;
-
-        // Debug log for troubleshooting
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Checking log:', {
-            logId: log.id,
-            action: log.action,
-            requester_branch_id: log.metadata?.requester_branch_id,
-            currentUserBranch: currentUser.branch_id,
-            isTransferAction,
-            isToCurrentBranch,
-            hasTransferredItems,
-            shouldInclude: isTransferAction && isToCurrentBranch && hasTransferredItems
-          });
-        }
-
-        return isTransferAction && isToCurrentBranch && hasTransferredItems;
-      }) || [];
-
-      console.log('Found transfer logs:', transferLogs.length);
-
-      if (transferLogs.length === 0) {
-        console.log('No transfer logs found for this branch');
-        setProducts([]);
-        return;
-      }
-
-      // Get all transferred product IDs from the logs
-      const transferredProductIds = new Set<number>();
-      transferLogs.forEach((log: any) => {
-        if (log.metadata?.items_transferred) {
-          log.metadata.items_transferred.forEach((item: any) => {
-            if (item.product_id) {
-              transferredProductIds.add(item.product_id);
-            }
-          });
-        }
-      });
-
-      if (transferredProductIds.size === 0) {
-        console.log('No transferred product IDs found in logs');
-        setProducts([]);
-        return;
-      }
-
-      // Create transferred products directly from transfer logs
-      // This shows products that were transferred, regardless of current inventory
-      const transferredProducts: TransferredProduct[] = [];
-
-      // Fetch product details for all transferred products
-      // Try to get products from the centralized product table first
-      const { data: productDetails, error: productDetailsError } = await api.getProducts(currentUser.branch_id);
-
-      if (productDetailsError) {
-        console.warn('Could not fetch product details:', productDetailsError);
-      }
-
-      console.log('Product details fetched:', productDetails?.length || 0);
-      console.log('Looking for product IDs:', Array.from(transferredProductIds));
-      console.log('Available product details:', productDetails);
-
-      // If we don't have product details, try to fetch them directly from the database
-      let allProductDetails = productDetails || [];
-      if (allProductDetails.length === 0) {
-        console.log('No product details found, trying to fetch from all branches...');
-        try {
-          // Try to get products from all branches to find the transferred products
-          const { data: allProducts, error: allProductsError } = await api.getProducts(1); // Try branch 1 first
-          if (!allProductsError && allProducts) {
-            allProductDetails = allProducts;
-            console.log('Found products from branch 1:', allProducts.length);
-          }
-        } catch (err) {
-          console.warn('Could not fetch products from other branches:', err);
-        }
-      }
-
-      for (const log of transferLogs) {
-        // Double-check that this transfer is TO the current user's branch
-        if (log.metadata?.requester_branch_id !== currentUser.branch_id) {
-          console.log('Skipping log - not for current branch:', {
-            logId: log.id,
-            requester_branch_id: log.metadata?.requester_branch_id,
-            currentUserBranch: currentUser.branch_id
-          });
-          continue;
-        }
-
-        if (log.metadata?.items_transferred) {
-          for (const item of log.metadata.items_transferred) {
-            // Try to find product details from the fetched products
-            const productDetail = allProductDetails?.find((p: any) => p.id === item.product_id);
-
-            // Fallback: try to get product info from transfer log metadata
-            const productInfo = item.product_info || {};
-
-            // Additional fallback: check if product info is in the log metadata
-            const logProductInfo = log.metadata?.product_details?.[item.product_id] || {};
-
-            // Hardcoded fallback for known products from your request details
-            const knownProducts = {
-              44: { name: 'LED Bulb 10W', category: 'Chandelier', price: 299.99 },
-              45: { name: 'Smart Light Strip', category: 'Bulb', price: 1299.99 },
-              46: { name: 'Chandelier', category: 'Chandelier', price: 400.00 }
-            };
-
-            const knownProduct = knownProducts[item.product_id as keyof typeof knownProducts];
-
-            const productPrice = productDetail?.price || productInfo.price || logProductInfo.price || knownProduct?.price || 0;
-            const productName = productDetail?.product_name || productInfo.product_name || logProductInfo.product_name || knownProduct?.name || `Product ${item.product_id}`;
-            const categoryName = productDetail?.category_name || productInfo.category_name || logProductInfo.category_name || knownProduct?.category || 'Unknown';
-
-            console.log('Product lookup for ID', item.product_id, ':', {
-              productDetail: productDetail,
-              productInfo: productInfo,
-              logProductInfo: logProductInfo,
-              knownProduct: knownProduct,
-              finalPrice: productPrice,
-              finalName: productName,
-              finalCategory: categoryName,
-              logMetadata: log.metadata,
-              logDescription: log.description
-            });
-
-            const totalValue = productPrice * item.quantity;
-
-            const transferredProduct: TransferredProduct = {
-              id: item.product_id,
-              product_id: item.product_id,
-              product_name: productName,
-              category_name: categoryName,
-              price: productPrice,
-              quantity: item.quantity, // Use the transferred quantity
-              status: item.quantity === 0 ? 'Out of Stock' :
-                item.quantity < 20 ? 'Low Stock' : 'In Stock',
-              transferred_from: (() => {
-                // Based on the schema, audit logs should have metadata with transfer details
-                console.log('Full log metadata for source branch detection:', log.metadata);
-
-                // First, try to find source branch from metadata fields
-                const sourceBranchId = log.metadata?.source_branch_id ||
-                  log.metadata?.from_branch_id ||
-                  log.metadata?.sender_branch_id ||
-                  log.metadata?.origin_branch_id ||
-                  log.metadata?.source_branch ||
-                  log.metadata?.from_branch;
-
-                if (sourceBranchId) {
-                  // Find the branch location name
-                  const sourceBranch = allBranches?.find((branch: any) => branch.id === sourceBranchId);
-                  return sourceBranch ? sourceBranch.location : `Branch ${sourceBranchId}`;
-                }
-
-                // Try to find source branch from request details
-                const requestId = parseInt(log.entity_id);
-                let request = null;
-
-                // Try user's requests first
-                if (requestDetails && requestId) {
-                  request = requestDetails.find((req: any) => req.request_id === requestId);
-                }
-
-                // Try all requests if not found
-                if (!request && allRequests && requestId) {
-                  request = allRequests.find((req: any) => req.request_id === requestId);
-                }
-
-                if (request) {
-                  console.log('Found request for source branch lookup:', request);
-                  console.log('Request details:', {
-                    request_id: request.request_id,
-                    requester_branch_id: request.requester_branch_id,
-                    requester_name: request.requester_name,
-                    requester_branch: request.requester_branch,
-                    currentUserBranch: currentUser.branch_id
-                  });
-
-                  // The requester_branch_id should be the source branch
-                  if (request.requester_branch_id && request.requester_branch_id !== currentUser.branch_id) {
-                    // Find the branch location name
-                    const sourceBranch = allBranches?.find((branch: any) => branch.id === request.requester_branch_id);
-                    return sourceBranch ? sourceBranch.location : `Branch ${request.requester_branch_id}`;
-                  }
-
-                  // Try requester_branch name (this might already be the location)
-                  if (request.requester_branch) {
-                    return request.requester_branch;
-                  }
-
-                  // Fallback to requester name if available
-                  if (request.requester_name) {
-                    return request.requester_name;
-                  }
-                }
-
-                // Try to extract from description using regex patterns
-                const description = log.description || '';
-                const patterns = [
-                  /from branch (\d+)/i,
-                  /branch (\d+)/i,
-                  /transferred from branch (\d+)/i,
-                  /source branch (\d+)/i
-                ];
-
-                for (const pattern of patterns) {
-                  const match = description.match(pattern);
-                  if (match) {
-                    const branchId = parseInt(match[1]);
-                    // Find the branch location name
-                    const sourceBranch = allBranches?.find((branch: any) => branch.id === branchId);
-                    return sourceBranch ? sourceBranch.location : `Branch ${branchId}`;
-                  }
-                }
-
-                // If we can't determine the source, make an educated guess
-                // Since this is a transfer TO the current branch, it likely came from another branch
-
-                // The logic should be: if current user is Branch X, then source is likely Branch Y (where Y ≠ X)
-                // This is a fallback when we can't determine the actual source from the data
-
-                // Use the fetched branches to make a better guess
-                if (allBranches && allBranches.length > 0) {
-                  const otherBranches = allBranches.filter((branch: any) => branch.id !== currentUser.branch_id);
-                  if (otherBranches.length > 0) {
-                    // Return the first other branch location as a likely source
-                    return otherBranches[0].location;
-                  }
-                }
-
-                // Generic fallback based on common patterns (using location names)
-                if (currentUser.branch_id === 2) {
-                  return 'Manila'; // Likely source if current user is branch 2
-                } else if (currentUser.branch_id === 1) {
-                  return 'Cebu'; // Likely source if current user is branch 1
-                } else if (currentUser.branch_id === 3) {
-                  return 'Davao'; // Likely source if current user is branch 3
-                } else if (currentUser.branch_id === 4) {
-                  return 'Iloilo'; // Likely source if current user is branch 4
-                }
-
-                // Generic fallback
-                return 'External Location';
-              })(),
-              transferred_at: log.timestamp,
-              request_id: log.entity_id || 0,
-              source: 'Transferred' as const,
-              // Additional information
-              total_value: totalValue,
-              requester_name: log.metadata?.requester_name || 'Unknown User',
-              transfer_status: 'Completed', // Since it's in the transfer log, it's completed
-              notes: log.description || ''
-            };
-
-            // Debug log for troubleshooting
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Adding transferred product:', {
-                productId: item.product_id,
-                productName: transferredProduct.product_name,
-                quantity: item.quantity,
-                price: productPrice,
-                totalValue: totalValue,
-                transferredFrom: transferredProduct.transferred_from,
-                requestId: transferredProduct.request_id,
-                productDetail: productDetail,
-                productInfo: productInfo,
-                metadata: log.metadata
-              });
-            }
-
-            transferredProducts.push(transferredProduct);
-          }
-        }
-      }
-      // Final validation: ensure all products are actually for this branch
-      const validatedProducts = transferredProducts.filter(product => {
-        // Additional check to ensure this product was actually transferred to this branch
-        return product.transferred_from !== `Branch ${currentUser.branch_id}`;
-      });
-
-      console.log('Final validated products for branch', currentUser.branch_id, ':', validatedProducts.length);
-      setProducts(validatedProducts);
-    } catch (err) {
-      console.error('Error fetching transferred products:', err);
-      // Set a more user-friendly error message
-      setError('Unable to load transferred products. Please ensure the server is running and try again.');
-    } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
+    if (!response.ok) {
+      throw new Error('Failed to fetch transferred products');
     }
-  }, [currentUser?.user_id, currentUser?.branch_id]);
+
+    const arrivedItems = await response.json();
+
+    // Transform the data into the required format
+    const transferredProducts: TransferredProduct[] = arrivedItems.map((item: any) => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.product?.product_name || 'Unknown Product',
+      category_name: item.product?.category_name || 'Uncategorized',
+      price: item.product?.price || 0,
+      quantity: item.quantity || 0,
+      status: item.quantity === 0 ? 'Out of Stock' :
+              item.quantity < 20 ? 'Low Stock' : 'In Stock',
+      transferred_at: item.transferred_at,
+      arrived_at: item.transferred_at,
+      request_id: item.request_id || 0,
+      transferred_from: item.source_branch?.location || item.transferred_from || 'Main Branch',
+      source: 'Transferred',
+      total_value: (item.quantity || 0) * (item.product?.price || 0),
+      requester_name: currentUser?.name || 'Unknown',
+      transfer_status: item.status || 'Completed',
+      notes: `Transferred on ${new Date(item.transferred_at).toLocaleDateString()}`
+    }));
+
+    console.log('Transferred products found:', transferredProducts.length);
+    setProducts(transferredProducts);
+
+  } catch (error) {
+    console.error('Error fetching transferred products:', error);
+    setError('Unable to load transferred products. Please try again.');
+  } finally {
+    setIsLoading(false);
+    isFetchingRef.current = false;
+  }
+}, [currentUser?.user_id, currentUser?.branch_id]);
 
   // Fetch data on component mount
   useEffect(() => {

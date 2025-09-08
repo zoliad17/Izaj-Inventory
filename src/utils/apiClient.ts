@@ -211,7 +211,11 @@ export const api = {
         apiClient.get(`/audit-logs/user/${userId}`, params),
 
     getAuditLogStats: (params?: any) =>
-        apiClient.get('/audit-logs/stats', params)
+        apiClient.get('/audit-logs/stats', params),
+        
+    // Product transfers
+    getTransferredProducts: (branchId: number) =>
+        apiClient.get(`/transfers/${branchId}`)
 };
 
 // Export the client and API methods

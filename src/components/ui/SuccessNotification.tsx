@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, Package, Calendar, DollarSign, Clipboard, Clock } from 'lucide-react';
 
 interface SuccessNotificationProps {
@@ -19,7 +18,7 @@ export default function SuccessNotification({
     onClose
 }: SuccessNotificationProps) {
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
                 {/* Header with gradient background */}
                 <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-t-2xl p-6 text-white relative overflow-hidden">

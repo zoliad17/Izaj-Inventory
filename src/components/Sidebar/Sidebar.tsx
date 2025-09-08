@@ -158,7 +158,7 @@ function Sidebar() {
       icon: LocationMarkerIcon,
       label: "Branches",
       path: "/branch-management",
-      allowedRoles: ["Super Admin", "Admin"],
+      allowedRoles: ["Super Admin"],
     },
     {
       icon: UserCircleIcon,

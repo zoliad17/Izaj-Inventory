@@ -1398,6 +1398,182 @@ app.get("/api/product-requests/pending-for-branch/:branchId", async (req, res) =
   }
 });
 
+// Mark product request as arrived
+app.put('/api/product-requests/:requestId/mark-arrived', async (req, res) => {
+  const { requestId } = req.params;
+  const { user_id, branch_id } = req.body;
+
+  try {
+    // Update request status to arrived
+    const { data: requestData, error: requestError } = await supabase
+      .from('product_requisition')  // Changed from product_requests to product_requisition
+      .update({ 
+        status: 'arrived',
+        arrived_at: new Date().toISOString()
+      })
+      .eq('request_id', requestId)
+      .select()
+      .single();
+
+    if (requestError) throw requestError;
+
+    // Get the request items with product details
+    const { data: items, error: itemsError } = await supabase
+      .from('product_requisition_items')  // Get items from requisition items table
+      .select(`
+        product_id,
+        quantity,
+        product:product_id (
+          product_name,
+          category_id
+        )
+      `)
+      .eq('request_id', requestId);
+
+    if (itemsError) throw itemsError;
+
+    if (items && items.length > 0) {
+      // Create transfer records for each item
+      const transferRecords = items.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        branch_id: branch_id,
+        transferred_at: new Date().toISOString(),
+        request_id: requestId,
+        status: 'Completed'
+      }));
+
+      // Insert transfer records
+      const { error: transferError } = await supabase
+        .from('product_transfers')
+        .insert(transferRecords);
+
+      if (transferError) throw transferError;
+    }
+
+    res.json({
+      success: true,
+      message: 'Request marked as arrived and transfers recorded',
+      data: requestData
+    });
+
+  } catch (error) {
+    console.error('Error marking request as arrived:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Simplified endpoint to fetch transferred products for a branch
+app.get('/api/transfers/:branchId', async (req, res) => {
+  const { branchId } = req.params;
+
+  try {
+    console.log(`Fetching transfers for branch ${branchId}`);
+
+    // First, get all product transfers for this branch
+    const { data: transfers, error: transferError } = await supabase
+      .from('product_transfers')
+      .select('*')
+      .eq('branch_id', branchId)
+      .order('transferred_at', { ascending: false });
+
+    if (transferError) {
+      console.error('Error fetching transfers:', transferError);
+      return res.status(500).json({ error: 'Failed to fetch transfers: ' + transferError.message });
+    }
+
+    console.log(`Found ${transfers?.length || 0} transfers`);
+
+    if (!transfers || transfers.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Get product details for each transfer
+    const transformedItems = [];
+    
+    for (const transfer of transfers) {
+      try {
+        // Get product details
+        const { data: product, error: productError } = await supabase
+          .from('centralized_product')
+          .select(`
+            id,
+            product_name,
+            price,
+            category_id,
+            category:category_id (
+              category_name
+            )
+          `)
+          .eq('id', transfer.product_id)
+          .single();
+
+        if (productError) {
+          console.error(`Error fetching product ${transfer.product_id}:`, productError);
+          continue;
+        }
+
+        // Get request details to find the source branch
+        const { data: request, error: requestError } = await supabase
+          .from('product_requisition')
+          .select(`
+            request_from,
+            request_to,
+            user_from:request_from (
+              name,
+              branch_id,
+              branch:branch_id (
+                location
+              )
+            )
+          `)
+          .eq('request_id', transfer.request_id)
+          .single();
+
+        if (requestError) {
+          console.error(`Error fetching request ${transfer.request_id}:`, requestError);
+        }
+
+        const transformedItem = {
+          id: transfer.id,
+          product_id: transfer.product_id,
+          product: {
+            product_name: product?.product_name || 'Unknown Product',
+            category_name: product?.category?.category_name || 'Uncategorized',
+            price: product?.price || 0
+          },
+          quantity: transfer.quantity || 0,
+          status: transfer.quantity === 0 ? 'Out of Stock' :
+                  transfer.quantity < 20 ? 'Low Stock' : 'In Stock',
+          transferred_from: request?.user_from?.branch?.location || 'Unknown Branch',
+          transferred_at: transfer.transferred_at,
+          request_id: transfer.request_id || 0,
+          source: 'Transferred',
+          total_value: (product?.price || 0) * (transfer.quantity || 0),
+          requester_name: request?.user_from?.name || 'Unknown User',
+          transfer_status: transfer.status || 'Completed'
+        };
+
+        transformedItems.push(transformedItem);
+      } catch (itemError) {
+        console.error(`Error processing transfer ${transfer.id}:`, itemError);
+        continue;
+      }
+    }
+
+    console.log(`Returning ${transformedItems.length} transformed items`);
+    res.json(transformedItems);
+
+  } catch (error) {
+    console.error('Error in transfers endpoint:', error);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // GET all requests (for Super Admin)
 app.get("/api/product-requests/all", async (req, res) => {
   try {
