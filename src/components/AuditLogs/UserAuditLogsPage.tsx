@@ -352,7 +352,7 @@ const UserAuditLogsPage = () => {
       <div className="container mx-auto px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
         {/* Header */}
         <div className="flex justify-between items-center ">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
@@ -364,10 +364,10 @@ const UserAuditLogsPage = () => {
                 <Clock className="h-7 w-7 text-blue-600 dark:text-blue-400" />
                 My Activity Log
               </h5>
-              <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
-                Track all your actions and system interactions in real-time
-              </p>
             </div>
+            <p className="text-base text-gray-600 dark:text-gray-400 ml-5.5 mt-1">
+              Track all your actions and system interactions in real-time
+            </p>
           </div>
 
           <div className="flex items-center space-x-4">

@@ -1041,7 +1041,7 @@ function OptimizedAllStock() {
         />
 
         <div className="p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <div className="flex flex-row justify-between items-center gap-4 mb-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
@@ -1049,22 +1049,40 @@ function OptimizedAllStock() {
               >
                 <ArrowLeft size={24} />
               </button>
-              <div>
-                <h5 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-6 w-6" />
-                  Available Stocks
-                  {currentUser?.branch_id && (
-                    <span className="ml-auto text-base px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
-                      Branch ID: {currentUser.branch_id}
-                    </span>
-                  )}
-                </h5>
-                <p className="text-base text-gray-600 dark:text-gray-400 mt-2">
-                  Complete inventory including local and transferred products
-                </p>
-              </div>
+              <h5 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Package className="h-6 w-6" />
+                Available Stocks
+                {currentUser?.branch_id && (
+                  <span className="ml-3 text-base px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
+                    Branch ID: {currentUser.branch_id}
+                  </span>
+                )}
+              </h5>
             </div>
+            <button
+              onClick={refetchProducts}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+              title="Refresh"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 1 1 2.83-14.17M19 5a9 9 0 1 0-2.83 14.17"
+                />
+              </svg>
+              Refresh
+            </button>
           </div>
+          <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+            Complete inventory including local and transferred products
+          </p>
 
           {/* Filter Controls */}
           <div className="flex flex-wrap sm:flex-nowrap items-end gap-4 mb-6 overflow-x-auto">
@@ -1198,7 +1216,7 @@ function OptimizedAllStock() {
               <table className="min-w-full bg-white dark:bg-neutral-800">
                 <thead>
                   <tr className="bg-gray-100 dark:bg-neutral-700">
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300 w-10">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200 w-10">
                       <input
                         type="checkbox"
                         checked={
@@ -1210,30 +1228,30 @@ function OptimizedAllStock() {
                         className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Product ID
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Product Name
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Category
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Price
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Quantity
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Status
                     </th>
-                    <th className="px-4 py-2 text-left text-base font-medium text-gray-700 dark:text-gray-300">
+                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-lg text-gray-700 dark:text-gray-300">
                   {paginatedData.currentItems.length > 0 ? (
                     paginatedData.currentItems.map((product: Product) => (
                       <ProductRow
@@ -1251,7 +1269,7 @@ function OptimizedAllStock() {
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-6 py-8 text-center text-lg text-gray-500 dark:text-gray-400 font-medium"
+                        className="px-6 py-10 text-center text-xl text-gray-500 dark:text-gray-400 font-semibold"
                       >
                         No products found matching your filters
                       </td>
