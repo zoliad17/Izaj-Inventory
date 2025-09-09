@@ -168,6 +168,7 @@ function Dashboard() {
   const userRole = currentUser?.role_name || localStorage.getItem("userRole");
   const isSuperAdmin = userRole === "Super Admin";
   const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
+  const isAdmin = userRole === "Admin" || isBranchManager;
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
@@ -175,7 +176,7 @@ function Dashboard() {
     enabled: true,
   });
 
-  // Fetch pending requests count for Branch Manager
+  // Fetch pending requests count for Branch Manager and Admin
   const {
     count: pendingRequestsCount,
     isLoading: isPendingLoading,
@@ -183,7 +184,7 @@ function Dashboard() {
   } = usePendingRequestsCount({
     userId: currentUser?.user_id,
     refreshInterval: 300000, // Refresh every 5 minutes
-    enabled: isBranchManager,
+    enabled: isAdmin,
   });
 
   // Sample product data - in production, this should be fetched from API
@@ -398,8 +399,8 @@ function Dashboard() {
 
         {/* Row 2: Pending Requests, Low Stock, Out of Stock */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {/* Pending Requests Card - Only visible to Branch Manager */}
-          {isBranchManager && (
+          {/* Pending Requests Card - Visible to Admin, and Branch Manager */}
+          {isAdmin && (
             <div
               className={`rounded-lg shadow-lg border p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group ${pendingRequestsCount > 0
                 ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
