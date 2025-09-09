@@ -51,6 +51,9 @@ export interface Branch {
     id: number;
     location: string;
     address: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    map_snapshot_url?: string | null;
     created_at?: string;
 }
 
@@ -141,6 +144,9 @@ export interface ApiResponse<T> {
 export interface BranchFormData {
     location: string;
     address: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    map_snapshot_url?: string | null;
 }
 
 export interface ProductFormData {
@@ -158,4 +164,10 @@ export type UserRole = "Admin" | "Branch Manager" | "Super Admin";
 // Route permissions
 export interface RouteRoles {
     [key: string]: UserRole[];
+}
+
+// Map related types
+export interface MapCoordinates {
+    lat: number;
+    lng: number;
 }

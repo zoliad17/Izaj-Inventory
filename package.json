@@ -11,10 +11,13 @@
     "start:bun": "cd backend/Server && bun start",
     "start:npm": "cd backend/Server && npm start",
     "create:superadmin": "cd backend/Server && node scripts/create-superadmin.js",
+    "migrate:branch-maps": "cd backend/Server && node scripts/add-branch-map-fields.js",
     "install:backend:bun": "cd backend/Server && bun install",
     "install:backend:npm": "cd backend/Server && npm install"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.10",
+    "@googlemaps/react-wrapper": "^1.2.0",
     "@heroicons/react": "^1.0.6",
     "@radix-ui/react-select": "^2.2.5",
     "@supabase/supabase-js": "^2.49.8",

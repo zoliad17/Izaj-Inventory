@@ -661,7 +661,7 @@ app.get("/api/branches", rateLimits.userManagement, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("branch")
-      .select("id, location, address")
+      .select("id, location, address, latitude, longitude, map_snapshot_url")
       .order("location");
 
     if (error) throw error;
@@ -676,7 +676,7 @@ app.get("/api/branches", rateLimits.userManagement, async (req, res) => {
 app.put("/api/branches/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { location, address } = req.body;
+    const { location, address, latitude, longitude, map_snapshot_url } = req.body;
 
     if (!location || !address) {
       return res.status(400).json({ error: "location and address are required" });
@@ -684,9 +684,15 @@ app.put("/api/branches/:id", async (req, res) => {
 
     const { data, error } = await supabase
       .from("branch")
-      .update({ location, address })
+      .update({
+        location,
+        address,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        map_snapshot_url: map_snapshot_url || null
+      })
       .eq("id", id)
-      .select("id, location, address")
+      .select("id, location, address, latitude, longitude, map_snapshot_url")
       .single();
 
     if (error) throw error;
@@ -2560,6 +2566,9 @@ app.post("/api/branches", async (req, res) => {
   const insertPayload = {
     location: branch.location,
     address: branch.address,
+    latitude: branch.latitude || null,
+    longitude: branch.longitude || null,
+    map_snapshot_url: branch.map_snapshot_url || null,
   };
 
   console.log("Insert payload:", insertPayload);
