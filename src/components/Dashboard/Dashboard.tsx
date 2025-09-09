@@ -7,9 +7,13 @@ import {
   Plus,
   RefreshCw,
   TrendingUp,
+  ClipboardList,
+  ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Define types for the product data
 interface Product {
@@ -22,7 +26,6 @@ interface Product {
 }
 
 // shadcn
-("use client");
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import {
@@ -47,7 +50,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-export const description = "An interactive area chart";
+
+// Sample chart data - in production, this should come from an API
 const chartData = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
   { date: "2024-04-02", desktop: 97, mobile: 180 },
@@ -158,10 +162,12 @@ const chartConfig = {
 function Dashboard() {
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
 
-  // Get user role from localStorage
-  const userRole = localStorage.getItem("userRole");
+  // Get user role from context (more reliable than localStorage)
+  const userRole = currentUser?.role_name || localStorage.getItem("userRole");
   const isSuperAdmin = userRole === "Super Admin";
+  const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
@@ -169,7 +175,18 @@ function Dashboard() {
     enabled: true,
   });
 
-  // Product data
+  // Fetch pending requests count for Branch Manager
+  const {
+    count: pendingRequestsCount,
+    isLoading: isPendingLoading,
+    error: pendingError
+  } = usePendingRequestsCount({
+    userId: currentUser?.user_id,
+    refreshInterval: 300000, // Refresh every 5 minutes
+    enabled: isBranchManager,
+  });
+
+  // Sample product data - in production, this should be fetched from API
   const products: Product[] = [
     {
       id: "001",
@@ -213,33 +230,26 @@ function Dashboard() {
     },
   ];
 
-  // shadcn
+  // Chart time range filter
   const [timeRange, setTimeRange] = React.useState("90d");
-  const filteredData = chartData.filter((item) => {
-    const date = new Date(item.date);
+
+  const filteredData = React.useMemo(() => {
+    const daysMap = { "7d": 7, "30d": 30, "90d": 90 };
+    const daysToSubtract = daysMap[timeRange as keyof typeof daysMap] || 90;
     const referenceDate = new Date("2024-06-30");
-    let daysToSubtract = 90;
-    if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7;
-    }
     const startDate = new Date(referenceDate);
     startDate.setDate(startDate.getDate() - daysToSubtract);
-    return date >= startDate;
-  });
+
+    return chartData.filter(item => new Date(item.date) >= startDate);
+  }, [timeRange]);
   return (
     <div
-      className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 `}
     >
       <div className="mt-1.5 mb-6">
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${
-            isSuperAdmin ? "lg:grid-cols-4" : "lg:grid-cols-3"
-          }`}
-        >
+        {/* Row 1: Total Stock, Products, Categories, Branches */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Stock Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center justify-between">
@@ -262,8 +272,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.totalStock?.toLocaleString() || "0"}
+                  ? "Error"
+                  : stats?.totalStock?.toLocaleString() || "0"}
             </h6>
             {error && (
               <p className="text-sm md:text-base text-red-500 mt-1">
@@ -294,8 +304,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.totalProducts || "0"}
+                  ? "Error"
+                  : stats?.totalProducts || "0"}
             </h6>
             {error && (
               <p className="text-sm md:text-base text-red-500 mt-1">
@@ -338,8 +348,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.totalCategories || "0"}
+                  ? "Error"
+                  : stats?.totalCategories || "0"}
             </h6>
             {error && (
               <p className="text-sm md:text-base text-red-500 mt-1">
@@ -373,8 +383,8 @@ function Dashboard() {
                 {isLoading
                   ? "..."
                   : error
-                  ? "Error"
-                  : stats?.totalBranches || "0"}
+                    ? "Error"
+                    : stats?.totalBranches || "0"}
               </h6>
               {error && (
                 <p className="text-sm md:text-base text-red-500 mt-1">
@@ -383,10 +393,56 @@ function Dashboard() {
               )}
             </div>
           )}
+
         </div>
 
-        {/* Additional Stats Row */}
+        {/* Row 2: Pending Requests, Low Stock, Out of Stock */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+          {/* Pending Requests Card - Only visible to Branch Manager */}
+          {isBranchManager && (
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group"
+              onClick={() => navigate("/pending_request")}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                    <ClipboardList
+                      className="text-orange-600 dark:text-orange-400"
+                      size={20}
+                    />
+                  </div>
+                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                    Pending Requests
+                  </h5>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isPendingLoading && (
+                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                  )}
+                  <ArrowRight
+                    className="w-5 h-5 text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200"
+                  />
+                </div>
+              </div>
+              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                {isPendingLoading
+                  ? "..."
+                  : pendingError
+                    ? "Error"
+                    : pendingRequestsCount || "0"}
+              </h6>
+              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1">
+                Awaiting your review
+              </p>
+              {pendingError && (
+                <p className="text-sm md:text-base text-red-500 mt-1">
+                  Failed to load data
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Low Stock Alert Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center justify-between">
@@ -409,8 +465,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.lowStockCount || "0"}
+                  ? "Error"
+                  : stats?.lowStockCount || "0"}
             </h6>
             <p className="font-medium text-gray-500 mt-1">
               Products with less than 20 units
@@ -442,8 +498,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.outOfStockCount || "0"}
+                  ? "Error"
+                  : stats?.outOfStockCount || "0"}
             </h6>
             <p className="font-medium text-gray-500 mt-1">
               Products with zero units
@@ -453,6 +509,10 @@ function Dashboard() {
             )}
           </div>
 
+        </div>
+
+        {/* Row 3: Recent Activity */}
+        <div className="grid grid-cols-1 gap-4 mt-6">
           {/* Recent Activity Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center justify-between">
@@ -475,8 +535,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                ? "Error"
-                : stats?.recentActivity || "0"}
+                  ? "Error"
+                  : stats?.recentActivity || "0"}
             </h6>
             <p className="font-medium text-gray-500 mt-1">
               Actions in the last 7 days
@@ -656,19 +716,18 @@ function Dashboard() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base">
                       <span
-                        className={`px-2 inline-flex text-xs md:text-sm leading-5 font-semibold rounded-full ${
-                          product.status === "in-stock"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                            : product.status === "low-stock"
+                        className={`px-2 inline-flex text-xs md:text-sm leading-5 font-semibold rounded-full ${product.status === "in-stock"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : product.status === "low-stock"
                             ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                             : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                        }`}
+                          }`}
                       >
                         {product.status === "in-stock"
                           ? "In Stock"
                           : product.status === "low-stock"
-                          ? "Low Stock"
-                          : "Out of Stock"}
+                            ? "Low Stock"
+                            : "Out of Stock"}
                       </span>
                     </td>
                   </tr>
@@ -685,12 +744,12 @@ function Dashboard() {
               {isLoading
                 ? "Loading..."
                 : error
-                ? "Error loading data"
-                : stats?.lastUpdated
-                ? `Last updated ${new Date(
-                    stats.lastUpdated
-                  ).toLocaleTimeString()}`
-                : "Last updated 3 mins ago"}
+                  ? "Error loading data"
+                  : stats?.lastUpdated
+                    ? `Last updated ${new Date(
+                      stats.lastUpdated
+                    ).toLocaleTimeString()}`
+                    : "Last updated 3 mins ago"}
             </span>
           </div>
           <button

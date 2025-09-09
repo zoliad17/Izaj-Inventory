@@ -91,6 +91,13 @@ const rateLimits = {
         5 * 60 * 1000, // 5 minutes
         200, // 200 request operations per 5 minutes
         'Too many product request operations, please try again later'
+    ),
+
+    // Audit logs rate limit - For audit log queries
+    auditLogs: createRateLimit(
+        5 * 60 * 1000, // 5 minutes
+        100, // 100 audit log requests per 5 minutes
+        'Too many audit log requests, please try again later'
     )
 };
 

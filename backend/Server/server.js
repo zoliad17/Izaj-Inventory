@@ -1407,7 +1407,7 @@ app.put('/api/product-requests/:requestId/mark-arrived', async (req, res) => {
     // Update request status to arrived
     const { data: requestData, error: requestError } = await supabase
       .from('product_requisition')  // Changed from product_requests to product_requisition
-      .update({ 
+      .update({
         status: 'arrived',
         arrived_at: new Date().toISOString()
       })
@@ -1490,7 +1490,7 @@ app.get('/api/transfers/:branchId', async (req, res) => {
 
     // Get product details for each transfer
     const transformedItems = [];
-    
+
     for (const transfer of transfers) {
       try {
         // Get product details
@@ -1544,7 +1544,7 @@ app.get('/api/transfers/:branchId', async (req, res) => {
           },
           quantity: transfer.quantity || 0,
           status: transfer.quantity === 0 ? 'Out of Stock' :
-                  transfer.quantity < 20 ? 'Low Stock' : 'In Stock',
+            transfer.quantity < 20 ? 'Low Stock' : 'In Stock',
           transferred_from: request?.user_from?.branch?.location || 'Unknown Branch',
           transferred_at: transfer.transferred_at,
           request_id: transfer.request_id || 0,
@@ -1566,8 +1566,8 @@ app.get('/api/transfers/:branchId', async (req, res) => {
 
   } catch (error) {
     console.error('Error in transfers endpoint:', error);
-    res.status(500).json({ 
-      error: 'Internal server error', 
+    res.status(500).json({
+      error: 'Internal server error',
       details: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -1900,7 +1900,7 @@ app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
 });
 
 // GET audit log statistics
-app.get("/api/audit-logs/stats", async (req, res) => {
+app.get("/api/audit-logs/stats", rateLimits.auditLogs, async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
 
