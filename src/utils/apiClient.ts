@@ -1,5 +1,5 @@
 // API Client with proper error handling and retry logic
-import { errorHandler, handleAsync, ApiError } from './errorHandler';
+import { errorHandler } from './errorHandler';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -211,7 +211,11 @@ export const api = {
         apiClient.get(`/audit-logs/user/${userId}`, params),
 
     getAuditLogStats: (params?: any) =>
-        apiClient.get('/audit-logs/stats', params)
+        apiClient.get('/audit-logs/stats', params),
+        
+    // Product transfers
+    getTransferredProducts: (branchId: number) =>
+        apiClient.get(`/transfers/${branchId}`)
 };
 
 // Export the client and API methods

@@ -53,10 +53,23 @@ export class ErrorHandler {
         return ErrorHandler.instance;
     }
 
-    // Categorize error based on response
+    // Categorize error based on response and error object
     public categorizeError(error: any, response?: Response): ErrorType {
         if (!response) {
-            return ErrorType.NETWORK_ERROR;
+            if (error instanceof TypeError && error.message.includes('fetch')) {
+                return ErrorType.NETWORK_ERROR;
+            }
+            if (error instanceof AppError) {
+                switch (error.statusCode) {
+                    case 400: return ErrorType.VALIDATION_ERROR;
+                    case 401: return ErrorType.AUTHENTICATION_ERROR;
+                    case 403: return ErrorType.AUTHORIZATION_ERROR;
+                    case 404: return ErrorType.NOT_FOUND_ERROR;
+                    case 429: return ErrorType.RATE_LIMIT_ERROR;
+                    case 500: return ErrorType.SERVER_ERROR;
+                }
+            }
+            return ErrorType.UNKNOWN_ERROR;
         }
 
         switch (response.status) {

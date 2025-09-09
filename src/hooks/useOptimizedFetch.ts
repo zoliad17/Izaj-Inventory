@@ -1,5 +1,5 @@
 // Custom hook for optimized data fetching with caching and memoization
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../utils/apiClient';
 
 interface UseOptimizedFetchOptions<T> {

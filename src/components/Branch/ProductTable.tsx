@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../utils/apiClient";
+import { Branch, Product as ApiProduct } from "../../types/api";
 
 // Define interface for Product data
 interface Product {
@@ -47,14 +48,17 @@ function ProductTable() {
   useEffect(() => {
     if (!branchId) return;
     const fetchBranch = async () => {
-      const { data, error } = await supabase
-        .from("branch")
-        .select("location")
-        .eq("id", branchId)
-        .single();
-      if (!error && data) {
-        setBranchName(data.location);
-      } else {
+      try {
+        const { data: branches, error } = await api.getBranches();
+        if (!error && Array.isArray(branches)) {
+          const branch = branches.find((b: Branch) => b.id === Number(branchId));
+          setBranchName(branch?.location || "");
+        } else {
+          setBranchName("");
+          console.error('Error fetching branch:', error);
+        }
+      } catch (error) {
+        console.error('Error fetching branch:', error);
         setBranchName("");
       }
     };
@@ -65,24 +69,26 @@ function ProductTable() {
   useEffect(() => {
     if (!branchId) return;
     const fetchProducts = async () => {
-      const { data, error } = await supabase
-        .from("centralized_product")
-        .select(
-          `id, product_name, quantity, price, status, category_id, category:category_id (category_name)`
-        )
-        .eq("branch_id", branchId);
-      if (!error && data) {
-        setProducts(
-          data.map((p: any) => ({
-            id: p.id.toString(),
-            name: p.product_name,
-            category: p.category?.category_name || "",
-            price: p.price ? `Php ${Number(p.price).toFixed(2)}` : "",
-            stock: p.quantity,
-            status: p.status,
-          }))
-        );
-      } else {
+      try {
+        const { data, error } = await api.getProducts(Number(branchId));
+        if (!error && Array.isArray(data)) {
+          setProducts(
+            data.map((p: ApiProduct) => ({
+              id: p.id.toString(),
+              name: p.product_name,
+              category: p.category_name || "",
+              price: p.price ? `Php ${Number(p.price).toFixed(2)}` : "",
+              stock: p.quantity,
+              status: p.quantity === 0 ? 'Out of Stock' :
+                     p.quantity < 20 ? 'Low Stock' : 'In Stock',
+            }))
+          );
+        } else {
+          console.error('Error fetching products:', error);
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
         setProducts([]);
       }
     };
