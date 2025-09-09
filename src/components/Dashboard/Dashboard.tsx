@@ -401,18 +401,30 @@ function Dashboard() {
           {/* Pending Requests Card - Only visible to Branch Manager */}
           {isBranchManager && (
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group"
+              className={`rounded-lg shadow-lg border p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group ${pendingRequestsCount > 0
+                ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+                : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600"
+                }`}
               onClick={() => navigate("/pending_request")}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                  <div className={`p-2 rounded-full ${pendingRequestsCount > 0
+                    ? "bg-orange-100 dark:bg-orange-900/30"
+                    : "bg-gray-100 dark:bg-gray-700"
+                    }`}>
                     <ClipboardList
-                      className="text-orange-600 dark:text-orange-400"
+                      className={`${pendingRequestsCount > 0
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-gray-400 dark:text-gray-500"
+                        }`}
                       size={20}
                     />
                   </div>
-                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                  <h5 className={`font-bold text-xl md:text-2xl ${pendingRequestsCount > 0
+                    ? "text-gray-900 dark:text-gray-100"
+                    : "text-gray-500 dark:text-gray-400"
+                    }`}>
                     Pending Requests
                   </h5>
                 </div>
@@ -421,19 +433,28 @@ function Dashboard() {
                     <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
                   )}
                   <ArrowRight
-                    className="w-5 h-5 text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors duration-200"
+                    className={`w-5 h-5 transition-colors duration-200 ${pendingRequestsCount > 0
+                      ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                      : "text-gray-300 dark:text-gray-600"
+                      }`}
                   />
                 </div>
               </div>
-              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+              <h6 className={`text-lg md:text-2xl font-semibold mt-2 ${pendingRequestsCount > 0
+                ? "text-gray-800 dark:text-gray-100"
+                : "text-gray-400 dark:text-gray-500"
+                }`}>
                 {isPendingLoading
                   ? "..."
                   : pendingError
                     ? "Error"
                     : pendingRequestsCount || "0"}
               </h6>
-              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1">
-                Awaiting your review
+              <p className={`text-sm md:text-base mt-1 ${pendingRequestsCount > 0
+                ? "text-gray-500 dark:text-gray-400"
+                : "text-gray-400 dark:text-gray-500"
+                }`}>
+                {pendingRequestsCount > 0 ? "Awaiting your review" : "No pending requests"}
               </p>
               {pendingError && (
                 <p className="text-sm md:text-base text-red-500 mt-1">
