@@ -53,59 +53,77 @@ const Transferred = memo(() => {
   const itemsPerPage = 5;
 
   // Fetch transferred products
-const fetchTransferredProducts = useCallback(async () => {
-  if (!currentUser?.user_id || !currentUser?.branch_id || isFetchingRef.current) return;
+  const fetchTransferredProducts = useCallback(async () => {
+    if (
+      !currentUser?.user_id ||
+      !currentUser?.branch_id ||
+      isFetchingRef.current
+    )
+      return;
 
-  try {
-    isFetchingRef.current = true;
-    setIsLoading(true);
-    setError(null);
+    try {
+      isFetchingRef.current = true;
+      setIsLoading(true);
+      setError(null);
 
-    const response = await fetch(`http://localhost:5000/api/transfers/${currentUser.branch_id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+      const response = await fetch(
+        `http://localhost:5000/api/transfers/${currentUser.branch_id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch transferred products");
       }
-    });
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch transferred products');
+      const arrivedItems = await response.json();
+
+      // Transform the data into the required format
+      const transferredProducts: TransferredProduct[] = arrivedItems.map(
+        (item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          product_name: item.product?.product_name || "Unknown Product",
+          category_name: item.product?.category_name || "Uncategorized",
+          price: item.product?.price || 0,
+          quantity: item.quantity || 0,
+          status:
+            item.quantity === 0
+              ? "Out of Stock"
+              : item.quantity < 20
+              ? "Low Stock"
+              : "In Stock",
+          transferred_at: item.transferred_at,
+          arrived_at: item.transferred_at,
+          request_id: item.request_id || 0,
+          transferred_from:
+            item.source_branch?.location ||
+            item.transferred_from ||
+            "Main Branch",
+          source: "Transferred",
+          total_value: (item.quantity || 0) * (item.product?.price || 0),
+          requester_name: currentUser?.name || "Unknown",
+          transfer_status: item.status || "Completed",
+          notes: `Transferred on ${new Date(
+            item.transferred_at
+          ).toLocaleDateString()}`,
+        })
+      );
+
+      console.log("Transferred products found:", transferredProducts.length);
+      setProducts(transferredProducts);
+    } catch (error) {
+      console.error("Error fetching transferred products:", error);
+      setError("Unable to load transferred products. Please try again.");
+    } finally {
+      setIsLoading(false);
+      isFetchingRef.current = false;
     }
-
-    const arrivedItems = await response.json();
-
-    // Transform the data into the required format
-    const transferredProducts: TransferredProduct[] = arrivedItems.map((item: any) => ({
-      id: item.id,
-      product_id: item.product_id,
-      product_name: item.product?.product_name || 'Unknown Product',
-      category_name: item.product?.category_name || 'Uncategorized',
-      price: item.product?.price || 0,
-      quantity: item.quantity || 0,
-      status: item.quantity === 0 ? 'Out of Stock' :
-              item.quantity < 20 ? 'Low Stock' : 'In Stock',
-      transferred_at: item.transferred_at,
-      arrived_at: item.transferred_at,
-      request_id: item.request_id || 0,
-      transferred_from: item.source_branch?.location || item.transferred_from || 'Main Branch',
-      source: 'Transferred',
-      total_value: (item.quantity || 0) * (item.product?.price || 0),
-      requester_name: currentUser?.name || 'Unknown',
-      transfer_status: item.status || 'Completed',
-      notes: `Transferred on ${new Date(item.transferred_at).toLocaleDateString()}`
-    }));
-
-    console.log('Transferred products found:', transferredProducts.length);
-    setProducts(transferredProducts);
-
-  } catch (error) {
-    console.error('Error fetching transferred products:', error);
-    setError('Unable to load transferred products. Please try again.');
-  } finally {
-    setIsLoading(false);
-    isFetchingRef.current = false;
-  }
-}, [currentUser?.user_id, currentUser?.branch_id]);
+  }, [currentUser?.user_id, currentUser?.branch_id]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -171,40 +189,52 @@ const fetchTransferredProducts = useCallback(async () => {
   const handleExport = useCallback(() => {
     try {
       const exportData = filteredProducts.map((product) => ({
-        'Product ID': product.id,
-        'Product Name': product.product_name,
-        'Category': product.category_name,
-        'Price': `₱${product.price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        'Quantity': product.quantity,
-        'Total Value': `₱${product.total_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        'Stock Status': product.status,
-        'Transferred From': product.transferred_from,
-        'Request ID': product.request_id,
-        'Transferred At': new Date(product.transferred_at).toLocaleDateString(),
-        'Transfer Status': product.transfer_status,
-        'Requester': product.requester_name
+        "Product ID": product.id,
+        "Product Name": product.product_name,
+        Category: product.category_name,
+        Price: `₱${product.price.toLocaleString("en-PH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+        Quantity: product.quantity,
+        "Total Value": `₱${product.total_value.toLocaleString("en-PH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`,
+        "Stock Status": product.status,
+        "Transferred From": product.transferred_from,
+        "Request ID": product.request_id,
+        "Transferred At": new Date(product.transferred_at).toLocaleDateString(),
+        "Transfer Status": product.transfer_status,
+        Requester: product.requester_name,
       }));
 
       // Create CSV content
       const headers = Object.keys(exportData[0] || {});
       const csvContent = [
-        headers.join(','),
-        ...exportData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
-      ].join('\n');
+        headers.join(","),
+        ...exportData.map((row) =>
+          headers
+            .map((header) => `"${row[header as keyof typeof row]}"`)
+            .join(",")
+        ),
+      ].join("\n");
 
       // Download CSV
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const blob = new Blob([csvContent], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `transferred-products-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `transferred-products-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      const errorMessage = handleError(error, 'Export transferred products');
-      console.error('Export error:', errorMessage);
+      const errorMessage = handleError(error, "Export transferred products");
+      console.error("Export error:", errorMessage);
     }
   }, [filteredProducts]);
 
@@ -212,13 +242,16 @@ const fetchTransferredProducts = useCallback(async () => {
   if (isLoading) {
     return (
       <div
-        className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-          } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+        className={`transition-all duration-300 ${
+          isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
       >
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-300">Loading transferred products...</p>
+            <p className="text-gray-600 dark:text-gray-300">
+              Loading transferred products...
+            </p>
           </div>
         </div>
       </div>
@@ -229,15 +262,26 @@ const fetchTransferredProducts = useCallback(async () => {
   if (error) {
     return (
       <div
-        className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-          } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+        className={`transition-all duration-300 ${
+          isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
       >
         <div className="flex items-center justify-center h-64">
           <div className="text-center max-w-md">
             <div className="mb-4">
               <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="w-8 h-8 text-red-600 dark:text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
@@ -247,7 +291,9 @@ const fetchTransferredProducts = useCallback(async () => {
               <div className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 <p className="mb-2">To fix this issue:</p>
                 <ul className="text-left space-y-1">
-                  <li>• Make sure the backend server is running on port 5000</li>
+                  <li>
+                    • Make sure the backend server is running on port 5000
+                  </li>
                   <li>• Check your internet connection</li>
                   <li>• Verify the API endpoints are accessible</li>
                 </ul>
@@ -267,8 +313,9 @@ const fetchTransferredProducts = useCallback(async () => {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
     >
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
         <Toaster
@@ -309,27 +356,41 @@ const fetchTransferredProducts = useCallback(async () => {
           {products.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Items</div>
+                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                  Total Items
+                </div>
                 <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                   {products.reduce((sum, product) => sum + product.quantity, 0)}
                 </div>
               </div>
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                <div className="text-sm text-green-600 dark:text-green-400 font-medium">Total Value</div>
+                <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                  Total Value
+                </div>
                 <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                  ₱{products.reduce((sum, product) => sum + product.total_value, 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ₱
+                  {products
+                    .reduce((sum, product) => sum + product.total_value, 0)
+                    .toLocaleString("en-PH", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                 </div>
               </div>
               <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">Unique Products</div>
+                <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                  Unique Products
+                </div>
                 <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                   {products.length}
                 </div>
               </div>
               <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
-                <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">Transfer Requests</div>
+                <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+                  Transfer Requests
+                </div>
                 <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-                  {new Set(products.map(p => p.request_id)).size}
+                  {new Set(products.map((p) => p.request_id)).size}
                 </div>
               </div>
             </div>
@@ -400,10 +461,10 @@ const fetchTransferredProducts = useCallback(async () => {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white dark:bg-neutral-800">
+            <table className="min-w-full bg-white dark:bg-neutral-800 text-base">
               <thead>
                 <tr className="bg-gray-100 dark:bg-neutral-700">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     <input
                       type="checkbox"
                       checked={
@@ -413,40 +474,40 @@ const fetchTransferredProducts = useCallback(async () => {
                         )
                       }
                       onChange={selectAllOnPage}
-                      className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
+                      className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
                     />
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     SKU/CODE
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Product Name
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Category
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Price
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Quantity
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Status
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Transferred From
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Total Value
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Request ID
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Transferred At
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-4 py-3 text-left text-base font-semibold text-gray-700 dark:text-gray-300">
                     Status
                   </th>
                 </tr>
@@ -458,58 +519,68 @@ const fetchTransferredProducts = useCallback(async () => {
                       key={product.id}
                       className="hover:bg-gray-50 dark:hover:bg-neutral-700/50"
                     >
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selectedProducts.includes(product.id)}
                           onChange={() => toggleProductSelection(product.id)}
-                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
+                          className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500 dark:bg-neutral-700"
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300 font-mono">
                         {product.id}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
                         {product.product_name}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
                         {product.category_name}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-                        ₱{product.price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
+                        ₱
+                        {product.price.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
                         {product.quantity}
                       </td>
                       <td
-                        className={`px-4 py-2 text-sm font-medium ${product.status === "In Stock"
-                          ? "text-green-600 dark:text-green-400"
-                          : product.status === "Low Stock"
+                        className={`px-4 py-3 text-base font-semibold ${
+                          product.status === "In Stock"
+                            ? "text-green-600 dark:text-green-400"
+                            : product.status === "Low Stock"
                             ? "text-yellow-600 dark:text-yellow-400"
                             : "text-red-600 dark:text-red-400"
-                          }`}
+                        }`}
                       >
                         {product.status}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
                         {product.transferred_from}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-semibold">
-                        ₱{product.total_value.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300 font-semibold">
+                        ₱
+                        {product.total_value.toLocaleString("en-PH", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300 font-mono">
                         #{product.request_id}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
+                      <td className="px-4 py-3 text-base text-gray-700 dark:text-gray-300">
                         {new Date(product.transferred_at).toLocaleDateString()}
                       </td>
                       <td
-                        className={`px-4 py-2 text-sm font-medium ${product.transfer_status === "Completed"
-                          ? "text-green-600 dark:text-green-400"
-                          : product.transfer_status === "Pending"
+                        className={`px-4 py-3 text-base font-semibold ${
+                          product.transfer_status === "Completed"
+                            ? "text-green-600 dark:text-green-400"
+                            : product.transfer_status === "Pending"
                             ? "text-yellow-600 dark:text-yellow-400"
                             : "text-blue-600 dark:text-blue-400"
-                          }`}
+                        }`}
                       >
                         {product.transfer_status}
                       </td>
@@ -519,12 +590,11 @@ const fetchTransferredProducts = useCallback(async () => {
                   <tr>
                     <td
                       colSpan={12}
-                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+                      className="px-4 py-8 text-center text-lg text-gray-500 dark:text-gray-400"
                     >
                       {products.length === 0
                         ? "No transferred products found. Products will appear here once they are transferred from other branches to this branch."
-                        : "No transferred products found matching your criteria"
-                      }
+                        : "No transferred products found matching your criteria"}
                     </td>
                   </tr>
                 )}
@@ -536,20 +606,22 @@ const fetchTransferredProducts = useCallback(async () => {
           {filteredProducts.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between mt-4">
               <div className="mb-2 sm:mb-0">
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Showing{" "}
-                  <span className="font-medium">
+                  <span className="font-semibold text-base sm:text-lg">
                     {(currentPage - 1) * itemsPerPage + 1}
                   </span>{" "}
                   to{" "}
-                  <span className="font-medium">
+                  <span className="font-semibold text-base sm:text-lg">
                     {Math.min(
                       currentPage * itemsPerPage,
                       filteredProducts.length
                     )}
                   </span>{" "}
                   of{" "}
-                  <span className="font-medium">{filteredProducts.length}</span>{" "}
+                  <span className="font-semibold text-base sm:text-lg">
+                    {filteredProducts.length}
+                  </span>{" "}
                   results
                 </p>
               </div>
@@ -559,10 +631,11 @@ const fetchTransferredProducts = useCallback(async () => {
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded ${currentPage === 1
-                    ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
-                    : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded text-xs sm:text-sm font-semibold ${
+                    currentPage === 1
+                      ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                      : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
+                  }`}
                 >
                   Previous
                 </button>
@@ -571,10 +644,11 @@ const fetchTransferredProducts = useCallback(async () => {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded ${currentPage === page
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
-                        }`}
+                      className={`px-3 py-1 rounded text-xs sm:text-sm font-semibold ${
+                        currentPage === page
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
+                      }`}
                     >
                       {page}
                     </button>
@@ -585,10 +659,11 @@ const fetchTransferredProducts = useCallback(async () => {
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded ${currentPage === totalPages
-                    ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
-                    : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
-                    }`}
+                  className={`px-3 py-1 rounded text-xs sm:text-sm font-semibold ${
+                    currentPage === totalPages
+                      ? "bg-gray-200 dark:bg-neutral-700 text-gray-500 dark:text-neutral-400 cursor-not-allowed"
+                      : "bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 text-gray-700 dark:text-gray-300"
+                  }`}
                 >
                   Next
                 </button>
@@ -606,6 +681,6 @@ const fetchTransferredProducts = useCallback(async () => {
   );
 });
 
-Transferred.displayName = 'Transferred';
+Transferred.displayName = "Transferred";
 
 export default Transferred;

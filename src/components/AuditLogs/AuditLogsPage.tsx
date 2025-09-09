@@ -111,7 +111,9 @@ const AuditLogsPage = () => {
           params.append("entity_type", selectedEntityType);
         }
 
-        const response = await fetch(`http://localhost:5000/api/audit-logs?${params}`);
+        const response = await fetch(
+          `http://localhost:5000/api/audit-logs?${params}`
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch audit logs");
         }
@@ -131,7 +133,13 @@ const AuditLogsPage = () => {
     };
 
     fetchLogs();
-  }, [currentPage, itemsPerPage, selectedAction, selectedUser, selectedEntityType]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    selectedAction,
+    selectedUser,
+    selectedEntityType,
+  ]);
 
   // Apply client-side search filter
   useEffect(() => {
@@ -188,13 +196,13 @@ const AuditLogsPage = () => {
   // Get severity icon and color
   const getSeverityIcon = (level: string) => {
     switch (level?.toLowerCase()) {
-      case 'high':
+      case "high":
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'medium':
+      case "medium":
         return <Info className="w-4 h-4 text-yellow-500" />;
-      case 'low':
+      case "low":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'info':
+      case "info":
         return <Info className="w-4 h-4 text-blue-500" />;
       default:
         return <Activity className="w-4 h-4 text-gray-500" />;
@@ -203,16 +211,16 @@ const AuditLogsPage = () => {
 
   const getSeverityColor = (level: string) => {
     switch (level?.toLowerCase()) {
-      case 'high':
-        return 'bg-red-50 border-red-200 text-red-800';
-      case 'medium':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
-      case 'low':
-        return 'bg-green-50 border-green-200 text-green-800';
-      case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+      case "high":
+        return "bg-red-50 border-red-200 text-red-800";
+      case "medium":
+        return "bg-yellow-50 border-yellow-200 text-yellow-800";
+      case "low":
+        return "bg-green-50 border-green-200 text-green-800";
+      case "info":
+        return "bg-blue-50 border-blue-200 text-blue-800";
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
+        return "bg-gray-50 border-gray-200 text-gray-800";
     }
   };
 
@@ -232,7 +240,8 @@ const AuditLogsPage = () => {
   const getActionColor = (action: string) => {
     if (action.includes("LOGIN")) return "bg-blue-100 text-blue-800";
     if (action.includes("SETUP")) return "bg-green-100 text-green-800";
-    if (action.includes("REQUEST_CREATED")) return "bg-yellow-100 text-yellow-800";
+    if (action.includes("REQUEST_CREATED"))
+      return "bg-yellow-100 text-yellow-800";
     if (action.includes("APPROVED")) return "bg-green-100 text-green-800";
     if (action.includes("DENIED")) return "bg-red-100 text-red-800";
     if (action.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
@@ -243,7 +252,8 @@ const AuditLogsPage = () => {
   const getActionIcon = (action: string) => {
     if (action.includes("LOGIN")) return <User className="w-4 h-4" />;
     if (action.includes("SETUP")) return <ChevronUp className="w-4 h-4" />;
-    if (action.includes("REQUEST_CREATED")) return <Package className="w-4 h-4" />;
+    if (action.includes("REQUEST_CREATED"))
+      return <Package className="w-4 h-4" />;
     if (action.includes("APPROVED")) return <ChevronUp className="w-4 h-4" />;
     if (action.includes("DENIED")) return <ChevronDown className="w-4 h-4" />;
     if (action.includes("TRANSFER")) return <Building className="w-4 h-4" />;
@@ -269,7 +279,9 @@ const AuditLogsPage = () => {
         params.append("entity_type", selectedEntityType);
       }
 
-      const response = await fetch(`http://localhost:5000/api/audit-logs?${params}`);
+      const response = await fetch(
+        `http://localhost:5000/api/audit-logs?${params}`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch audit logs");
       }
@@ -330,8 +342,9 @@ const AuditLogsPage = () => {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4`}
     >
       <div className="container mx-auto px-4 py-6 bg-white rounded-lg mb-3.5 shadow-md">
         {/* Header */}
@@ -415,7 +428,9 @@ const AuditLogsPage = () => {
                 <option value="USER_LOGIN">Login</option>
                 <option value="USER_SETUP_COMPLETED">User Setup</option>
                 <option value="PRODUCT_REQUEST_CREATED">Request Created</option>
-                <option value="PRODUCT_REQUEST_APPROVED">Request Approved</option>
+                <option value="PRODUCT_REQUEST_APPROVED">
+                  Request Approved
+                </option>
                 <option value="PRODUCT_REQUEST_DENIED">Request Denied</option>
               </select>
             </div>
@@ -557,7 +572,9 @@ const AuditLogsPage = () => {
                           >
                             <div className="flex items-center">
                               {getActionIcon(log.action)}
-                              <span className="ml-1">{log.action.replace(/_/g, ' ')}</span>
+                              <span className="ml-1">
+                                {log.action.replace(/_/g, " ")}
+                              </span>
                             </div>
                           </span>
                         </td>
@@ -573,10 +590,12 @@ const AuditLogsPage = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-900">
-                            <span className="font-medium">Type:</span> {log.entity_type || "—"}
+                            <span className="font-medium">Type:</span>{" "}
+                            {log.entity_type || "—"}
                           </div>
                           <div className="text-sm text-gray-500">
-                            <span className="font-medium">ID:</span> {log.entity_id || "—"}
+                            <span className="font-medium">ID:</span>{" "}
+                            {log.entity_id || "—"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -601,9 +620,15 @@ const AuditLogsPage = () => {
                           <div className="flex items-center space-x-2">
                             {/* Severity Badge */}
                             {log.severity_level && (
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(log.severity_level)}`}>
+                              <div
+                                className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
+                                  log.severity_level
+                                )}`}
+                              >
                                 {getSeverityIcon(log.severity_level)}
-                                <span className="ml-1">{log.severity_level}</span>
+                                <span className="ml-1">
+                                  {log.severity_level}
+                                </span>
                               </div>
                             )}
 
@@ -655,14 +680,13 @@ const AuditLogsPage = () => {
                     <p className="text-sm text-gray-700">
                       Showing{" "}
                       <span className="font-medium">
-                        {((currentPage - 1) * itemsPerPage) + 1}
+                        {(currentPage - 1) * itemsPerPage + 1}
                       </span>{" "}
                       to{" "}
                       <span className="font-medium">
                         {Math.min(currentPage * itemsPerPage, totalItems)}
                       </span>{" "}
-                      of{" "}
-                      <span className="font-medium">{totalItems}</span>{" "}
+                      of <span className="font-medium">{totalItems}</span>{" "}
                       results
                     </p>
                   </div>
@@ -700,10 +724,11 @@ const AuditLogsPage = () => {
                           <button
                             key={number}
                             onClick={() => paginate(number)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number
-                              ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                              : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
-                              }`}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === number
+                                ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
+                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                            }`}
                           >
                             {number}
                           </button>
@@ -739,10 +764,7 @@ const AuditLogsPage = () => {
 
       {/* Detail View Modal */}
       {showDetailView && selectedLog && (
-        <AuditLogDetailView
-          log={selectedLog}
-          onClose={handleCloseDetailView}
-        />
+        <AuditLogDetailView log={selectedLog} onClose={handleCloseDetailView} />
       )}
     </div>
   );

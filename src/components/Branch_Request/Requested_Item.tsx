@@ -173,29 +173,19 @@ export default function Requested_Item() {
           }}
         />
         <div className="p-6">
-          <div className="flex items-center gap-4 mb-3.5">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Package className="h-6 w-6 text-blue-600" />
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                <ArrowLeft size={24} />
+              </button>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <Package className="h-7 w-7 text-blue-600" />
                 Requested Items
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
-                Track the status of your product requests to other branches
-              </p>
-              <div className="mt-2 text-sm text-gray-500 bg-green-50 dark:bg-green-900/30 p-2 rounded-md">
-                <strong>📊 Request Status:</strong> Monitor your outgoing
-                requests and see when they're approved, denied, or still pending
-                review.
-              </div>
             </div>
-          </div>
-          <div className="flex justify-end mb-4">
             <button
               onClick={loadSentRequests}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -204,19 +194,28 @@ export default function Requested_Item() {
               Refresh
             </button>
           </div>
+          <div className="ml-12">
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Track the status of your product requests to other branches
+            </p>
+            <div className="mt-2 text-base text-gray-500 bg-green-50 dark:bg-green-900/30 p-2 rounded-md">
+              <strong>📊 Request Status:</strong> Monitor your outgoing requests
+              and see when they're approved, denied, or still pending review.
+            </div>
+          </div>
         </div>
 
         <div className="p-6">
           {requests.length === 0 ? (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
                 No Sent Requests
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
                 You haven't sent any product requests yet.
               </p>
-              <div className="text-sm text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md max-w-md mx-auto">
+              <div className="text-base text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md max-w-md mx-auto">
                 <strong>🚀 Ready to request products?</strong>
                 <ul className="mt-1 text-left space-y-1">
                   <li>• Browse products from other branches</li>
@@ -226,7 +225,7 @@ export default function Requested_Item() {
                 </ul>
                 <button
                   onClick={() => navigate("/branch_location")}
-                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base"
                 >
                   Browse Products
                 </button>
@@ -242,11 +241,11 @@ export default function Requested_Item() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                           Request #{request.request_id}
                         </h3>
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
+                          className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
                             request.status
                           )}`}
                         >
@@ -255,21 +254,21 @@ export default function Requested_Item() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-base text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
+                          <User className="h-5 w-5" />
                           <span>
                             <strong>To:</strong> {request.recipient.name}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
+                          <MapPin className="h-5 w-5" />
                           <span>
                             <strong>Branch:</strong> {request.recipient_branch}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
+                          <Calendar className="h-5 w-5" />
                           <span>
                             <strong>Sent:</strong>{" "}
                             {formatDate(request.created_at)}
@@ -278,7 +277,7 @@ export default function Requested_Item() {
                       </div>
 
                       {request.reviewed_at && (
-                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="mt-2 text-base text-gray-600 dark:text-gray-400">
                           <span>
                             <strong>Reviewed:</strong>{" "}
                             {formatDate(request.reviewed_at)}
@@ -295,7 +294,7 @@ export default function Requested_Item() {
 
                   {/* Request Summary */}
                   <div className="mb-4 p-4 bg-gray-50 dark:bg-neutral-700 rounded-md">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">
                           Items:
@@ -343,12 +342,12 @@ export default function Requested_Item() {
                   {request.notes && (
                     <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
                       <div className="flex items-start gap-2">
-                        <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5" />
+                        <MessageSquare className="h-5 w-5 text-blue-500 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                          <p className="text-base font-medium text-blue-700 dark:text-blue-300">
                             Review Notes:
                           </p>
-                          <p className="text-sm text-blue-600 dark:text-blue-400">
+                          <p className="text-base text-blue-600 dark:text-blue-400">
                             {request.notes}
                           </p>
                         </div>
@@ -360,9 +359,9 @@ export default function Requested_Item() {
                   <div className="flex justify-end">
                     <button
                       onClick={() => handleViewDetails(request)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" />
                       View Details
                     </button>
                   </div>
@@ -393,21 +392,27 @@ export default function Requested_Item() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-3">
                 <div>
-                  <span className="font-medium text-gray-700">Recipient:</span>
-                  <p className="text-gray-600">
+                  <span className="font-semibold text-lg text-gray-700">
+                    Recipient:
+                  </span>
+                  <p className="text-gray-700 text-base md:text-lg">
                     {selectedRequest.recipient.name}
                   </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Branch:</span>
-                  <p className="text-gray-600">
+                  <span className="font-semibold text-lg text-gray-700">
+                    Branch:
+                  </span>
+                  <p className="text-gray-700 text-base md:text-lg">
                     {selectedRequest.recipient_branch}
                   </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Status:</span>
+                  <span className="font-semibold text-lg text-gray-700">
+                    Status:
+                  </span>
                   <span
-                    className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    className={`ml-2 px-2 py-1 rounded-full text-sm md:text-base font-semibold ${getStatusColor(
                       selectedRequest.status
                     )}`}
                   >
@@ -417,27 +422,29 @@ export default function Requested_Item() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <span className="font-medium text-gray-700">Sent Date:</span>
-                  <p className="text-gray-600">
+                  <span className="font-semibold text-lg text-gray-700">
+                    Sent Date:
+                  </span>
+                  <p className="text-gray-700 text-base md:text-lg">
                     {formatDate(selectedRequest.created_at)}
                   </p>
                 </div>
                 {selectedRequest.reviewed_at && (
                   <div>
-                    <span className="font-medium text-gray-700">
+                    <span className="font-semibold text-lg text-gray-700">
                       Reviewed Date:
                     </span>
-                    <p className="text-gray-600">
+                    <p className="text-gray-700 text-base md:text-lg">
                       {formatDate(selectedRequest.reviewed_at)}
                     </p>
                   </div>
                 )}
                 {selectedRequest.reviewer_name && (
                   <div>
-                    <span className="font-medium text-gray-700">
+                    <span className="font-semibold text-lg text-gray-700">
                       Reviewed By:
                     </span>
-                    <p className="text-gray-600">
+                    <p className="text-gray-700 text-base md:text-lg">
                       {selectedRequest.reviewer_name}
                     </p>
                   </div>
@@ -447,26 +454,26 @@ export default function Requested_Item() {
 
             {/* Items Table */}
             <div className="mb-6">
-              <h4 className="font-medium text-gray-900 mb-3">
+              <h4 className="font-semibold text-xl text-gray-900 mb-3">
                 Requested Items:
               </h4>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 text-base md:text-lg">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
                         Product
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
                         Category
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
                         Quantity
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
                         Price
                       </th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
                         Total
                       </th>
                     </tr>
@@ -474,19 +481,19 @@ export default function Requested_Item() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {selectedRequest.items.map((item, index) => (
                       <tr key={index}>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
                           {item.product_name}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-600">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-700">
                           {item.category_name}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
                           {item.quantity}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
                           ₱{item.price.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-sm text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
                           ₱{(item.price * item.quantity).toFixed(2)}
                         </td>
                       </tr>
@@ -496,11 +503,11 @@ export default function Requested_Item() {
                     <tr>
                       <td
                         colSpan={4}
-                        className="px-4 py-2 text-sm font-medium text-gray-900 text-right"
+                        className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 text-right"
                       >
                         Total Value:
                       </td>
-                      <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                      <td className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900">
                         ₱{getTotalValue(selectedRequest.items).toFixed(2)}
                       </td>
                     </tr>
@@ -510,11 +517,11 @@ export default function Requested_Item() {
 
               {/* Review Notes */}
               {selectedRequest.notes && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md mt-4">
+                  <h4 className="font-semibold text-lg text-blue-700 dark:text-blue-300 mb-2">
                     Review Notes:
                   </h4>
-                  <p className="text-blue-600 dark:text-blue-400">
+                  <p className="text-blue-700 dark:text-blue-400 text-base md:text-lg">
                     {selectedRequest.notes}
                   </p>
                 </div>
@@ -551,15 +558,15 @@ export default function Requested_Item() {
                         toast.error("Failed to mark items as arrived");
                       }
                     }}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+                    className="px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 text-base md:text-lg font-semibold"
                   >
-                    <Package className="h-4 w-4" />
+                    <Package className="h-5 w-5" />
                     Mark as Arrived
                   </button>
                 )}
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="px-5 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-base md:text-lg font-semibold"
                 >
                   Close
                 </button>
