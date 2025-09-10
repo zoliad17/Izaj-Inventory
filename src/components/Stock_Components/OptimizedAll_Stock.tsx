@@ -1064,6 +1064,7 @@ function OptimizedAllStock() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
               title="Refresh"
             >
+              
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -1074,9 +1075,11 @@ function OptimizedAllStock() {
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 1 1 2.83-14.17M19 5a9 9 0 1 0-2.83 14.17"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
+              
+            
               Refresh
             </button>
           </div>
@@ -1086,7 +1089,7 @@ function OptimizedAllStock() {
 
           {/* Filter Controls */}
           <div className="flex flex-wrap sm:flex-nowrap items-end gap-4 mb-6 overflow-x-auto">
-            <div className="relative flex-shrink-0 sm:w-64">
+            <div className="relative flex-shrink-0 sm:w-48">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-6 w-6 text-gray-400" />
               </div>
