@@ -21,6 +21,7 @@ import {
   Info,
   CheckCircle,
   Activity,
+  Download,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useNavigate } from "react-router-dom";
@@ -344,34 +345,34 @@ const AuditLogsPage = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 overflow-x-hidden`} // Added overflow-x-hidden to prevent horizontal scroll
     >
-      <div className="container mx-auto px-4 py-6 bg-white rounded-lg mb-3.5 shadow-md">
+      <div className="container mx-auto px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-lg mb-3.5 shadow-md dark:shadow-gray-900/30">
         {/* Header */}
-        <div className="flex justify-between items-center ">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer text-gray-800 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft size={20} className="mr-1" />
-              </button>
-              <h5 className="text-2xl font-bold text-gray-800">Audit Logs</h5>
-            </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <ArrowLeft size={20} className="mr-1" />
+            </button>
+            <h5 className="text-2xl font-bold text-gray-800 dark:text-white">
+              Audit Logs
+            </h5>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
             <div className="flex items-center">
               <label
                 htmlFor="itemsPerPage"
-                className="mr-2 text-sm text-gray-600"
+                className="mr-2 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
               >
                 Items per page:
               </label>
               <select
                 id="itemsPerPage"
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -384,31 +385,42 @@ const AuditLogsPage = () => {
                 <option value="50">50</option>
               </select>
             </div>
+
+            {/* Export Button */}
+            <button
+              // onClick={exportToExcel}
+              className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              title="Export to Excel"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+
             <button
               onClick={refreshLogs}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
               />
-              <span>Refresh</span>
+              <span className="hidden sm:inline">Refresh</span>
             </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white mt-2.5 p-4 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
+        <div className="bg-white dark:bg-gray-700 mt-2.5 p-4 rounded-lg shadow dark:shadow-gray-900/30">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search - Made responsive */}
+            <div className="relative col-span-1 md:col-span-2 lg:col-span-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search logs..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -420,7 +432,7 @@ const AuditLogsPage = () => {
                 <Filter className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
               >
@@ -441,7 +453,7 @@ const AuditLogsPage = () => {
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
               >
@@ -456,7 +468,7 @@ const AuditLogsPage = () => {
                 <Building className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedEntityType}
                 onChange={(e) => setSelectedEntityType(e.target.value)}
               >
@@ -470,29 +482,31 @@ const AuditLogsPage = () => {
         </div>
 
         {/* Logs Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg mt-3.5">
+        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg mt-3.5">
           {isLoading ? (
             <div className="flex justify-center items-center p-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
           ) : sortedLogs.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">No audit logs found</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                No audit logs found
+              </p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("timestamp")}
                       >
                         <div className="flex items-center">
                           <Calendar className="w-4 h-4 mr-2" />
-                          Date & Time
+                          <span className="hidden sm:inline">Date & Time</span>
                           {sortConfig.key === "timestamp" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -503,12 +517,12 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("action")}
                       >
                         <div className="flex items-center">
                           <Filter className="w-4 h-4 mr-2" />
-                          Action
+                          <span className="hidden sm:inline">Action</span>
                           {sortConfig.key === "action" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -519,24 +533,24 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        Description
+                        <span className="hidden sm:inline">Description</span>
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        Entity
+                        <span className="hidden sm:inline">Entity</span>
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("user")}
                       >
                         <div className="flex items-center">
                           <User className="w-4 h-4 mr-2" />
-                          User
+                          <span className="hidden sm:inline">User</span>
                           {sortConfig.key === "user" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -547,24 +561,27 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        Details
+                        <span className="hidden sm:inline">Details</span>
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {currentItems.map((log) => (
-                      <tr key={log.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                      <tr
+                        key={log.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {new Date(log.timestamp).toLocaleDateString()}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <span
                             className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(
                               log.action
@@ -572,52 +589,52 @@ const AuditLogsPage = () => {
                           >
                             <div className="flex items-center">
                               {getActionIcon(log.action)}
-                              <span className="ml-1">
+                              <span className="ml-1 hidden sm:inline">
                                 {log.action.replace(/_/g, " ")}
                               </span>
                             </div>
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs">
+                        <td className="px-4 sm:px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">
                             {log.description}
                           </div>
                           {log.notes && (
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
                               Note: {log.notes}
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-4 sm:px-6 py-4">
+                          <div className="text-sm text-gray-900 dark:text-white">
                             <span className="font-medium">Type:</span>{" "}
                             {log.entity_type || "—"}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             <span className="font-medium">ID:</span>{" "}
                             {log.entity_id || "—"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">
                             {log.user?.name || "Unknown"}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {log.user?.email || log.user_id}
                           </div>
                           {log.user?.role?.role_name && (
-                            <div className="text-xs text-blue-600">
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
                               {log.user.role.role_name}
                             </div>
                           )}
                           {log.user?.branch?.location && (
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
                               {log.user.branch.location}
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center space-x-2">
+                        <td className="px-4 sm:px-6 py-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                             {/* Severity Badge */}
                             {log.severity_level && (
                               <div
@@ -634,7 +651,7 @@ const AuditLogsPage = () => {
 
                             {/* Action Category */}
                             {log.action_category && (
-                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
                                 {log.action_category}
                               </div>
                             )}
@@ -642,7 +659,7 @@ const AuditLogsPage = () => {
                             {/* View Details Button */}
                             <button
                               onClick={() => handleViewDetails(log)}
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
                               <Eye className="w-3 h-3 mr-1" />
                               View Details
@@ -656,12 +673,12 @@ const AuditLogsPage = () => {
               </div>
 
               {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => paginate(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
@@ -670,14 +687,14 @@ const AuditLogsPage = () => {
                       paginate(Math.min(totalPages, currentPage + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
                 </div>
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
                       Showing{" "}
                       <span className="font-medium">
                         {(currentPage - 1) * itemsPerPage + 1}
@@ -698,7 +715,7 @@ const AuditLogsPage = () => {
                       <button
                         onClick={() => paginate(1)}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="sr-only">First</span>
                         <ChevronsLeft className="h-5 w-5" />
@@ -706,7 +723,7 @@ const AuditLogsPage = () => {
                       <button
                         onClick={() => paginate(Math.max(1, currentPage - 1))}
                         disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="sr-only">Previous</span>
                         <ChevronLeft className="h-5 w-5" />
@@ -716,7 +733,7 @@ const AuditLogsPage = () => {
                         number === -1 ? (
                           <span
                             key={`ellipsis-${index}`}
-                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300"
                           >
                             ...
                           </span>
@@ -726,8 +743,8 @@ const AuditLogsPage = () => {
                             onClick={() => paginate(number)}
                             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                               currentPage === number
-                                ? "z-10 bg-blue-50 border-blue-500 text-blue-600"
-                                : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                                ? "z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-300"
+                                : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
                             }`}
                           >
                             {number}
@@ -740,7 +757,7 @@ const AuditLogsPage = () => {
                           paginate(Math.min(totalPages, currentPage + 1))
                         }
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="sr-only">Next</span>
                         <ChevronRight className="h-5 w-5" />
@@ -748,7 +765,7 @@ const AuditLogsPage = () => {
                       <button
                         onClick={() => paginate(totalPages)}
                         disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="sr-only">Last</span>
                         <ChevronsRight className="h-5 w-5" />

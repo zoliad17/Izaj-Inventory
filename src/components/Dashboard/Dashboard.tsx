@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
 import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
 import { useAuth } from "../../contexts/AuthContext";
+import { useRole } from "../../contexts/AuthContext";
 
 // Define types for the product data
 interface Product {
@@ -163,12 +164,13 @@ function Dashboard() {
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { isSuperAdmin, isBranchManager, isAdmin } = useRole(); // Use the hook
 
   // Get user role from context (more reliable than localStorage)
-  const userRole = currentUser?.role_name || localStorage.getItem("userRole");
-  const isSuperAdmin = userRole === "Super Admin";
-  const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
-  const isAdmin = userRole === "Admin" || isBranchManager;
+  // const userRole = currentUser?.role_name || localStorage.getItem("userRole");
+  // const isSuperAdmin = userRole === "Super Admin";
+  // const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
+  // const isAdmin = userRole === "Admin" || isBranchManager;
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
@@ -180,11 +182,11 @@ function Dashboard() {
   const {
     count: pendingRequestsCount,
     isLoading: isPendingLoading,
-    error: pendingError
+    error: pendingError,
   } = usePendingRequestsCount({
     userId: currentUser?.user_id,
     refreshInterval: 300000, // Refresh every 5 minutes
-    enabled: isAdmin,
+    enabled: isAdmin(),
   });
 
   // Sample product data - in production, this should be fetched from API
@@ -241,126 +243,135 @@ function Dashboard() {
     const startDate = new Date(referenceDate);
     startDate.setDate(startDate.getDate() - daysToSubtract);
 
-    return chartData.filter(item => new Date(item.date) >= startDate);
+    return chartData.filter((item) => new Date(item.date) >= startDate);
   }, [timeRange]);
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4 `}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 `}
     >
       <div className="mt-1.5 mb-6">
-        {/* Row 1: Total Stock, Products, Categories, Branches */}
+        {/* Row 1: Cards based on user role */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Stock Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                  <Package
-                    className="text-amber-600 dark:text-amber-400"
-                    size={20}
-                  />
+          {/* Total Stock Card - Visible to Admin and Branch Manager only */}
+          {(isAdmin() || isBranchManager()) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                    <Package
+                      className="text-amber-600 dark:text-amber-400"
+                      size={20}
+                    />
+                  </div>
+                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                    Total Stock
+                  </h5>
                 </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                  Total Stock
-                </h5>
-              </div>
-              {isLoading && (
-                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-              )}
-            </div>
-            <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-              {isLoading
-                ? "..."
-                : error
-                  ? "Error"
-                  : stats?.totalStock?.toLocaleString() || "0"}
-            </h6>
-            {error && (
-              <p className="text-sm md:text-base text-red-500 mt-1">
-                Failed to load data
-              </p>
-            )}
-          </div>
-
-          {/* Products Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                  <Lightbulb
-                    className="text-blue-600 dark:text-blue-400"
-                    size={20}
-                  />
-                </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                  Products
-                </h5>
-              </div>
-              {isLoading && (
-                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-              )}
-            </div>
-            <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-              {isLoading
-                ? "..."
-                : error
-                  ? "Error"
-                  : stats?.totalProducts || "0"}
-            </h6>
-            {error && (
-              <p className="text-sm md:text-base text-red-500 mt-1">
-                Failed to load data
-              </p>
-            )}
-          </div>
-
-          {/* Categories Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <Lightbulb
-                    className="text-green-600 dark:text-green-400"
-                    size={20}
-                  />
-                </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                  Categories
-                </h5>
-              </div>
-              <div className="flex items-center gap-2">
                 {isLoading && (
                   <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
                 )}
-                <button
-                  onClick={() => navigate("/categories/add")}
-                  className="p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-                  title="Add Category"
-                >
-                  <Plus
-                    className="text-green-600 dark:text-green-400"
-                    size={16}
-                  />
-                </button>
               </div>
+              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                {isLoading
+                  ? "..."
+                  : error
+                  ? "Error"
+                  : stats?.totalStock?.toLocaleString() || "0"}
+              </h6>
+              {error && (
+                <p className="text-sm md:text-base text-red-500 mt-1">
+                  Failed to load data
+                </p>
+              )}
             </div>
-            <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-              {isLoading
-                ? "..."
-                : error
+          )}
+
+          {/* Products Card - Visible to Admin and Branch Manager only */}
+          {(isAdmin() || isBranchManager()) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <Lightbulb
+                      className="text-blue-600 dark:text-blue-400"
+                      size={20}
+                    />
+                  </div>
+                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                    Products
+                  </h5>
+                </div>
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                )}
+              </div>
+              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                {isLoading
+                  ? "..."
+                  : error
+                  ? "Error"
+                  : stats?.totalProducts || "0"}
+              </h6>
+              {error && (
+                <p className="text-sm md:text-base text-red-500 mt-1">
+                  Failed to load data
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Categories Card - Visible to Admin and Branch Manager only */}
+          {(isAdmin() || isBranchManager()) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <Lightbulb
+                      className="text-green-600 dark:text-green-400"
+                      size={20}
+                    />
+                  </div>
+                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                    Categories
+                  </h5>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                  )}
+                  {isBranchManager() && (
+                    <button
+                      onClick={() => navigate("/categories/add")}
+                      className="p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
+                      title="Add Category"
+                    >
+                      <Plus
+                        className="text-green-600 dark:text-green-400"
+                        size={16}
+                      />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                {isLoading
+                  ? "..."
+                  : error
                   ? "Error"
                   : stats?.totalCategories || "0"}
-            </h6>
-            {error && (
-              <p className="text-sm md:text-base text-red-500 mt-1">
-                Failed to load data
-              </p>
-            )}
-          </div>
+              </h6>
+              {error && (
+                <p className="text-sm md:text-base text-red-500 mt-1">
+                  Failed to load data
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Branches Card - Only visible to Super Admin */}
-          {isSuperAdmin && (
+          {isSuperAdmin() && isBranchManager() && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -384,8 +395,8 @@ function Dashboard() {
                 {isLoading
                   ? "..."
                   : error
-                    ? "Error"
-                    : stats?.totalBranches || "0"}
+                  ? "Error"
+                  : stats?.totalBranches || "0"}
               </h6>
               {error && (
                 <p className="text-sm md:text-base text-red-500 mt-1">
@@ -394,148 +405,172 @@ function Dashboard() {
               )}
             </div>
           )}
-
         </div>
 
-        {/* Row 2: Pending Requests, Low Stock, Out of Stock */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-          {/* Pending Requests Card - Visible to Admin, and Branch Manager */}
-          {isAdmin && (
-            <div
-              className={`rounded-lg shadow-lg border p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group ${pendingRequestsCount > 0
-                ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
-                : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600"
+        {/* Row 2: Pending Requests, Low Stock, Out of Stock - Not shown for Super Admin */}
+        {!isSuperAdmin() && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            {/* Pending Requests Card - Visible to Branch Manager only */}
+            {isBranchManager() && (
+              <div
+                className={`rounded-lg shadow-lg border p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group ${
+                  pendingRequestsCount > 0
+                    ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+                    : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600"
                 }`}
-              onClick={() => navigate("/pending_request")}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${pendingRequestsCount > 0
-                    ? "bg-orange-100 dark:bg-orange-900/30"
-                    : "bg-gray-100 dark:bg-gray-700"
-                    }`}>
-                    <ClipboardList
-                      className={`${pendingRequestsCount > 0
-                        ? "text-orange-600 dark:text-orange-400"
-                        : "text-gray-400 dark:text-gray-500"
+                onClick={() => navigate("/pending_request")}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`p-2 rounded-full ${
+                        pendingRequestsCount > 0
+                          ? "bg-orange-100 dark:bg-orange-900/30"
+                          : "bg-gray-100 dark:bg-gray-700"
+                      }`}
+                    >
+                      <ClipboardList
+                        className={`${
+                          pendingRequestsCount > 0
+                            ? "text-orange-600 dark:text-orange-400"
+                            : "text-gray-400 dark:text-gray-500"
                         }`}
-                      size={20}
+                        size={20}
+                      />
+                    </div>
+                    <h5
+                      className={`font-bold text-xl md:text-2xl ${
+                        pendingRequestsCount > 0
+                          ? "text-gray-900 dark:text-gray-100"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      Pending Requests
+                    </h5>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isPendingLoading && (
+                      <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                    )}
+                    <ArrowRight
+                      className={`w-5 h-5 transition-colors duration-200 ${
+                        pendingRequestsCount > 0
+                          ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
                     />
                   </div>
-                  <h5 className={`font-bold text-xl md:text-2xl ${pendingRequestsCount > 0
-                    ? "text-gray-900 dark:text-gray-100"
-                    : "text-gray-500 dark:text-gray-400"
-                    }`}>
-                    Pending Requests
-                  </h5>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isPendingLoading && (
-                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                  )}
-                  <ArrowRight
-                    className={`w-5 h-5 transition-colors duration-200 ${pendingRequestsCount > 0
-                      ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
-                      : "text-gray-300 dark:text-gray-600"
-                      }`}
-                  />
-                </div>
-              </div>
-              <h6 className={`text-lg md:text-2xl font-semibold mt-2 ${pendingRequestsCount > 0
-                ? "text-gray-800 dark:text-gray-100"
-                : "text-gray-400 dark:text-gray-500"
-                }`}>
-                {isPendingLoading
-                  ? "..."
-                  : pendingError
+                <h6
+                  className={`text-lg md:text-2xl font-semibold mt-2 ${
+                    pendingRequestsCount > 0
+                      ? "text-gray-800 dark:text-gray-100"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                >
+                  {isPendingLoading
+                    ? "..."
+                    : pendingError
                     ? "Error"
                     : pendingRequestsCount || "0"}
-              </h6>
-              <p className={`text-sm md:text-base mt-1 ${pendingRequestsCount > 0
-                ? "text-gray-500 dark:text-gray-400"
-                : "text-gray-400 dark:text-gray-500"
-                }`}>
-                {pendingRequestsCount > 0 ? "Awaiting your review" : "No pending requests"}
-              </p>
-              {pendingError && (
-                <p className="text-sm md:text-base text-red-500 mt-1">
-                  Failed to load data
+                </h6>
+                <p
+                  className={`text-sm md:text-base mt-1 ${
+                    pendingRequestsCount > 0
+                      ? "text-gray-500 dark:text-gray-400"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                >
+                  {pendingRequestsCount > 0
+                    ? "Awaiting your review"
+                    : "No pending requests"}
                 </p>
-              )}
-            </div>
-          )}
-
-          {/* Low Stock Alert Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
-                  <AlertCircle
-                    className="text-yellow-600 dark:text-yellow-400"
-                    size={20}
-                  />
-                </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                  Low Stock
-                </h5>
+                {pendingError && (
+                  <p className="text-sm md:text-base text-red-500 mt-1">
+                    Failed to load data
+                  </p>
+                )}
               </div>
-              {isLoading && (
-                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-              )}
-            </div>
-            <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-              {isLoading
-                ? "..."
-                : error
-                  ? "Error"
-                  : stats?.lowStockCount || "0"}
-            </h6>
-            <p className="font-medium text-gray-500 mt-1">
-              Products with less than 20 units
-            </p>
-            {error && (
-              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+            )}
+
+            {/* Low Stock Alert Card - Visible to Admin and Branch Manager */}
+            {(isAdmin() || isBranchManager()) && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
+                      <AlertCircle
+                        className="text-yellow-600 dark:text-yellow-400"
+                        size={20}
+                      />
+                    </div>
+                    <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                      Low Stock
+                    </h5>
+                  </div>
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                  )}
+                </div>
+                <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                  {isLoading
+                    ? "..."
+                    : error
+                    ? "Error"
+                    : stats?.lowStockCount || "0"}
+                </h6>
+                <p className="font-medium text-gray-500 mt-1">
+                  Products with less than 20 units
+                </p>
+                {error && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Failed to load data
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Out of Stock Card - Visible to Admin and Branch Manager */}
+            {(isAdmin() || isBranchManager()) && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
+                      <AlertCircle
+                        className="text-red-600 dark:text-red-400"
+                        size={20}
+                      />
+                    </div>
+                    <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                      Out of Stock
+                    </h5>
+                  </div>
+                  {isLoading && (
+                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                  )}
+                </div>
+                <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                  {isLoading
+                    ? "..."
+                    : error
+                    ? "Error"
+                    : stats?.outOfStockCount || "0"}
+                </h6>
+                <p className="font-medium text-gray-500 mt-1">
+                  Products with zero units
+                </p>
+                {error && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Failed to load data
+                  </p>
+                )}
+              </div>
             )}
           </div>
+        )}
 
-          {/* Out of Stock Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
-                  <AlertCircle
-                    className="text-red-600 dark:text-red-400"
-                    size={20}
-                  />
-                </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                  Out of Stock
-                </h5>
-              </div>
-              {isLoading && (
-                <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-              )}
-            </div>
-            <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
-              {isLoading
-                ? "..."
-                : error
-                  ? "Error"
-                  : stats?.outOfStockCount || "0"}
-            </h6>
-            <p className="font-medium text-gray-500 mt-1">
-              Products with zero units
-            </p>
-            {error && (
-              <p className="text-sm text-red-500 mt-1">Failed to load data</p>
-            )}
-          </div>
-
-        </div>
-
-        {/* Row 3: Recent Activity */}
+        {/* Row 3: Recent Activity - Visible to all roles */}
         <div className="grid grid-cols-1 gap-4 mt-6">
-          {/* Recent Activity Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -557,8 +592,8 @@ function Dashboard() {
               {isLoading
                 ? "..."
                 : error
-                  ? "Error"
-                  : stats?.recentActivity || "0"}
+                ? "Error"
+                : stats?.recentActivity || "0"}
             </h6>
             <p className="font-medium text-gray-500 mt-1">
               Actions in the last 7 days
@@ -738,18 +773,19 @@ function Dashboard() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base">
                       <span
-                        className={`px-2 inline-flex text-xs md:text-sm leading-5 font-semibold rounded-full ${product.status === "in-stock"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          : product.status === "low-stock"
+                        className={`px-2 inline-flex text-xs md:text-sm leading-5 font-semibold rounded-full ${
+                          product.status === "in-stock"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            : product.status === "low-stock"
                             ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
                             : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                          }`}
+                        }`}
                       >
                         {product.status === "in-stock"
                           ? "In Stock"
                           : product.status === "low-stock"
-                            ? "Low Stock"
-                            : "Out of Stock"}
+                          ? "Low Stock"
+                          : "Out of Stock"}
                       </span>
                     </td>
                   </tr>
@@ -766,12 +802,12 @@ function Dashboard() {
               {isLoading
                 ? "Loading..."
                 : error
-                  ? "Error loading data"
-                  : stats?.lastUpdated
-                    ? `Last updated ${new Date(
-                      stats.lastUpdated
-                    ).toLocaleTimeString()}`
-                    : "Last updated 3 mins ago"}
+                ? "Error loading data"
+                : stats?.lastUpdated
+                ? `Last updated ${new Date(
+                    stats.lastUpdated
+                  ).toLocaleTimeString()}`
+                : "Last updated 3 mins ago"}
             </span>
           </div>
           <button

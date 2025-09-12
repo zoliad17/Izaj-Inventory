@@ -61,9 +61,9 @@ function Sidebar() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/branches');
+        const response = await fetch("http://localhost:5000/api/branches");
         if (!response.ok) {
-          throw new Error('Failed to fetch branches');
+          throw new Error("Failed to fetch branches");
         }
         const data = await response.json();
         setBranches(data || []);
@@ -209,8 +209,9 @@ function Sidebar() {
 
   return (
     <div
-      className={`h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${isCollapsed ? "w-25" : "w-64"
-        }`}
+      className={`h-screen bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 fixed top-0 left-0 overflow-y-auto flex flex-col justify-between border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${
+        isCollapsed ? "w-25" : "w-64"
+      }`}
     >
       {/* Header Section */}
       <div>
@@ -290,8 +291,9 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`group flex items-center font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${isCollapsed ? "p-3 justify-center" : "p-3"
-                      }`}
+                    className={`group flex items-center font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
+                      isCollapsed ? "p-3 justify-center" : "p-3"
+                    }`}
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
@@ -308,8 +310,9 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`group flex items-center w-full font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${isCollapsed ? "p-3 justify-center" : "p-3"
-                          }`}
+                        className={`group flex items-center w-full font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
+                          isCollapsed ? "p-3 justify-center" : "p-3"
+                        }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
@@ -320,8 +323,9 @@ function Sidebar() {
                               {item.label}
                             </span>
                             <svg
-                              className={`ml-2 w-4 h-4 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isDropdownOpen ? "rotate-180" : ""
-                                }`}
+                              className={`ml-2 w-4 h-4 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${
+                                isDropdownOpen ? "rotate-180" : ""
+                              }`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -341,8 +345,9 @@ function Sidebar() {
                       {/* Dropdown content */}
                       {!isCollapsed && item.subItems && (
                         <div
-                          className={`overflow-hidden transition-all duration-300 ${isDropdownOpen ? "max-h-40" : "max-h-0"
-                            }`}
+                          className={`overflow-hidden transition-all duration-300 ${
+                            isDropdownOpen ? "max-h-40" : "max-h-0"
+                          }`}
                         >
                           <ul className="ml-2 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
                             {item.subItems.map((subItem, subIndex) => (
@@ -379,16 +384,14 @@ function Sidebar() {
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-4 border border-blue-100 dark:border-blue-800/50 hover:shadow-lg hover:scale-[1.02] hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-800/40 dark:hover:to-indigo-800/40 transition-all duration-300 ease-in-out">
                   {/* User Avatar */}
                   <div className="flex items-center mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                      {(user.name || user.email || "U")
-                        .charAt(0)
-                        .toUpperCase()}
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-base">
+                      {(user.name || user.email || "U").charAt(0).toUpperCase()}
                     </div>
                     <div className="ml-3 flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 truncate">
                         {user.name || user.email}
                       </h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      <p className="text-base text-gray-600 dark:text-gray-400 truncate">
                         User
                       </p>
                     </div>
@@ -398,9 +401,9 @@ function Sidebar() {
                   <div className="space-y-2">
                     <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
                       <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                      <span className="font-medium">Active</span>
+                      <span className="font-bold text-base">Active</span>
                     </div>
-                    <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
                       <LocationMarkerIcon className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                       <span className="truncate">
                         {userBranch?.location || "Unknown Branch"}
@@ -411,9 +414,7 @@ function Sidebar() {
               ) : (
                 <div className="flex justify-center mb-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {(user.name || user.email || "U")
-                      .charAt(0)
-                      .toUpperCase()}
+                    {(user.name || user.email || "U").charAt(0).toUpperCase()}
                   </div>
                 </div>
               )}
@@ -422,8 +423,9 @@ function Sidebar() {
 
           <button
             onClick={toggleTheme}
-            className={`group flex items-center justify-center font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${isCollapsed ? "p-3" : "px-3 py-2.5"
-              }`}
+            className={`group flex items-center justify-center font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-r hover:from-yellow-50 hover:to-orange-50 dark:hover:from-yellow-900/20 dark:hover:to-orange-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
+              isCollapsed ? "p-3" : "px-3 py-2.5"
+            }`}
             title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isCollapsed ? (
@@ -437,12 +439,16 @@ function Sidebar() {
                 {isDarkMode ? (
                   <>
                     <SunIcon className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
-                    <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">Light Mode</span>
+                    <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">
+                      Light Mode
+                    </span>
                   </>
                 ) : (
                   <>
                     <MoonIcon className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
-                    <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">Dark Mode</span>
+                    <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">
+                      Dark Mode
+                    </span>
                   </>
                 )}
               </>
@@ -451,14 +457,17 @@ function Sidebar() {
 
           <button
             onClick={handleLogout}
-            className={`group flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${isCollapsed ? "p-3" : "px-3 py-2.5"
-              }`}
+            className={`group flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
+              isCollapsed ? "p-3" : "px-3 py-2.5"
+            }`}
             title="Logout"
           >
             {isCollapsed ? (
               <LogOutIcon className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
             ) : (
-              <span className="group-hover:tracking-wide transition-all duration-300">Logout</span>
+              <span className="group-hover:tracking-wide transition-all duration-300">
+                Logout
+              </span>
             )}
           </button>
         </div>
