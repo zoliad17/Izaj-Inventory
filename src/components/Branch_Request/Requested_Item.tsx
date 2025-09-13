@@ -194,7 +194,7 @@ export default function Requested_Item() {
               Refresh
             </button>
           </div>
-          <div className="ml-12">
+          <div>
             <p className="text-lg text-gray-600 dark:text-gray-400">
               Track the status of your product requests to other branches
             </p>
@@ -375,14 +375,14 @@ export default function Requested_Item() {
       {/* Details Modal */}
       {showDetailsModal && selectedRequest && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-neutral-700">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Request Details #{selectedRequest.request_id}
               </h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 <XCircle className="h-6 w-6" />
               </button>
@@ -392,23 +392,23 @@ export default function Requested_Item() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div className="space-y-3">
                 <div>
-                  <span className="font-semibold text-lg text-gray-700">
+                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                     Recipient:
                   </span>
-                  <p className="text-gray-700 text-base md:text-lg">
+                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
                     {selectedRequest.recipient.name}
                   </p>
                 </div>
                 <div>
-                  <span className="font-semibold text-lg text-gray-700">
+                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                     Branch:
                   </span>
-                  <p className="text-gray-700 text-base md:text-lg">
+                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
                     {selectedRequest.recipient_branch}
                   </p>
                 </div>
                 <div>
-                  <span className="font-semibold text-lg text-gray-700">
+                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                     Status:
                   </span>
                   <span
@@ -422,29 +422,29 @@ export default function Requested_Item() {
               </div>
               <div className="space-y-3">
                 <div>
-                  <span className="font-semibold text-lg text-gray-700">
+                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                     Sent Date:
                   </span>
-                  <p className="text-gray-700 text-base md:text-lg">
+                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
                     {formatDate(selectedRequest.created_at)}
                   </p>
                 </div>
                 {selectedRequest.reviewed_at && (
                   <div>
-                    <span className="font-semibold text-lg text-gray-700">
+                    <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                       Reviewed Date:
                     </span>
-                    <p className="text-gray-700 text-base md:text-lg">
+                    <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
                       {formatDate(selectedRequest.reviewed_at)}
                     </p>
                   </div>
                 )}
                 {selectedRequest.reviewer_name && (
                   <div>
-                    <span className="font-semibold text-lg text-gray-700">
+                    <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
                       Reviewed By:
                     </span>
-                    <p className="text-gray-700 text-base md:text-lg">
+                    <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
                       {selectedRequest.reviewer_name}
                     </p>
                   </div>
@@ -454,60 +454,60 @@ export default function Requested_Item() {
 
             {/* Items Table */}
             <div className="mb-6">
-              <h4 className="font-semibold text-xl text-gray-900 mb-3">
+              <h4 className="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
                 Requested Items:
               </h4>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-base md:text-lg">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 text-base md:text-lg">
+                  <thead className="bg-gray-50 dark:bg-neutral-800">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Product
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Category
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Quantity
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Price
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Total
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-neutral-700">
                     {selectedRequest.items.map((item, index) => (
                       <tr key={index}>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
                           {item.product_name}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-700">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-700 dark:text-gray-300">
                           {item.category_name}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
                           {item.quantity}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
                           ₱{item.price.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900">
+                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
                           ₱{(item.price * item.quantity).toFixed(2)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-gray-50">
+                  <tfoot className="bg-gray-50 dark:bg-neutral-800">
                     <tr>
                       <td
                         colSpan={4}
-                        className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 text-right"
+                        className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 text-right"
                       >
                         Total Value:
                       </td>
-                      <td className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900">
+                      <td className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100">
                         ₱{getTotalValue(selectedRequest.items).toFixed(2)}
                       </td>
                     </tr>

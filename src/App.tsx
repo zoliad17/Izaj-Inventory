@@ -35,6 +35,7 @@ import SessionWarning from "./components/SessionWarning";
 import { ThemeProvider } from "./components/ThemeContext/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { RouteRoles } from "./types";
+import UserAuditLogsDetailView from "./components/AuditLogs/UserAuditLogsDetailView";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -62,6 +63,7 @@ const routeRoles: RouteRoles = {
   branchManagement: ["Super Admin", "Admin"],
   auditlogs: ["Super Admin", "Branch Manager"],
   myActivity: ["Admin", "Branch Manager", "Super Admin"],
+  UserAuditLogDetails: ["Admin", "Branch Manager", "Super Admin"],
 };
 
 // Layout component that includes the Sidebar
@@ -260,6 +262,16 @@ const App: React.FC = () => {
                   <ProtectedRoute allowedRoles={routeRoles.myActivity}>
                     <Layout>
                       <UserAuditLogsPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/user-audit-log-details"
+                element={
+                  <ProtectedRoute allowedRoles={routeRoles.myActivity}>
+                    <Layout>
+                      <UserAuditLogsDetailView />
                     </Layout>
                   </ProtectedRoute>
                 }

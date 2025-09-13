@@ -345,7 +345,7 @@ const AuditLogsPage = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 overflow-x-hidden`} // Added overflow-x-hidden to prevent horizontal scroll
+      } p-2 sm:p-4 overflow-x-hidden`}
     >
       <div className="container mx-auto px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-lg mb-3.5 shadow-md dark:shadow-gray-900/30">
         {/* Header */}
@@ -412,27 +412,27 @@ const AuditLogsPage = () => {
         {/* Filters */}
         <div className="bg-white dark:bg-gray-700 mt-2.5 p-4 rounded-lg shadow dark:shadow-gray-900/30">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search - Made responsive */}
-            <div className="relative col-span-1 md:col-span-2 lg:col-span-1">
+            {/* Search - Responsive fix */}
+            <div className="relative col-span-1 md:col-span-2 lg:col-span-1 w-full min-w-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search logs..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             {/* Action Filter */}
-            <div className="relative">
+            <div className="relative w-full min-w-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Filter className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
               >
@@ -448,12 +448,12 @@ const AuditLogsPage = () => {
             </div>
 
             {/* User Filter */}
-            <div className="relative">
+            <div className="relative w-full min-w-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
               >
@@ -463,12 +463,12 @@ const AuditLogsPage = () => {
             </div>
 
             {/* Entity Type Filter */}
-            <div className="relative">
+            <div className="relative w-full min-w-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Building className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 value={selectedEntityType}
                 onChange={(e) => setSelectedEntityType(e.target.value)}
               >
@@ -482,7 +482,7 @@ const AuditLogsPage = () => {
         </div>
 
         {/* Logs Table */}
-        <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg mt-3.5">
+        <div className="bg-white dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg mt-3.5">
           {isLoading ? (
             <div className="flex justify-center items-center p-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

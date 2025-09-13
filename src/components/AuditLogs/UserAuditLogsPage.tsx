@@ -607,14 +607,26 @@ const UserAuditLogsPage = () => {
                           <div className="text-base text-gray-500 dark:text-gray-400 max-w-xs">
                             {log.metadata &&
                             Object.keys(log.metadata).length > 0 ? (
-                              <details className="cursor-pointer">
-                                <summary className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                                  View Details
-                                </summary>
-                                <pre className="mt-2 text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-32 text-gray-800 dark:text-gray-200">
-                                  {JSON.stringify(log.metadata, null, 2)}
-                                </pre>
-                              </details>
+                              <>
+                                {/* <details className="cursor-pointer">
+                                  <summary className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                    View Details
+                                  </summary>
+                                  <pre className="mt-2 text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-32 text-gray-800 dark:text-gray-200">
+                                    {JSON.stringify(log.metadata, null, 2)}
+                                  </pre>
+                                </details> */}
+
+                                <button
+                                  className="mt-2 px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                                  onClick={() =>
+                                    navigate("/user-audit-log-details")
+                                  }
+                                  type="button"
+                                >
+                                  View Full Log
+                                </button>
+                              </>
                             ) : (
                               "—"
                             )}
