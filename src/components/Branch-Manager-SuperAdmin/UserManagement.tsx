@@ -74,10 +74,12 @@ function UserManagement() {
       // Get branch and role information separately
       const [branchesResponse, rolesResponse] = await Promise.all([
         fetch("http://localhost:5000/api/branches"),
-        fetch("http://localhost:5000/api/roles")
+        fetch("http://localhost:5000/api/roles"),
       ]);
 
-      const branchesData = branchesResponse.ok ? await branchesResponse.json() : [];
+      const branchesData = branchesResponse.ok
+        ? await branchesResponse.json()
+        : [];
       const rolesData = rolesResponse.ok ? await rolesResponse.json() : [];
 
       // Join user data with branch and role information
@@ -384,13 +386,13 @@ function UserManagement() {
         { wch: 20 }, // Branch
         { wch: 10 }, // Status
       ];
-      ws['!cols'] = colWidths;
+      ws["!cols"] = colWidths;
 
       // Add the worksheet to the workbook
       XLSX.utils.book_append_sheet(wb, ws, "Users");
 
       // Generate filename with current date
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = new Date().toISOString().split("T")[0];
       const filename = `users_export_${currentDate}.xlsx`;
 
       // Save the file
@@ -405,8 +407,9 @@ function UserManagement() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
     >
       <div className="p-2">
         {/* Toaster for success and error */}
@@ -474,38 +477,45 @@ function UserManagement() {
         </div>
 
         {/* Users Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gradient-to-r text-base text-bold from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Contact
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Branch
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody>
                 {currentUsers.length > 0 ? (
-                  currentUsers.map((user) => (
-                    <tr key={user.user_id}>
+                  currentUsers.map((user, idx) => (
+                    <tr
+                      key={user.user_id}
+                      className={`group transition-colors font-semibold${
+                        idx % 2 === 0
+                          ? "bg-white dark:bg-gray-800"
+                          : "bg-gray-50 dark:bg-gray-800"
+                      } hover:bg-gray-100 dark:hover:bg-gray-900`}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
                         {isEditMode && editedUser.user_id === user.user_id ? (
                           <input
@@ -513,10 +523,10 @@ function UserManagement() {
                             name="name"
                             defaultValue={user.name}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           />
                         ) : (
-                          user.name
+                          <span className="font-medium">{user.name}</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
@@ -526,7 +536,7 @@ function UserManagement() {
                             name="contact"
                             defaultValue={user.contact}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           />
                         ) : (
                           user.contact
@@ -539,7 +549,7 @@ function UserManagement() {
                             name="email"
                             defaultValue={user.email}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           />
                         ) : (
                           user.email
@@ -551,7 +561,7 @@ function UserManagement() {
                             name="role_id"
                             defaultValue={user.role_id}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           >
                             {roles.map((role) => (
                               <option key={role.id} value={role.id}>
@@ -560,7 +570,9 @@ function UserManagement() {
                             ))}
                           </select>
                         ) : (
-                          user.role_name || "N/A"
+                          <span className="inline-block px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                            {user.role_name || "N/A"}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
@@ -569,7 +581,7 @@ function UserManagement() {
                             name="branch_id"
                             defaultValue={user.branch_id}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           >
                             {branches.map((branch) => (
                               <option key={branch.id} value={branch.id}>
@@ -578,7 +590,9 @@ function UserManagement() {
                             ))}
                           </select>
                         ) : (
-                          user.branch_name || "N/A"
+                          <span className="inline-block px-2 py-1 rounded bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+                            {user.branch_name || "N/A"}
+                          </span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -587,28 +601,29 @@ function UserManagement() {
                             name="status"
                             defaultValue={user.status}
                             onChange={(e) => handleInputChange(e, user.user_id)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1 border border-blue-300 dark:border-blue-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                           </select>
                         ) : (
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.status === "Active"
-                              ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100"
-                              : "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
-                              }`}
+                            className={`px-3 py-1 inline-flex text-xs font-bold rounded-full ${
+                              user.status === "Active"
+                                ? "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200"
+                            }`}
                           >
                             {user.status || "Active"}
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {isEditMode && editedUser.user_id === user.user_id ? (
-                          <div className="flex space-x-2">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => handleUpdate(user.user_id)}
-                              className="text-green-600 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+                              className="px-3 py-1 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
                             >
                               Save
                             </button>
@@ -617,19 +632,20 @@ function UserManagement() {
                                 setIsEditMode(false);
                                 setEditedUser({});
                               }}
-                              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
+                              className="px-3 py-1 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
                             >
                               Cancel
                             </button>
                           </div>
                         ) : (
-                          <div className="flex space-x-2">
+                          <div className="flex gap-2">
                             <button
                               onClick={() => {
                                 setEditedUser(user);
                                 setIsEditMode(true);
                               }}
-                              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
+                              className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
+                              title="Edit"
                             >
                               <Edit size={16} />
                             </button>
@@ -638,7 +654,8 @@ function UserManagement() {
                                 setUserIdToDelete(user.user_id);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300"
+                              className="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                              title="Delete"
                             >
                               <Trash2Icon size={16} />
                             </button>
@@ -651,7 +668,7 @@ function UserManagement() {
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                      className="px-6 py-8 text-center text-base text-gray-500 dark:text-gray-400"
                     >
                       No users found
                     </td>
@@ -663,69 +680,60 @@ function UserManagement() {
 
           {/* Pagination */}
           {filteredUsers.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Showing{" "}
-                    <span className="font-medium">
-                      {(currentPage - 1) * itemsPerPage + 1}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-medium">
-                      {Math.min(
-                        currentPage * itemsPerPage,
-                        filteredUsers.length
-                      )}
-                    </span>{" "}
-                    of{" "}
-                    <span className="font-medium">{filteredUsers.length}</span>{" "}
-                    results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={currentPage === 1}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === 1
-                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                        : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        }`}
-                    >
-                      Previous
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (pageNum) => (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                            ? "z-10 bg-blue-50 border-blue-500 text-blue-600 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-200"
-                            : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      )
-                    )}
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                      }
-                      disabled={currentPage === totalPages}
-                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium ${currentPage === totalPages
-                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                        : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
-                        }`}
-                    >
-                      Next
-                    </button>
-                  </nav>
-                </div>
+            <div className="bg-white dark:bg-gray-900 px-4 py-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-800">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                Showing{" "}
+                <span className="font-semibold">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
+                </span>{" "}
+                of <span className="font-semibold">{filteredUsers.length}</span>{" "}
+                results
               </div>
+              <nav className="flex gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
+                    currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Previous
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
+                        currentPage === pageNum
+                          ? "bg-blue-500 dark:bg-blue-700 text-white"
+                          : "bg-white dark:bg-gray-800"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                )}
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
+                    currentPage === totalPages
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  Next
+                </button>
+              </nav>
             </div>
           )}
         </div>
@@ -900,20 +908,22 @@ function UserManagement() {
                   }
                 }}
                 disabled={isAddingUser}
-                className={`py-2 px-4 rounded-lg transition duration-300 ${isAddingUser
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-gray-500 hover:bg-gray-600"
-                  } text-white`}
+                className={`py-2 px-4 rounded-lg transition duration-300 ${
+                  isAddingUser
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gray-500 hover:bg-gray-600"
+                } text-white`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddUser}
                 disabled={isAddingUser}
-                className={`flex items-center gap-2 py-2 px-4 rounded-lg transition duration-300 ${isAddingUser
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-                  } text-white`}
+                className={`flex items-center gap-2 py-2 px-4 rounded-lg transition duration-300 ${
+                  isAddingUser
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700"
+                } text-white`}
               >
                 {isAddingUser ? (
                   <>

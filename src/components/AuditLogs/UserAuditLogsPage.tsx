@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
+  Eye,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useNavigate } from "react-router-dom";
@@ -360,7 +361,7 @@ const UserAuditLogsPage = () => {
               >
                 <ArrowLeft size={24} className="mr-1" />
               </button>
-              <h5 className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <h5 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 <Clock className="h-7 w-7 text-blue-600 dark:text-blue-400" />
                 My Activity Log
               </h5>
@@ -569,9 +570,9 @@ const UserAuditLogsPage = () => {
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 ">
                           <span
-                            className={`px-2 inline-flex text-sm leading-6 font-semibold rounded-full ${getActionColor(
+                            className={`px-3 py-1.5 inline-flex text-sm leading-5 font-semibold rounded-lg shadow-sm border-2 backdrop-blur-sm ${getActionColor(
                               log.action
                             )}`}
                           >
@@ -618,13 +619,14 @@ const UserAuditLogsPage = () => {
                                 </details> */}
 
                                 <button
-                                  className="mt-2 px-3 py-1.5 rounded-md bg-green-600 hover:bg-green-700 text-white font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                                  className="inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-xl text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200"
                                   onClick={() =>
                                     navigate("/user-audit-log-details")
                                   }
                                   type="button"
                                 >
-                                  View Full Log
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
                                 </button>
                               </>
                             ) : (

@@ -9,6 +9,7 @@ import {
   MessageSquare,
   RefreshCw,
   ArrowLeft,
+  TruckIcon,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -218,8 +219,8 @@ export default function PendingRequest() {
               >
                 <ArrowLeft size={24} />
               </button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <Package className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <TruckIcon className="h-7 w-7 text-blue-600 dark:text-blue-400" />
                 Pending Requests
               </h1>
             </div>

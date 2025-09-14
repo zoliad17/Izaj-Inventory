@@ -18,6 +18,7 @@ import { api } from "../../utils/apiClient";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import SuccessNotification from "../ui/SuccessNotification";
+import { useSidebar } from "../Sidebar/SidebarContext";
 
 interface Product {
   id: number;
@@ -40,6 +41,7 @@ interface RequestItem {
 }
 
 export default function UnifiedProductRequest() {
+  const { isCollapsed } = useSidebar();
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const { user: currentUser, isAuthenticated } = useAuth();
@@ -422,7 +424,11 @@ export default function UnifiedProductRequest() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      }  sm:p-4`}
+    >
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -489,8 +495,9 @@ export default function UnifiedProductRequest() {
 
         <div className="p-6">
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-grow">
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+            {/* Search Bar */}
+            <div className="relative flex-grow w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
@@ -504,63 +511,64 @@ export default function UnifiedProductRequest() {
               />
             </div>
 
-            <div className="flex gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
-                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <select
-                  className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  value={categoryFilter}
-                  onChange={(e) => {
-                    setCategoryFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
-                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <select
-                  className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  {statuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={mockExport}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors whitespace-nowrap"
+            {/* Category Filter */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
+              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <select
+                className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  ></path>
-                </svg>
-                Export
-              </button>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
+              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <select
+                className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                {statuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Export Button */}
+            <button
+              onClick={mockExport}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors whitespace-nowrap"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                ></path>
+              </svg>
+              Export
+            </button>
           </div>
 
           {/* Products Table */}
@@ -665,7 +673,7 @@ export default function UnifiedProductRequest() {
                                         : "bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 dark:from-blue-400 dark:to-blue-700 dark:hover:from-blue-500 dark:hover:to-blue-800"
                                     }`}
                             >
-                              Add to Request
+                              Request
                             </button>
                           )}
                         </td>

@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  HomeIcon,
-  LocationMarkerIcon,
-  CubeIcon,
-  ClipboardListIcon,
-  SwitchHorizontalIcon,
-  // CogIcon,
-  UserCircleIcon,
-  // SearchIcon,
-} from "@heroicons/react/outline";
 import { useSidebar } from "./SidebarContext";
-import { LogOutIcon, MenuIcon } from "lucide-react";
+import {
+  LogOutIcon,
+  MenuIcon,
+  Home,
+  MapPin,
+  // Package,
+  ClipboardList,
+  ArrowRightLeft,
+  Users,
+  Building2,
+  Activity,
+  Moon,
+  Sun,
+  // ShoppingCart,
+  Warehouse,
+  Book,
+  Coins,
+  Rotate3D,
+  Building2Icon,
+} from "lucide-react";
 import { useAuth, useRole } from "../../contexts/AuthContext";
 
 // theme
 import { useTheme } from "../ThemeContext/ThemeContext";
-import { MoonIcon, SunIcon } from "@heroicons/react/outline";
 
 // Define types for the navigation items
 interface NavItem {
@@ -92,38 +100,38 @@ function Sidebar() {
   // Navigation items data with proper typing and role permissions
   const navItems: NavItem[] = [
     {
-      icon: HomeIcon,
+      icon: Home,
       label: "Dashboard",
       path: "/dashboard",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
     {
-      icon: LocationMarkerIcon,
+      icon: MapPin,
       label: "Branch",
       path: "/branch_location",
       allowedRoles: ["Admin", "Branch Manager"],
     },
 
     {
-      icon: ClipboardListIcon,
+      icon: Building2Icon,
       label: "Branch Request",
       path: null,
       allowedRoles: ["Admin", "Branch Manager"],
       subItems: [
         {
-          icon: ClipboardListIcon,
+          icon: ClipboardList,
           label: "Pending Request",
           path: "/pending_request",
           allowedRoles: ["Branch Manager"],
         },
         {
-          icon: SwitchHorizontalIcon,
+          icon: Rotate3D,
           label: "Transferred",
           path: "/transferred",
           allowedRoles: ["Admin", "Branch Manager"],
         },
         {
-          icon: SwitchHorizontalIcon,
+          icon: ArrowRightLeft,
           label: "Requested Item",
           path: "/requested_item",
           allowedRoles: ["Admin", "Branch Manager"],
@@ -131,13 +139,13 @@ function Sidebar() {
       ],
     },
     {
-      icon: CubeIcon,
+      icon: Coins,
       label: "Sales",
       path: "/sales",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
     {
-      icon: CubeIcon,
+      icon: Warehouse,
       label: "Stock",
       path: "/all_stock",
       allowedRoles: ["Admin", "Branch Manager"],
@@ -149,25 +157,25 @@ function Sidebar() {
     //   allowedRoles: [ "Super Admin"],
     // },
     {
-      icon: UserCircleIcon,
+      icon: Users,
       label: "User",
       path: "/user-management",
       allowedRoles: ["Super Admin"],
     },
     {
-      icon: LocationMarkerIcon,
+      icon: Building2,
       label: "Branches",
       path: "/branch-management",
       allowedRoles: ["Super Admin"],
     },
     {
-      icon: UserCircleIcon,
+      icon: Book,
       label: "Audit Logs",
       path: "/auditlogs",
       allowedRoles: ["Super Admin"],
     },
     {
-      icon: ClipboardListIcon,
+      icon: Activity,
       label: "My Activity",
       path: "/my-activity",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
@@ -404,7 +412,7 @@ function Sidebar() {
                       <span className="font-bold text-base">Active</span>
                     </div>
                     <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
-                      <LocationMarkerIcon className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
+                      <MapPin className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                       <span className="truncate">
                         {userBranch?.location || "Unknown Branch"}
                       </span>
@@ -430,22 +438,22 @@ function Sidebar() {
           >
             {isCollapsed ? (
               isDarkMode ? (
-                <SunIcon className="h-6 w-6 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
+                <Sun className="h-6 w-6 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
               ) : (
-                <MoonIcon className="h-6 w-6 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
+                <Moon className="h-6 w-6 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
               )
             ) : (
               <>
                 {isDarkMode ? (
                   <>
-                    <SunIcon className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
+                    <Sun className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
                     <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">
                       Light Mode
                     </span>
                   </>
                 ) : (
                   <>
-                    <MoonIcon className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
+                    <Moon className="h-5 w-5 mr-2 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300" />
                     <span className="group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors duration-300">
                       Dark Mode
                     </span>

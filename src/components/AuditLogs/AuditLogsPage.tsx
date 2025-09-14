@@ -213,15 +213,15 @@ const AuditLogsPage = () => {
   const getSeverityColor = (level: string) => {
     switch (level?.toLowerCase()) {
       case "high":
-        return "bg-red-50 border-red-200 text-red-800";
+        return "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700";
       case "medium":
-        return "bg-yellow-50 border-yellow-200 text-yellow-800";
+        return "bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-800/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700";
       case "low":
-        return "bg-green-50 border-green-200 text-green-800";
+        return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
       case "info":
-        return "bg-blue-50 border-blue-200 text-blue-800";
+        return "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700";
       default:
-        return "bg-gray-50 border-gray-200 text-gray-800";
+        return "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700";
     }
   };
 
@@ -239,15 +239,15 @@ const AuditLogsPage = () => {
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes("LOGIN")) return "bg-blue-100 text-blue-800";
-    if (action.includes("SETUP")) return "bg-green-100 text-green-800";
+    if (action.includes("LOGIN")) return "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700";
+    if (action.includes("SETUP")) return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
     if (action.includes("REQUEST_CREATED"))
-      return "bg-yellow-100 text-yellow-800";
-    if (action.includes("APPROVED")) return "bg-green-100 text-green-800";
-    if (action.includes("DENIED")) return "bg-red-100 text-red-800";
-    if (action.includes("TRANSFER")) return "bg-purple-100 text-purple-800";
-    if (action.includes("RECEIVE")) return "bg-teal-100 text-teal-800";
-    return "bg-gray-100 text-gray-800";
+      return "bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-800/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700";
+    if (action.includes("APPROVED")) return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
+    if (action.includes("DENIED")) return "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700";
+    if (action.includes("TRANSFER")) return "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-700";
+    if (action.includes("RECEIVE")) return "bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-700";
+    return "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700";
   };
 
   const getActionIcon = (action: string) => {
@@ -345,9 +345,9 @@ const AuditLogsPage = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 overflow-x-hidden`}
+      } p-2 sm:p-4`}
     >
-      <div className="container mx-auto px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-lg mb-3.5 shadow-md dark:shadow-gray-900/30">
+      <div className="w-full px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-lg mb-3.5 shadow-md dark:shadow-gray-900/30">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -411,9 +411,9 @@ const AuditLogsPage = () => {
 
         {/* Filters */}
         <div className="bg-white dark:bg-gray-700 mt-2.5 p-4 rounded-lg shadow dark:shadow-gray-900/30">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search - Responsive fix */}
-            <div className="relative col-span-1 md:col-span-2 lg:col-span-1 w-full min-w-0">
+            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1 w-full min-w-0">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -482,7 +482,7 @@ const AuditLogsPage = () => {
         </div>
 
         {/* Logs Table */}
-        <div className="bg-white dark:bg-gray-800 shadow overflow-x-auto sm:rounded-lg mt-3.5">
+        <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mt-3.5 w-full">
           {isLoading ? (
             <div className="flex justify-center items-center p-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -495,18 +495,19 @@ const AuditLogsPage = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="w-full">
+                <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                        className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("timestamp")}
                       >
                         <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2" />
+                          <Calendar className="w-4 h-4 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">Date & Time</span>
+                          <span className="sm:hidden">Date</span>
                           {sortConfig.key === "timestamp" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -517,12 +518,13 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                        className="w-40 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("action")}
                       >
                         <div className="flex items-center">
-                          <Filter className="w-4 h-4 mr-2" />
+                          <Filter className="w-4 h-4 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">Action</span>
+                          <span className="sm:hidden">Action</span>
                           {sortConfig.key === "action" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -533,24 +535,27 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="w-48 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        <span className="hidden sm:inline">Description</span>
+                        <span className="hidden lg:inline">Description</span>
+                        <span className="lg:hidden">Desc</span>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        <span className="hidden sm:inline">Entity</span>
+                        <span className="hidden lg:inline">Entity</span>
+                        <span className="lg:hidden">Entity</span>
                       </th>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                        className="w-40 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                         onClick={() => requestSort("user")}
                       >
                         <div className="flex items-center">
-                          <User className="w-4 h-4 mr-2" />
+                          <User className="w-4 h-4 mr-1 sm:mr-2" />
                           <span className="hidden sm:inline">User</span>
+                          <span className="sm:hidden">User</span>
                           {sortConfig.key === "user" &&
                             (sortConfig.direction === "ascending" ? (
                               <ChevronUp className="w-4 h-4 ml-1" />
@@ -561,9 +566,10 @@ const AuditLogsPage = () => {
                       </th>
                       <th
                         scope="col"
-                        className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
+                        className="w-48 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        <span className="hidden sm:inline">Details</span>
+                        <span className="hidden lg:inline">Details</span>
+                        <span className="lg:hidden">Details</span>
                       </th>
                     </tr>
                   </thead>
@@ -573,85 +579,87 @@ const AuditLogsPage = () => {
                         key={log.id}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base font-medium text-gray-900 dark:text-white">
                             {new Date(log.timestamp).toLocaleDateString()}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(
+                            className={`px-3 py-1.5 inline-flex text-sm leading-5 font-semibold rounded-lg shadow-sm border-2 backdrop-blur-sm ${getActionColor(
                               log.action
                             )}`}
                           >
                             <div className="flex items-center">
                               {getActionIcon(log.action)}
-                              <span className="ml-1 hidden sm:inline">
+                              <span className="ml-2 hidden sm:inline">
                                 {log.action.replace(/_/g, " ")}
                               </span>
                             </div>
                           </span>
                         </td>
-                        <td className="px-4 sm:px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white max-w-xs truncate">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base font-medium text-gray-900 dark:text-white break-words">
                             {log.description}
                           </div>
                           {log.notes && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 break-words mt-1">
                               Note: {log.notes}
                             </div>
                           )}
                         </td>
-                        <td className="px-4 sm:px-6 py-4">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            <span className="font-medium">Type:</span>{" "}
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base text-gray-900 dark:text-white">
+                            <span className="font-semibold">Type:</span>{" "}
                             {log.entity_type || "—"}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             <span className="font-medium">ID:</span>{" "}
                             {log.entity_id || "—"}
                           </div>
                         </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base font-medium text-gray-900 dark:text-white break-words">
                             {log.user?.name || "Unknown"}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 break-words mt-1">
                             {log.user?.email || log.user_id}
                           </div>
                           {log.user?.role?.role_name && (
-                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                            <div className="text-sm text-blue-600 dark:text-blue-400 break-words mt-1 font-medium">
                               {log.user.role.role_name}
                             </div>
                           )}
                           {log.user?.branch?.location && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                            <div className="text-sm text-gray-500 dark:text-gray-400 break-words mt-1">
                               {log.user.branch.location}
                             </div>
                           )}
                         </td>
-                        <td className="px-4 sm:px-6 py-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="flex flex-col space-y-2">
                             {/* Severity Badge */}
                             {log.severity_level && (
                               <div
-                                className={`px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
+                                className={`px-3 py-2 rounded-xl text-sm font-semibold shadow-sm border-2 backdrop-blur-sm ${getSeverityColor(
                                   log.severity_level
                                 )}`}
                               >
-                                {getSeverityIcon(log.severity_level)}
-                                <span className="ml-1">
-                                  {log.severity_level}
-                                </span>
+                                <div className="flex items-center">
+                                  {getSeverityIcon(log.severity_level)}
+                                  <span className="ml-2 capitalize">
+                                    {log.severity_level}
+                                  </span>
+                                </div>
                               </div>
                             )}
 
                             {/* Action Category */}
                             {log.action_category && (
-                              <div className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+                              <div className="px-3 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-800 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700 shadow-sm backdrop-blur-sm">
                                 {log.action_category}
                               </div>
                             )}
@@ -659,9 +667,9 @@ const AuditLogsPage = () => {
                             {/* View Details Button */}
                             <button
                               onClick={() => handleViewDetails(log)}
-                              className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 text-xs font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-xl text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200"
                             >
-                              <Eye className="w-3 h-3 mr-1" />
+                              <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </button>
                           </div>
@@ -673,7 +681,7 @@ const AuditLogsPage = () => {
               </div>
 
               {/* Pagination */}
-              <div className="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+              <div className="bg-white dark:bg-gray-800 px-2 sm:px-4 lg:px-6 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
                 <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() => paginate(Math.max(1, currentPage - 1))}

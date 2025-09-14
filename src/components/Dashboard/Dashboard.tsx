@@ -9,6 +9,9 @@ import {
   TrendingUp,
   ClipboardList,
   ArrowRight,
+  User,
+  Building,
+  Group,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
@@ -251,74 +254,72 @@ function Dashboard() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 `}
     >
-      <div className="mt-1.5 mb-6">
-        {/* Row 1: Cards based on user role */}
+      <div className="mt-2 mb-8">
         {isSuperAdmin() ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {/* Branches Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                    <Lightbulb
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-purple-500/20 to-purple-700/20 dark:from-purple-800/30 dark:to-purple-600/30">
+                    <Building
                       className="text-purple-600 dark:text-purple-400"
-                      size={20}
+                      size={22}
                     />
                   </div>
-                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                  <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                     Branches
                   </h5>
                 </div>
-                <div className="flex items-center gap-2">
-                  {isLoading && (
-                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                  )}
-                </div>
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                )}
               </div>
-              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+              <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                 {isLoading
                   ? "..."
                   : error
                   ? "Error"
                   : stats?.totalBranches || "0"}
               </h6>
+              <p className="text-sm text-gray-500 mt-1">Total Branches</p>
               {error && (
-                <p className="text-sm md:text-base text-red-500 mt-1">
-                  Failed to load data
-                </p>
+                <p className="text-sm text-red-500 mt-2">Failed to load data</p>
               )}
             </div>
-            {/* Users Card (static) */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+
+            {/* Users Card */}
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-full">
-                  <Package
+                <div className="p-3 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-indigo-700/20 dark:from-indigo-800/30 dark:to-indigo-600/30">
+                  <User
                     className="text-indigo-600 dark:text-indigo-400"
-                    size={20}
+                    size={22}
                   />
                 </div>
-                <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                   Users
                 </h5>
               </div>
-              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+              <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                 12
               </h6>
-              <p className="text-sm md:text-base text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Total registered users
               </p>
             </div>
+
             {/* Recent Activity Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
                     <TrendingUp
                       className="text-blue-600 dark:text-blue-400"
-                      size={20}
+                      size={22}
                     />
                   </div>
-                  <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                  <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                     Recent Activity
                   </h5>
                 </div>
@@ -326,70 +327,67 @@ function Dashboard() {
                   <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
                 )}
               </div>
-              <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+              <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                 {isLoading
                   ? "..."
                   : error
                   ? "Error"
                   : stats?.recentActivity || "0"}
               </h6>
-              <p className="font-medium text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 mt-1">
                 Actions in the last 7 days
               </p>
               {error && (
-                <p className="text-sm text-red-500 mt-1">Failed to load data</p>
+                <p className="text-sm text-red-500 mt-2">Failed to load data</p>
               )}
             </div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-              {/* Total Stock Card - Visible to Admin and Branch Manager only */}
+            {/* Row 1: Stock / Products / Categories */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {isBranchManager() && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                      <div className="p-3 rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-700/20 dark:from-amber-800/30 dark:to-amber-600/30">
                         <Package
                           className="text-amber-600 dark:text-amber-400"
-                          size={20}
+                          size={22}
                         />
                       </div>
-                      <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                      <h4 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                         Total Stock
-                      </h5>
+                      </h4>
                     </div>
                     {isLoading && (
                       <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
                     )}
                   </div>
-                  <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                     {isLoading
                       ? "..."
                       : error
                       ? "Error"
                       : stats?.totalStock?.toLocaleString() || "0"}
                   </h6>
-                  {error && (
-                    <p className="text-sm md:text-base text-red-500 mt-1">
-                      Failed to load data
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Total items in inventory
+                  </p>
                 </div>
               )}
 
-              {/* Products Card - Visible to Admin and Branch Manager only */}
               {isBranchManager() && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                      <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
                         <Lightbulb
                           className="text-blue-600 dark:text-blue-400"
-                          size={20}
+                          size={22}
                         />
                       </div>
-                      <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                         Products
                       </h5>
                     </div>
@@ -397,89 +395,78 @@ function Dashboard() {
                       <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
                     )}
                   </div>
-                  <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                     {isLoading
                       ? "..."
                       : error
                       ? "Error"
                       : stats?.totalProducts || "0"}
                   </h6>
-                  {error && (
-                    <p className="text-sm md:text-base text-red-500 mt-1">
-                      Failed to load data
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Total distinct products
+                  </p>
                 </div>
               )}
 
-              {/* Categories Card - Visible to Admin and Branch Manager only */}
               {isBranchManager() && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow relative">
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                        <Lightbulb
+                      <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
+                        <Group
                           className="text-green-600 dark:text-green-400"
-                          size={20}
+                          size={22}
                         />
                       </div>
-                      <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
+                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                         Categories
                       </h5>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isLoading && (
-                        <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                      )}
-                      {isBranchManager() && (
-                        <button
-                          onClick={() => navigate("/categories/add")}
-                          className="p-1.5 cursor-pointer bg-green-100 dark:bg-green-900/30 rounded-full hover:bg-green-200 dark:hover:bg-green-800/50 transition-colors"
-                          title="Add Category"
-                        >
-                          <Plus
-                            className="text-green-600 dark:text-green-400"
-                            size={16}
-                          />
-                        </button>
-                      )}
-                    </div>
+                    {isBranchManager() && (
+                      <button
+                        onClick={() => navigate("/categories/add")}
+                        className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                        title="Add Category"
+                      >
+                        <Plus
+                          className="text-green-600 dark:text-green-400"
+                          size={16}
+                        />
+                      </button>
+                    )}
                   </div>
-                  <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                     {isLoading
                       ? "..."
                       : error
                       ? "Error"
                       : stats?.totalCategories || "0"}
                   </h6>
-                  {error && (
-                    <p className="text-sm md:text-base text-red-500 mt-1">
-                      Failed to load data
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-500 mt-1">
+                    Total product categories
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* Row 2: Pending Requests, Low Stock, Out of Stock - Not shown for Super Admin */}
+            {/* Row 2: Requests / Low Stock / Out of Stock */}
             {!isSuperAdmin() && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                {/* Pending Requests Card - Visible to Branch Manager only */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {isBranchManager() && (
                   <div
-                    className={`rounded-lg shadow-lg border p-6 hover:shadow-xl outline-1 transition-all duration-200 relative cursor-pointer group ${
-                      pendingRequestsCount > 0
-                        ? "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
-                        : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-600"
-                    }`}
                     onClick={() => navigate("/pending_request")}
+                    className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
+                      pendingRequestsCount > 0
+                        ? "bg-white/80 dark:bg-gray-900/70 border-gray-200 dark:border-gray-700"
+                        : "bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-600"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-2 rounded-full ${
+                          className={`p-3 rounded-xl ${
                             pendingRequestsCount > 0
-                              ? "bg-orange-100 dark:bg-orange-900/30"
+                              ? "bg-gradient-to-tr from-orange-500/20 to-orange-700/20 dark:from-orange-800/30 dark:to-orange-600/30"
                               : "bg-gray-100 dark:bg-gray-700"
                           }`}
                         >
@@ -489,36 +476,31 @@ function Dashboard() {
                                 ? "text-orange-600 dark:text-orange-400"
                                 : "text-gray-400 dark:text-gray-500"
                             }`}
-                            size={20}
+                            size={22}
                           />
                         </div>
                         <h5
-                          className={`font-bold text-xl md:text-2xl ${
+                          className={`font-bold text-lg md:text-xl ${
                             pendingRequestsCount > 0
                               ? "text-gray-900 dark:text-gray-100"
-                              : "text-gray-500 dark:text-gray-400"
+                              : "text-gray-400 dark:text-gray-500"
                           }`}
                         >
                           Pending Requests
                         </h5>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {isPendingLoading && (
-                          <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                        )}
-                        <ArrowRight
-                          className={`w-5 h-5 transition-colors duration-200 ${
-                            pendingRequestsCount > 0
-                              ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
-                              : "text-gray-300 dark:text-gray-600"
-                          }`}
-                        />
-                      </div>
+                      <ArrowRight
+                        className={`w-5 h-5 transition-colors ${
+                          pendingRequestsCount > 0
+                            ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                            : "text-gray-300 dark:text-gray-600"
+                        }`}
+                      />
                     </div>
                     <h6
-                      className={`text-lg md:text-2xl font-semibold mt-2 ${
+                      className={`text-2xl font-bold mt-3 ${
                         pendingRequestsCount > 0
-                          ? "text-gray-800 dark:text-gray-100"
+                          ? "text-gray-900 dark:text-white"
                           : "text-gray-400 dark:text-gray-500"
                       }`}
                     >
@@ -529,7 +511,7 @@ function Dashboard() {
                         : pendingRequestsCount || "0"}
                     </h6>
                     <p
-                      className={`text-sm md:text-base mt-1 ${
+                      className={`text-sm mt-1 ${
                         pendingRequestsCount > 0
                           ? "text-gray-500 dark:text-gray-400"
                           : "text-gray-400 dark:text-gray-500"
@@ -539,124 +521,87 @@ function Dashboard() {
                         ? "Awaiting your review"
                         : "No pending requests"}
                     </p>
-                    {pendingError && (
-                      <p className="text-sm md:text-base text-red-500 mt-1">
-                        Failed to load data
-                      </p>
-                    )}
                   </div>
                 )}
 
-                {/* Low Stock Alert Card - Visible to Admin and Branch Manager */}
                 {(isAdmin() || isBranchManager()) && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-full">
-                          <AlertCircle
-                            className="text-yellow-600 dark:text-yellow-400"
-                            size={20}
-                          />
-                        </div>
-                        <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                          Low Stock
-                        </h5>
+                  <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-tr from-yellow-500/20 to-yellow-700/20 dark:from-yellow-800/30 dark:to-yellow-600/30">
+                        <AlertCircle
+                          className="text-yellow-600 dark:text-yellow-400"
+                          size={22}
+                        />
                       </div>
-                      {isLoading && (
-                        <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                      )}
+                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                        Low Stock
+                      </h5>
                     </div>
-                    <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                    <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                       {isLoading
                         ? "..."
                         : error
                         ? "Error"
                         : stats?.lowStockCount || "0"}
                     </h6>
-                    <p className="font-medium text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       Products with less than 20 units
                     </p>
-                    {error && (
-                      <p className="text-sm text-red-500 mt-1">
-                        Failed to load data
-                      </p>
-                    )}
                   </div>
                 )}
 
-                {/* Out of Stock Card - Visible to Admin and Branch Manager */}
                 {(isAdmin() || isBranchManager()) && (
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full">
-                          <AlertCircle
-                            className="text-red-600 dark:text-red-400"
-                            size={20}
-                          />
-                        </div>
-                        <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                          Out of Stock
-                        </h5>
+                  <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-tr from-red-500/20 to-red-700/20 dark:from-red-800/30 dark:to-red-600/30">
+                        <AlertCircle
+                          className="text-red-600 dark:text-red-400"
+                          size={22}
+                        />
                       </div>
-                      {isLoading && (
-                        <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                      )}
+                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                        Out of Stock
+                      </h5>
                     </div>
-                    <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                    <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                       {isLoading
                         ? "..."
                         : error
                         ? "Error"
                         : stats?.outOfStockCount || "0"}
                     </h6>
-                    <p className="font-medium text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 mt-1">
                       Products with zero units
                     </p>
-                    {error && (
-                      <p className="text-sm text-red-500 mt-1">
-                        Failed to load data
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Row 3: Recent Activity - Visible to all roles */}
-            <div className="grid grid-cols-1 gap-4 mt-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl outline-1 transition-shadow">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                      <TrendingUp
-                        className="text-blue-600 dark:text-blue-400"
-                        size={20}
-                      />
-                    </div>
-                    <h5 className="font-bold text-xl md:text-2xl text-gray-900 dark:text-gray-100">
-                      Recent Activity
-                    </h5>
+            {/* Row 3: Recent Activity */}
+            <div className="grid grid-cols-1 gap-6 mt-6">
+              <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
+                    <TrendingUp
+                      className="text-blue-600 dark:text-blue-400"
+                      size={22}
+                    />
                   </div>
-                  {isLoading && (
-                    <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
-                  )}
+                  <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                    Recent Activity
+                  </h5>
                 </div>
-                <h6 className="text-lg md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mt-2">
+                <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                   {isLoading
                     ? "..."
                     : error
                     ? "Error"
                     : stats?.recentActivity || "0"}
                 </h6>
-                <p className="font-medium text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   Actions in the last 7 days
                 </p>
-                {error && (
-                  <p className="text-sm text-red-500 mt-1">
-                    Failed to load data
-                  </p>
-                )}
               </div>
             </div>
           </>
@@ -664,7 +609,7 @@ function Dashboard() {
       </div>
 
       {/* Line Chart Card */}
-      <Card className="pt-0">
+      <Card className=" bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
           <div className="grid flex-1 gap-1">
             <CardTitle>Area Chart - Interactive</CardTitle>
@@ -775,44 +720,51 @@ function Dashboard() {
 
       {/* Bottom Row - Products Table */}
 
-      <Card className="mt-6">
-        <div className="py-1 md:px-6">
-          <div className="flex items-center gap-3 mb-4 md:mb-6">
-            <Lightbulb className="text-gray-500 dark:text-gray-400" size={20} />
-            <h5 className="text-lg md:text-xl font-medium text-gray-900 dark:text-gray-100">
+      <Card className="mt-6 bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="py-4 md:px-6">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-700/20 dark:from-amber-800/30 dark:to-amber-600/30">
+              <Lightbulb
+                className="text-amber-600 dark:text-amber-400"
+                size={20}
+              />
+            </div>
+            <h5 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
               Top Products
             </h5>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-900">
-              <thead className="bg-gray-50 dark:bg-neutral-900">
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50/70 dark:bg-gray-800/70">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
                     Product ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide hidden sm:table-cell">
                     Category
                   </th>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
                     Price
                   </th>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide hidden md:table-cell">
                     Stock
                   </th>
-                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wide">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white/70 dark:bg-gray-900/50 divide-y divide-gray-200 dark:divide-gray-700">
                 {products.map((product) => (
                   <tr
                     key={product.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    className="hover:bg-gray-50/70 dark:hover:bg-gray-800/60 transition-colors"
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-900 dark:text-gray-100">
                       {product.id}
@@ -823,20 +775,20 @@ function Dashboard() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                       {product.category}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-500 dark:text-gray-400">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-700 dark:text-gray-300">
                       {product.price}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base text-gray-700 dark:text-gray-300 hidden md:table-cell">
                       {product.stock}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm md:text-base">
                       <span
-                        className={`px-2 inline-flex text-xs md:text-sm leading-5 font-semibold rounded-full ${
+                        className={`px-3 py-1 inline-flex text-xs md:text-sm font-medium rounded-full shadow-sm ${
                           product.status === "in-stock"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                             : product.status === "low-stock"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
                         }`}
                       >
                         {product.status === "in-stock"
@@ -853,7 +805,8 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center justify-between text-sm md:text-base text-gray-500 dark:text-gray-400">
+        {/* Footer */}
+        <div className="px-4 py-3 md:px-6 bg-gray-50/70 dark:bg-gray-800/70 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-sm md:text-base text-gray-500 dark:text-gray-400">
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-gray-400 dark:text-gray-500" />
             <span>
@@ -870,11 +823,11 @@ function Dashboard() {
           </div>
           <button
             onClick={refetch}
-            className="flex items-center gap-1 px-2 py-1 text-xs md:text-sm bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs md:text-sm bg-gray-200/70 dark:bg-gray-700/70 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             disabled={isLoading}
             title="Refresh data (minimum 30 seconds between requests)"
           >
-            <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
             {isLoading ? "Refreshing..." : "Refresh"}
           </button>
         </div>

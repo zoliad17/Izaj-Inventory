@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { useSidebar } from "../Sidebar/SidebarContext";
 import {
   Upload,
   Plus,
@@ -11,6 +10,7 @@ import {
   Download,
   Package,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import AddProductModal from "./AddProductModal";
 import EditProductModal from "./EditProductModal";
@@ -21,6 +21,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSidebar } from "../Sidebar/SidebarContext";
 
 interface Product {
   id: number;
@@ -244,6 +245,7 @@ Pagination.displayName = "Pagination";
 
 function OptimizedAllStock() {
   const { isCollapsed } = useSidebar();
+
   const navigate = useNavigate();
   const { handleError } = useErrorHandler();
   const { user: currentUser } = useAuth();
@@ -1026,7 +1028,7 @@ function OptimizedAllStock() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 bg-white dark:bg-neutral-900`}
+      } p-2 sm:p-4 `}
     >
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
         <Toaster
@@ -1041,168 +1043,183 @@ function OptimizedAllStock() {
         />
 
         <div className="p-6">
-          <div className="flex flex-row justify-between items-center gap-4 mb-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-              >
-                <ArrowLeft size={24} />
-              </button>
-              <h5 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Package className="h-6 w-6" />
-                Available Stocks
-                {currentUser?.branch_id && (
-                  <span className="ml-3 text-base px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
-                    Branch ID: {currentUser.branch_id}
-                  </span>
-                )}
-              </h5>
-            </div>
-            <button
-              onClick={refetchProducts}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              title="Refresh"
-            >
-              
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              
-            
-              Refresh
-            </button>
-          </div>
-          <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-            Complete inventory including local and transferred products
-          </p>
-
-          {/* Filter Controls */}
-          <div className="flex flex-wrap sm:flex-nowrap items-end gap-4 mb-6 overflow-x-auto">
-            <div className="relative flex-shrink-0 sm:w-48">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-6 w-6 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="block w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md leading-6 bg-white dark:bg-neutral-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="category-filter"
-                className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Category
-              </label>
-              <select
-                id="category-filter"
-                className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(Number(e.target.value))}
-              >
-                <option value={0}>All</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.category_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="status-filter"
-                className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Status
-              </label>
-              <select
-                id="status-filter"
-                className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              >
-                <option value="All">All Status</option>
-                {STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex-shrink-0">
-              <label
-                htmlFor="source-filter"
-                className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Source
-              </label>
-              <select
-                id="source-filter"
-                className="block w-full pl-4 pr-10 py-3 text-base border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
-                value={selectedSource}
-                onChange={(e) => setSelectedSource(e.target.value)}
-              >
-                <option value="All">All Sources</option>
-                <option value="Local">Local Inventory</option>
-                <option value="Transferred">Transferred Products</option>
-              </select>
-            </div>
-
-            <div className="flex gap-2 flex-shrink-0">
-              {selectedProducts.length > 0 && (
+          <div className="flex flex-col gap-4 mb-6">
+            {/* Header Row */}
+            <div className="flex flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={confirmBulkDelete}
-                  className="flex items-center gap-2 px-5 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-base"
+                  onClick={() => navigate(-1)}
+                  className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
                 >
-                  <Trash2 className="w-6 h-6" />
-                  <span className="hidden sm:inline">Delete</span>
+                  <ArrowLeft size={26} />
                 </button>
-              )}
+                <h5 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Package className="h-7 w-7" />
+                  Available Stocks
+                  {currentUser?.branch_id && (
+                    <span className="ml-3 text-base px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full">
+                      Branch ID: {currentUser.branch_id}
+                    </span>
+                  )}
+                </h5>
+              </div>
+
               <button
-                onClick={handleImportExcel}
-                className="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-base"
+                onClick={refetchProducts}
+                className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base transition-all"
+                title="Refresh"
               >
-                <Upload className="w-6 h-6" />
-                <span className="hidden sm:inline">Import Excel</span>
+                <RefreshCw className="w-4 h-4" />
+                Refresh
               </button>
-              <button
-                onClick={handleExportExcel}
-                className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              >
-                <Download className="w-6 h-6" />
-                <span className="hidden sm:inline">Export Excel</span>
-              </button>
-              <button
-                onClick={handleDownloadTemplate}
-                className="flex items-center gap-2 px-5 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 text-base"
-              >
-                <Download className="w-6 h-6" />
-                <span className="hidden sm:inline">Download Template</span>
-              </button>
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              >
-                <Plus className="w-6 h-6" />
-                <span className="hidden sm:inline">Add Product</span>
-              </button>
+            </div>
+
+            {/* Subtitle */}
+            <p className="text-base text-gray-600 dark:text-gray-400">
+              Complete inventory including local and transferred products
+            </p>
+
+            {/* Filter Controls */}
+            <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 overflow-x-auto">
+              {/* Search */}
+              <div className="relative flex-shrink-0 sm:w-56">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+                 bg-white dark:bg-neutral-700 placeholder-gray-400 dark:placeholder-gray-400 
+                 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 
+                 focus:ring-blue-500 focus:border-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex-shrink-0">
+                <label
+                  htmlFor="category-filter"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Category
+                </label>
+                <select
+                  id="category-filter"
+                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(Number(e.target.value))}
+                >
+                  <option value={0}>All</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.category_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex-shrink-0">
+                <label
+                  htmlFor="status-filter"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Status
+                </label>
+                <select
+                  id="status-filter"
+                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="All">All Status</option>
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Source Filter */}
+              <div className="flex-shrink-0">
+                <label
+                  htmlFor="source-filter"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  Source
+                </label>
+                <select
+                  id="source-filter"
+                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  value={selectedSource}
+                  onChange={(e) => setSelectedSource(e.target.value)}
+                >
+                  <option value="All">All Sources</option>
+                  <option value="Local">Local Inventory</option>
+                  <option value="Transferred">Transferred Products</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 flex-shrink-0">
+                {selectedProducts.length > 0 && (
+                  <button
+                    onClick={confirmBulkDelete}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-md 
+                   hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 
+                   text-sm transition-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleImportExcel}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-md 
+                 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
+                 text-sm transition-all"
+                >
+                  <Upload className="w-5 h-5" />
+                  <span className="hidden sm:inline">Import</span>
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-md 
+                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                 text-sm transition-all"
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-600 text-white rounded-md 
+                 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 
+                 text-sm transition-all"
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline">Template</span>
+                </button>
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-md 
+                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 
+                 text-sm transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="hidden sm:inline">Add</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1216,10 +1233,10 @@ function OptimizedAllStock() {
           {/* Products table */}
           {!isLoading && (
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-neutral-800">
+              <table className="min-w-full bg-white dark:bg-neutral-900 shadow-lg rounded-xl overflow-hidden">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-neutral-700">
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200 w-10">
+                  <tr className="bg-gray-100 dark:bg-neutral-800 text-base">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100 w-12">
                       <input
                         type="checkbox"
                         checked={
@@ -1228,33 +1245,33 @@ function OptimizedAllStock() {
                           paginatedData.currentItems.length > 0
                         }
                         onChange={toggleSelectAll}
-                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                        className="h-5 w-5 text-blue-600 rounded-md border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Product ID
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Product Name
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Category
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Quantity
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-lg font-semibold text-gray-800 dark:text-gray-200">
+                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="text-lg text-gray-700 dark:text-gray-300">
+                <tbody className="text-lg text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-neutral-700">
                   {paginatedData.currentItems.length > 0 ? (
                     paginatedData.currentItems.map((product: Product) => (
                       <ProductRow
@@ -1272,7 +1289,7 @@ function OptimizedAllStock() {
                     <tr>
                       <td
                         colSpan={8}
-                        className="px-6 py-10 text-center text-xl text-gray-500 dark:text-gray-400 font-semibold"
+                        className="px-6 py-12 text-center text-xl font-medium text-gray-500 dark:text-gray-400"
                       >
                         No products found matching your filters
                       </td>
