@@ -1066,7 +1066,12 @@ function OptimizedAllStock() {
 
               <button
                 onClick={refetchProducts}
-                className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold bg-transparent
+                 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                 hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                 dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                 transition-all duration-300 text-blue-600 dark:text-blue-400"
                 title="Refresh"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -1078,39 +1083,106 @@ function OptimizedAllStock() {
             <p className="text-base text-gray-600 dark:text-gray-400">
               Complete inventory including local and transferred products
             </p>
-
+            {/* Action Buttons */}
+            <div className="flex flex-row-reverse gap-3 flex-shrink-0">
+              {selectedProducts.length > 0 && (
+                <button
+                  onClick={confirmBulkDelete}
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-base text-red-700 bg-transparent
+       shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+       dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+       hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+       dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+       transition-all"
+                >
+                  <Trash2 className="w-6 h-6" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              )}
+              {[
+                {
+                  label: "Import",
+                  icon: Upload,
+                  handler: handleImportExcel,
+                  bg: "green",
+                },
+                {
+                  label: "Export",
+                  icon: Download,
+                  handler: handleExportExcel,
+                  bg: "blue",
+                },
+                {
+                  label: "Template",
+                  icon: Download,
+                  handler: handleDownloadTemplate,
+                  bg: "gray",
+                },
+                {
+                  label: "Add",
+                  icon: Plus,
+                  handler: () => setIsAddModalOpen(true),
+                  bg: "blue",
+                },
+              ].map((btn, idx) => (
+                <button
+                  key={idx}
+                  onClick={btn.handler}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-base text-white
+       shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+       dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+       hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+       dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+       transition-all`}
+                  style={{
+                    color:
+                      btn.bg === "green"
+                        ? "#16a34a"
+                        : btn.bg === "blue"
+                        ? "#3b82f6"
+                        : "#6b7280",
+                  }}
+                >
+                  <btn.icon className="w-6 h-6" />
+                  <span className="hidden sm:inline">{btn.label}</span>
+                </button>
+              ))}
+            </div>
             {/* Filter Controls */}
-            <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 overflow-x-auto">
+            <div
+              className="flex flex-wrap sm:flex-nowrap items-end gap-3 p-3 bg-white dark:bg-neutral-800 rounded-2xl
+             shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)]
+             dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)]"
+            >
               {/* Search */}
-              <div className="relative flex-shrink-0 sm:w-56">
+              <div className="relative flex-1 min-w-[200px] sm:w-56">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   type="text"
                   placeholder="Search products..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                 bg-white dark:bg-neutral-700 placeholder-gray-400 dark:placeholder-gray-400 
-                 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 
-                 focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-3 py-2 rounded-2xl text-sm
+                 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                 placeholder-gray-400 dark:placeholder-gray-400 border border-gray-300 dark:border-gray-600
+                 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
 
               {/* Category Filter */}
-              <div className="flex-shrink-0">
-                <label
-                  htmlFor="category-filter"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+              <div className="flex-shrink-0 w-full sm:w-auto">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Category
                 </label>
                 <select
-                  id="category-filter"
-                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                 border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(Number(e.target.value))}
                 >
@@ -1124,18 +1196,15 @@ function OptimizedAllStock() {
               </div>
 
               {/* Status Filter */}
-              <div className="flex-shrink-0">
-                <label
-                  htmlFor="status-filter"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+              <div className="flex-shrink-0 w-full sm:w-auto">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Status
                 </label>
                 <select
-                  id="status-filter"
-                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                 border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                 >
@@ -1149,18 +1218,15 @@ function OptimizedAllStock() {
               </div>
 
               {/* Source Filter */}
-              <div className="flex-shrink-0">
-                <label
-                  htmlFor="source-filter"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
+              <div className="flex-shrink-0 w-full sm:w-auto">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Source
                 </label>
                 <select
-                  id="source-filter"
-                  className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-                 rounded-md bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                 border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   value={selectedSource}
                   onChange={(e) => setSelectedSource(e.target.value)}
                 >
@@ -1168,57 +1234,6 @@ function OptimizedAllStock() {
                   <option value="Local">Local Inventory</option>
                   <option value="Transferred">Transferred Products</option>
                 </select>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 flex-shrink-0">
-                {selectedProducts.length > 0 && (
-                  <button
-                    onClick={confirmBulkDelete}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-md 
-                   hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 
-                   text-sm transition-all"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    <span className="hidden sm:inline">Delete</span>
-                  </button>
-                )}
-                <button
-                  onClick={handleImportExcel}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-md 
-                 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
-                 text-sm transition-all"
-                >
-                  <Upload className="w-5 h-5" />
-                  <span className="hidden sm:inline">Import</span>
-                </button>
-                <button
-                  onClick={handleExportExcel}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-md 
-                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                 text-sm transition-all"
-                >
-                  <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline">Export</span>
-                </button>
-                <button
-                  onClick={handleDownloadTemplate}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-600 text-white rounded-md 
-                 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 
-                 text-sm transition-all"
-                >
-                  <Download className="w-5 h-5" />
-                  <span className="hidden sm:inline">Template</span>
-                </button>
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-md 
-                 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                 text-sm transition-all"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="hidden sm:inline">Add</span>
-                </button>
               </div>
             </div>
           </div>

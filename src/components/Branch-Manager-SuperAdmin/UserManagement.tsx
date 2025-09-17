@@ -436,39 +436,86 @@ function UserManagement() {
         </div>
 
         {/* Search, Branch Filter and Export Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          {/* Search + Filter */}
           <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            {/* Search Input */}
             <div className="relative w-full sm:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search users..."
-                className="pl-10 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="
+          w-full pl-10 pr-4 py-3 rounded-2xl font-semibold text-base
+          text-gray-800 dark:text-gray-100
+          bg-gray-50 dark:bg-gray-800
+          shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.6)]
+          dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
+          hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.6)]
+          dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
+          focus:outline-none focus:ring-2 focus:ring-blue-500/50
+          transition-all duration-300
+        "
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
+            {/* Branch Filter */}
             <select
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              className="w-full sm:w-40 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="
+        w-full sm:w-auto px-6 py-3 rounded-2xl font-semibold text-base
+        text-gray-800 dark:text-gray-100
+        bg-gray-50 dark:bg-gray-800
+        shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.6)]
+        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
+        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.6)]
+        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
+        focus:outline-none focus:ring-2 focus:ring-blue-500/50
+        transition-all duration-300
+      "
             >
               <option value="All">All Branches</option>
             </select>
           </div>
+
+          {/* Action Buttons */}
           <div className="flex gap-4">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+              className="
+        flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-base
+        text-green-600 dark:text-green-400
+        bg-transparent
+        shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.6)]
+        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
+        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.2),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
+        hover:scale-[1.05] active:scale-95
+        transition-all duration-300
+      "
             >
               <Plus size={16} />
               Add User
             </button>
+
             <button
               onClick={exportToExcel}
-              className="flex items-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300"
+              className="
+        flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-base
+        text-blue-600 dark:text-blue-400
+        bg-transparent
+        shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.6)]
+        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
+        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.2),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
+        hover:scale-[1.05] active:scale-95
+        transition-all duration-300
+      "
             >
               <Download size={16} />
               Export to Excel
@@ -741,29 +788,51 @@ function UserManagement() {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          {/* Overlay */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50"
+            className="absolute inset-0"
             onClick={() => setIsDeleteModalOpen(false)}
           ></div>
-          <div className="relative bg-white dark:bg-gray-800 rounded-lg p-6 w-96 shadow-xl">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+
+          {/* Modal Card */}
+          <div
+            className="relative bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 w-96
+      shadow-[9px_9px_18px_rgba(0,0,0,0.25),-9px_-9px_18px_rgba(255,255,255,0.9)]
+      dark:shadow-[9px_9px_18px_rgba(0,0,0,0.9),-9px_-9px_18px_rgba(40,40,40,0.5)]
+      transition-all duration-300"
+          >
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Confirm Delete
             </h3>
             <p className="mb-6 text-gray-700 dark:text-gray-300">
               Are you sure you want to delete this user? This action cannot be
               undone.
             </p>
+
+            {/* Buttons */}
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-300
+          shadow-[4px_4px_8px_rgba(0,0,0,0.15),-4px_-4px_8px_rgba(255,255,255,0.8)]
+          dark:shadow-[4px_4px_8px_rgba(0,0,0,0.7),-4px_-4px_8px_rgba(50,50,50,0.5)]
+          hover:scale-[1.05] hover:text-gray-800 dark:hover:text-gray-100
+          hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.2),inset_-3px_-3px_6px_rgba(255,255,255,0.6)]
+          dark:hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.9),inset_-3px_-3px_6px_rgba(50,50,50,0.4)]
+          transition duration-300"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-4 py-2 rounded-xl bg-red-500 text-white font-semibold
+          shadow-[4px_4px_8px_rgba(0,0,0,0.2),-4px_-4px_8px_rgba(255,255,255,0.7)]
+          dark:shadow-[4px_4px_8px_rgba(0,0,0,0.9),-4px_-4px_8px_rgba(50,50,50,0.4)]
+          hover:scale-[1.05] hover:bg-red-600
+          hover:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.4),inset_-3px_-3px_6px_rgba(255,255,255,0.5)]
+          dark:hover:bg-red-600
+          transition duration-300"
               >
                 Delete
               </button>
@@ -774,13 +843,13 @@ function UserManagement() {
 
       {/* Add User Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 z-50 flex justify-center items-center">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.8)] dark:shadow-[8px_8px_16px_rgba(0,0,0,0.6),-8px_-8px_16px_rgba(255,255,255,0.05)] transition-all duration-300">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               Add New User
             </h2>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               {/* Column 1 */}
               <div className="space-y-4">
                 <div>
@@ -794,7 +863,7 @@ function UserManagement() {
                     value={newUser.name}
                     onChange={(e) => handleInputChange(e)}
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -810,7 +879,7 @@ function UserManagement() {
                     value={newUser.email}
                     onChange={(e) => handleInputChange(e)}
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -828,7 +897,7 @@ function UserManagement() {
                     onChange={handleContactChange}
                     placeholder="Enter 11-digit contact number"
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   />
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -845,7 +914,7 @@ function UserManagement() {
                     value={newUser.branch_id}
                     onChange={(e) => handleInputChange(e)}
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="" disabled>
@@ -868,7 +937,7 @@ function UserManagement() {
                     value={newUser.role_id}
                     onChange={(e) => handleInputChange(e)}
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="" disabled>
@@ -891,7 +960,7 @@ function UserManagement() {
                     value={newUser.status}
                     onChange={(e) => handleInputChange(e)}
                     disabled={isAddingUser}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
@@ -901,33 +970,36 @@ function UserManagement() {
             </div>
 
             <div className="flex justify-end space-x-4 mt-6">
+              {/* Cancel Button */}
               <button
                 onClick={() => {
-                  if (!isAddingUser) {
-                    setIsAddModalOpen(false);
-                  }
+                  if (!isAddingUser) setIsAddModalOpen(false);
                 }}
                 disabled={isAddingUser}
-                className={`py-2 px-4 rounded-lg transition duration-300 ${
-                  isAddingUser
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gray-500 hover:bg-gray-600"
-                } text-white`}
+                className={`px-5 py-2 rounded-lg font-medium transition-all duration-300 
+      ${
+        isAddingUser
+          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+          : "bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+      }`}
               >
                 Cancel
               </button>
+
+              {/* Add User Button */}
               <button
                 onClick={handleAddUser}
                 disabled={isAddingUser}
-                className={`flex items-center gap-2 py-2 px-4 rounded-lg transition duration-300 ${
-                  isAddingUser
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } text-white`}
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium shadow-md transition-all duration-300 
+      ${
+        isAddingUser
+          ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+          : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white"
+      }`}
               >
                 {isAddingUser ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                     Adding...
                   </>
                 ) : (

@@ -174,32 +174,50 @@ export default function Requested_Item() {
           }}
         />
         <div className="p-6">
-          <div className="flex items-center justify-between mb-3.5">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
+              {/* Back Button */}
               <button
                 onClick={() => navigate(-1)}
-                className="hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="flex items-center justify-center p-2 rounded-2xl bg-transparent"
+                title="Go Back"
               >
                 <ArrowLeft size={24} />
               </button>
+
+              {/* Title */}
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <TruckIcon className="h-7 w-7 text-blue-600" />
                 Requested Items
               </h1>
             </div>
+
+            {/* Refresh Button */}
             <button
               onClick={loadSentRequests}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold bg-transparent
+                 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                 hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                 dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                 transition-all duration-300 text-blue-600 dark:text-blue-400"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
           </div>
+
+          {/* Description */}
           <div>
             <p className="text-lg text-gray-600 dark:text-gray-400">
               Track the status of your product requests to other branches
             </p>
-            <div className="mt-2 text-base text-gray-500 bg-green-50 dark:bg-green-900/30 p-2 rounded-md">
+            <div
+              className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-900/30
+                    shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)]
+                    dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]
+                    text-gray-500"
+            >
               <strong>📊 Request Status:</strong> Monitor your outgoing requests
               and see when they're approved, denied, or still pending review.
             </div>
@@ -216,7 +234,12 @@ export default function Requested_Item() {
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
                 You haven't sent any product requests yet.
               </p>
-              <div className="text-base text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-md max-w-md mx-auto">
+              <div
+                className="text-base text-gray-500 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-2xl
+                      shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)]
+                      dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]
+                      max-w-md mx-auto"
+              >
                 <strong>🚀 Ready to request products?</strong>
                 <ul className="mt-1 text-left space-y-1">
                   <li>• Browse products from other branches</li>
@@ -226,18 +249,28 @@ export default function Requested_Item() {
                 </ul>
                 <button
                   onClick={() => navigate("/branch_location")}
-                  className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base"
+                  className="mt-3 px-4 py-2 rounded-2xl bg-transparent
+                     shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                     dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                     hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                     dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                     text-blue-600 dark:text-blue-400 transition-all duration-300"
                 >
                   Browse Products
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {requests.map((request) => (
                 <div
                   key={request.request_id}
-                  className="border border-gray-200 dark:border-neutral-600 rounded-lg p-6 hover:shadow-md transition-shadow"
+                  className="rounded-2xl p-6 bg-white dark:bg-neutral-800
+                     shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.7)]
+                     dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+                     hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                     dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+                     transition-all duration-300"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -294,7 +327,11 @@ export default function Requested_Item() {
                   </div>
 
                   {/* Request Summary */}
-                  <div className="mb-4 p-4 bg-gray-50 dark:bg-neutral-700 rounded-md">
+                  <div
+                    className="mb-4 p-4 rounded-2xl bg-gray-50 dark:bg-neutral-700
+                          shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                          dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]"
+                  >
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">
@@ -341,7 +378,12 @@ export default function Requested_Item() {
 
                   {/* Review Notes */}
                   {request.notes && (
-                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div
+                      className="mb-4 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30
+                            shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                            dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                            border border-blue-200 dark:border-blue-800"
+                    >
                       <div className="flex items-start gap-2">
                         <MessageSquare className="h-5 w-5 text-blue-500 mt-0.5" />
                         <div>
@@ -360,7 +402,12 @@ export default function Requested_Item() {
                   <div className="flex justify-end">
                     <button
                       onClick={() => handleViewDetails(request)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base"
+                      className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-transparent text-base font-bold
+                         shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                         dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                         hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                         dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                         text-blue-600 dark:text-blue-400 transition-all duration-300"
                     >
                       <Eye className="h-5 w-5" />
                       View Details

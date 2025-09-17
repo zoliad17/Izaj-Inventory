@@ -215,7 +215,7 @@ export default function PendingRequest() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+                className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200"
               >
                 <ArrowLeft size={24} />
               </button>
@@ -226,16 +226,28 @@ export default function PendingRequest() {
             </div>
             <button
               onClick={loadPendingRequests}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl text-base font-bold bg-transparent
+                 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                 dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                 hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                 dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                 text-blue-600 dark:text-blue-400 transition-all duration-300"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
           </div>
+
           <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
             Review and approve/deny product requests from other branches
           </p>
-          <div className="mt-2 text-base text-gray-500 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">
+
+          <div
+            className="mt-2 text-base text-gray-500 dark:text-gray-300
+                  bg-blue-50 dark:bg-blue-900/30 p-2 rounded-2xl
+                  shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]"
+          >
             <strong>📋 Review Process:</strong> As a Branch Manager, you can
             approve or deny incoming product requests. Approved requests will
             transfer inventory to the requesting branch.
@@ -252,7 +264,11 @@ export default function PendingRequest() {
               <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">
                 You don't have any pending product requests at the moment.
               </p>
-              <div className="text-lg text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded-md max-w-md mx-auto">
+              <div
+                className="text-lg text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-neutral-800 p-3 rounded-2xl
+                      shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                      dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)] max-w-md mx-auto"
+              >
                 <strong>💡 What happens next?</strong>
                 <ul className="mt-1 text-left space-y-1">
                   <li>
@@ -270,8 +286,13 @@ export default function PendingRequest() {
               {requests.map((request) => (
                 <div
                   key={request.request_id}
-                  className="border border-gray-200 dark:border-neutral-700 rounded-lg p-6 bg-white dark:bg-neutral-800"
+                  className="rounded-2xl p-6 bg-white dark:bg-neutral-800
+                     shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)]
+                     dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)]
+                     transition-shadow hover:shadow-[8px_8px_16px_rgba(0,0,0,0.1),-8px_-8px_16px_rgba(255,255,255,0.5)]
+                     dark:hover:shadow-[8px_8px_16px_rgba(0,0,0,0.7),-8px_-8px_16px_rgba(40,40,40,0.5)]"
                 >
+                  {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -311,74 +332,70 @@ export default function PendingRequest() {
                     </div>
                   </div>
 
-                  {/* Request Items */}
-                  <div className="mb-4">
-                    <h4 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                      Requested Items:
-                    </h4>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
-                        <thead className="bg-gray-50 dark:bg-neutral-700">
-                          <tr>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Product
+                  {/* Requested Items Table */}
+                  <div className="mb-4 overflow-x-auto rounded-2xl shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+                      <thead className="bg-gray-50 dark:bg-neutral-700">
+                        <tr>
+                          {[
+                            "Product",
+                            "Category",
+                            "Requested",
+                            "Available",
+                            "Price",
+                            "Total",
+                          ].map((col) => (
+                            <th
+                              key={col}
+                              className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider"
+                            >
+                              {col}
                             </th>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Category
-                            </th>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Requested
-                            </th>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Available
-                            </th>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Price
-                            </th>
-                            <th className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                              Total
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-neutral-700">
-                          {request.items.map((item, index) => (
-                            <tr key={index}>
-                              <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
-                                {item.product_name}
-                              </td>
-                              <td className="px-5 py-4 text-xl text-gray-700 dark:text-gray-300">
-                                {item.category_name}
-                              </td>
-                              <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
-                                {item.quantity}
-                              </td>
-                              <td className="px-5 py-4 text-xl">
-                                <span
-                                  className={`${
-                                    item.quantity <= item.available_quantity
-                                      ? "text-green-700 dark:text-green-500 font-semibold"
-                                      : "text-red-700 dark:text-red-500 font-semibold"
-                                  }`}
-                                >
-                                  {item.available_quantity}
-                                </span>
-                              </td>
-                              <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
-                                ₱{item.price.toFixed(2)}
-                              </td>
-                              <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
-                                ₱{(item.price * item.quantity).toFixed(2)}
-                              </td>
-                            </tr>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-neutral-700">
+                        {request.items.map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                              {item.product_name}
+                            </td>
+                            <td className="px-5 py-4 text-xl text-gray-700 dark:text-gray-300">
+                              {item.category_name}
+                            </td>
+                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                              {item.quantity}
+                            </td>
+                            <td className="px-5 py-4 text-xl">
+                              <span
+                                className={`${
+                                  item.quantity <= item.available_quantity
+                                    ? "text-green-700 dark:text-green-500 font-semibold"
+                                    : "text-red-700 dark:text-red-500 font-semibold"
+                                }`}
+                              >
+                                {item.available_quantity}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                              ₱{item.price.toFixed(2)}
+                            </td>
+                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                              ₱{(item.price * item.quantity).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* Notes */}
                   {request.notes && (
-                    <div className="mb-4 p-3 bg-gray-50 dark:bg-neutral-700 rounded-md">
+                    <div
+                      className="mb-4 p-3 bg-gray-50 dark:bg-neutral-700 rounded-2xl
+                            shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                            dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]"
+                    >
                       <div className="flex items-start gap-2">
                         <MessageSquare className="h-6 w-6 text-gray-500 dark:text-gray-400 mt-0.5" />
                         <div>
@@ -398,7 +415,14 @@ export default function PendingRequest() {
                     <button
                       onClick={() => handleReviewRequest(request, "denied")}
                       disabled={isProcessing === request.request_id}
-                      className="flex items-center gap-2 px-5 py-2.5 text-lg text-red-600 dark:text-red-500 border border-red-300 dark:border-red-700 rounded-md hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 text-lg text-red-600 dark:text-red-500
+                         border border-red-300 dark:border-red-700 rounded-2xl
+                         bg-transparent
+                         shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                         dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                         hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+                         dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+                         disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                     >
                       <XCircle className="h-6 w-6" />
                       Deny
@@ -406,7 +430,14 @@ export default function PendingRequest() {
                     <button
                       onClick={() => handleReviewRequest(request, "approved")}
                       disabled={isProcessing === request.request_id}
-                      className="flex items-center gap-2 px-5 py-2.5 text-lg bg-green-600 dark:bg-green-700 text-white rounded-md hover:bg-green-700 dark:hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 text-lg text-white
+                         rounded-2xl
+                         shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                         dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                         hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+                         dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+                         bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800
+                         disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
                     >
                       <CheckCircle2 className="h-6 w-6" />
                       Approve

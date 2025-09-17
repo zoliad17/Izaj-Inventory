@@ -11,10 +11,10 @@ import {
   Building,
   Clock,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
+  // ChevronLeft,
+  // ChevronRight,
+  // ChevronsLeft,
+  // ChevronsRight,
   ArrowLeft,
   CheckCircle2,
   XCircle,
@@ -371,17 +371,25 @@ const UserAuditLogsPage = () => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
+            {/* Items per page */}
             <div className="flex items-center">
               <label
                 htmlFor="itemsPerPage"
-                className="mr-2 text-base text-gray-600 dark:text-gray-400"
+                className="mr-3 text-base font-medium text-gray-600 dark:text-gray-400"
               >
                 Items per page:
               </label>
               <select
                 id="itemsPerPage"
-                className="border border-gray-300 dark:border-gray-700 rounded-md px-2 py-1 text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                className="
+        px-4 py-2 rounded-xl text-base font-medium
+        bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+        text-gray-800 dark:text-gray-200
+        shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.7)]
+        dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.8),inset_-4px_-4px_8px_rgba(60,60,60,0.5)]
+        focus:ring-2 focus:ring-blue-500 outline-none transition-all
+      "
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -394,10 +402,22 @@ const UserAuditLogsPage = () => {
                 <option value="50">50</option>
               </select>
             </div>
+
+            {/* Refresh Button */}
             <button
               onClick={refreshLogs}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="
+      flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-base
+      text-gray-800 dark:text-gray-100
+      bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+      shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+      hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+      dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+      hover:scale-[1.05] active:scale-95
+      transition-all duration-300 disabled:opacity-50
+    "
             >
               <RefreshCw
                 className={`w-5 h-5 ${isLoading ? "animate-spin" : ""}`}
@@ -408,17 +428,28 @@ const UserAuditLogsPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="mt-2.5 p-4 rounded-lg shadow bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div
+          className="mt-2.5 p-6 rounded-2xl
+    bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+    shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.7)]
+    dark:shadow-[8px_8px_16px_rgba(0,0,0,0.7),-8px_-8px_16px_rgba(40,40,40,0.6)]
+    transition-all duration-300"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Search */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <Search className="h-6 w-6 text-gray-400 dark:text-gray-500" />
               </div>
               <input
                 type="text"
                 placeholder="Search my activity..."
-                className="block w-full pl-12 pr-3 py-3 border border-gray-300 dark:border-gray-700 rounded-md leading-6 bg-white dark:bg-gray-900 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base text-gray-800 dark:text-gray-200"
+                className="block w-full pl-12 pr-3 py-3 rounded-xl text-base
+          bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+          text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.7)]
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.8),inset_-4px_-4px_8px_rgba(60,60,60,0.5)]
+          focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -426,11 +457,16 @@ const UserAuditLogsPage = () => {
 
             {/* Action Filter */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <Filter className="h-6 w-6 text-gray-400 dark:text-gray-500" />
               </div>
               <select
-                className="block w-full pl-12 pr-3 py-3 border border-gray-300 dark:border-gray-700 rounded-md leading-6 bg-white dark:bg-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base text-gray-800 dark:text-gray-200"
+                className="block w-full pl-12 pr-3 py-3 rounded-xl text-base
+          bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+          text-gray-800 dark:text-gray-200
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.7)]
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.8),inset_-4px_-4px_8px_rgba(60,60,60,0.5)]
+          focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
               >
@@ -447,11 +483,16 @@ const UserAuditLogsPage = () => {
 
             {/* Entity Type Filter */}
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <Building className="h-6 w-6 text-gray-400 dark:text-gray-500" />
               </div>
               <select
-                className="block w-full pl-12 pr-3 py-3 border border-gray-300 dark:border-gray-700 rounded-md leading-6 bg-white dark:bg-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-base text-gray-800 dark:text-gray-200"
+                className="block w-full pl-12 pr-3 py-3 rounded-xl text-base
+          bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
+          text-gray-800 dark:text-gray-200
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.7)]
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.8),inset_-4px_-4px_8px_rgba(60,60,60,0.5)]
+          focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 value={selectedEntityType}
                 onChange={(e) => setSelectedEntityType(e.target.value)}
               >
@@ -492,7 +533,11 @@ const UserAuditLogsPage = () => {
                     setSelectedAction("ALL");
                     setSelectedEntityType("ALL");
                   }}
-                  className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors text-base"
+                  className="px-5 py-2.5 rounded-2xl 
+            shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
+            dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
+            bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 
+            font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
                 >
                   Clear Filters
                 </button>
@@ -560,7 +605,7 @@ const UserAuditLogsPage = () => {
                     {currentItems.map((log) => (
                       <tr
                         key={log.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-base text-gray-900 dark:text-gray-100">
@@ -570,11 +615,12 @@ const UserAuditLogsPage = () => {
                             {new Date(log.timestamp).toLocaleTimeString()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 ">
+                        <td className="px-6 py-4">
                           <span
-                            className={`px-3 py-1.5 inline-flex text-sm leading-5 font-semibold rounded-lg shadow-sm border-2 backdrop-blur-sm ${getActionColor(
-                              log.action
-                            )}`}
+                            className={`px-3 py-1.5 inline-flex text-sm leading-5 font-semibold rounded-xl 
+                      shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.7)] 
+                      dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)] 
+                      backdrop-blur-sm ${getActionColor(log.action)}`}
                           >
                             <div className="flex items-center">
                               {getActionIcon(log.action)}
@@ -608,27 +654,20 @@ const UserAuditLogsPage = () => {
                           <div className="text-base text-gray-500 dark:text-gray-400 max-w-xs">
                             {log.metadata &&
                             Object.keys(log.metadata).length > 0 ? (
-                              <>
-                                {/* <details className="cursor-pointer">
-                                  <summary className="inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400">
-                                    View Details
-                                  </summary>
-                                  <pre className="mt-2 text-sm bg-gray-100 dark:bg-gray-800 p-2 rounded overflow-auto max-h-32 text-gray-800 dark:text-gray-200">
-                                    {JSON.stringify(log.metadata, null, 2)}
-                                  </pre>
-                                </details> */}
-
-                                <button
-                                  className="inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-xl text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200"
-                                  onClick={() =>
-                                    navigate("/user-audit-log-details")
-                                  }
-                                  type="button"
-                                >
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  View Details
-                                </button>
-                              </>
+                              <button
+                                className="inline-flex items-center px-4 py-2 rounded-2xl 
+                          shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
+                          dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
+                          bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 
+                          font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                                onClick={() =>
+                                  navigate("/user-audit-log-details")
+                                }
+                                type="button"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Details
+                              </button>
                             ) : (
                               "—"
                             )}
@@ -646,7 +685,11 @@ const UserAuditLogsPage = () => {
                   <button
                     onClick={() => paginate(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-xl 
+              shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
+              dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
+              bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 
+              font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
                   >
                     Previous
                   </button>
@@ -655,11 +698,16 @@ const UserAuditLogsPage = () => {
                       paginate(Math.min(totalPages, currentPage + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-base font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 rounded-xl 
+              shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
+              dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
+              bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 
+              font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50"
                   >
                     Next
                   </button>
                 </div>
+                {/* Desktop Pagination */}
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <p className="text-base text-gray-700 dark:text-gray-200">
@@ -677,31 +725,14 @@ const UserAuditLogsPage = () => {
                   </div>
                   <div>
                     <nav
-                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                      className="relative z-0 inline-flex rounded-md"
                       aria-label="Pagination"
                     >
-                      <button
-                        onClick={() => paginate(1)}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">First</span>
-                        <ChevronsLeft className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={() => paginate(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Previous</span>
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-
                       {getPageNumbers().map((number, index) =>
                         number === -1 ? (
                           <span
                             key={`ellipsis-${index}`}
-                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-200"
+                            className="px-4 py-2 text-gray-500 dark:text-gray-400"
                           >
                             ...
                           </span>
@@ -709,35 +740,16 @@ const UserAuditLogsPage = () => {
                           <button
                             key={number}
                             onClick={() => paginate(number)}
-                            className={`relative inline-flex items-center px-4 py-2 border text-base font-medium ${
+                            className={`px-4 py-2 mx-1 rounded-xl font-semibold transition-all duration-300 ${
                               currentPage === number
-                                ? "z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-700 text-blue-600 dark:text-blue-400"
-                                : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                ? "bg-blue-500 text-white shadow-lg"
+                                : "shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:scale-[1.05]"
                             }`}
                           >
                             {number}
                           </button>
                         )
                       )}
-
-                      <button
-                        onClick={() =>
-                          paginate(Math.min(totalPages, currentPage + 1))
-                        }
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Next</span>
-                        <ChevronRight className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={() => paginate(totalPages)}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <span className="sr-only">Last</span>
-                        <ChevronsRight className="h-6 w-6" />
-                      </button>
                     </nav>
                   </div>
                 </div>

@@ -40,7 +40,8 @@ function AdminBranchManagement() {
     longitude: null,
     map_snapshot_url: null,
   });
-  const [selectedCoordinates, setSelectedCoordinates] = useState<MapCoordinates | null>(null);
+  const [selectedCoordinates, setSelectedCoordinates] =
+    useState<MapCoordinates | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(false);
@@ -147,7 +148,10 @@ function AdminBranchManagement() {
     }));
   };
 
-  const handleLocationSelect = (coordinates: MapCoordinates, address: string) => {
+  const handleLocationSelect = (
+    coordinates: MapCoordinates,
+    address: string
+  ) => {
     setFormData((prev) => ({
       ...prev,
       address,
@@ -169,30 +173,37 @@ function AdminBranchManagement() {
       // Use geocoding for suggestions
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: value }, (results: any[], status: string) => {
-          setIsLoadingSuggestions(false);
-          if (status === 'OK' && results) {
-            const formattedSuggestions = results.map((result: any, index: number) => ({
-              place_id: `geocoding_${index}_${Date.now()}`,
-              description: result.formatted_address,
-              structured_formatting: {
-                main_text: result.address_components[0]?.long_name || result.formatted_address,
-                secondary_text: result.formatted_address
-              },
-              geometry: {
-                location: {
-                  lat: result.geometry.location.lat(),
-                  lng: result.geometry.location.lng()
-                }
-              }
-            }));
-            setSuggestions(formattedSuggestions);
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
+        geocoder.geocode(
+          { address: value },
+          (results: any[], status: string) => {
+            setIsLoadingSuggestions(false);
+            if (status === "OK" && results) {
+              const formattedSuggestions = results.map(
+                (result: any, index: number) => ({
+                  place_id: `geocoding_${index}_${Date.now()}`,
+                  description: result.formatted_address,
+                  structured_formatting: {
+                    main_text:
+                      result.address_components[0]?.long_name ||
+                      result.formatted_address,
+                    secondary_text: result.formatted_address,
+                  },
+                  geometry: {
+                    location: {
+                      lat: result.geometry.location.lat(),
+                      lng: result.geometry.location.lng(),
+                    },
+                  },
+                })
+              );
+              setSuggestions(formattedSuggestions);
+              setShowSuggestions(true);
+            } else {
+              setSuggestions([]);
+              setShowSuggestions(false);
+            }
           }
-        });
+        );
       }
     } else {
       setSuggestions([]);
@@ -205,14 +216,14 @@ function AdminBranchManagement() {
     if (suggestion.geometry?.location) {
       const coordinates = {
         lat: suggestion.geometry.location.lat,
-        lng: suggestion.geometry.location.lng
+        lng: suggestion.geometry.location.lng,
       };
       setSelectedCoordinates(coordinates);
       setFormData({
         ...formData,
         address: suggestion.description,
         latitude: coordinates.lat,
-        longitude: coordinates.lng
+        longitude: coordinates.lng,
       });
       setShowSuggestions(false);
     }
@@ -222,17 +233,19 @@ function AdminBranchManagement() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      const isInputClick = target && (target as Element).closest('input[name="address"]');
-      const isSuggestionClick = target && (target as Element).closest('[data-suggestion="true"]');
+      const isInputClick =
+        target && (target as Element).closest('input[name="address"]');
+      const isSuggestionClick =
+        target && (target as Element).closest('[data-suggestion="true"]');
 
       if (!isInputClick && !isSuggestionClick) {
         setShowSuggestions(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -247,7 +260,6 @@ function AdminBranchManagement() {
       }, 1000);
     }
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,7 +280,6 @@ function AdminBranchManagement() {
         map_snapshot_url: mapSnapshotUrl,
       };
 
-
       const url = editingBranch
         ? `http://localhost:5000/api/branches/${editingBranch.id}`
         : "http://localhost:5000/api/branches";
@@ -287,7 +298,7 @@ function AdminBranchManagement() {
         const errorData = await response.json();
         throw new Error(
           errorData.error ||
-          `Failed to ${editingBranch ? "update" : "add"} branch`
+            `Failed to ${editingBranch ? "update" : "add"} branch`
         );
       }
 
@@ -299,13 +310,13 @@ function AdminBranchManagement() {
           prev.map((branch) =>
             branch.id === editingBranch.id
               ? {
-                ...branch,
-                location: formData.location,
-                address: formData.address,
-                latitude: formData.latitude,
-                longitude: formData.longitude,
-                map_snapshot_url: mapSnapshotUrl,
-              }
+                  ...branch,
+                  location: formData.location,
+                  address: formData.address,
+                  latitude: formData.latitude,
+                  longitude: formData.longitude,
+                  map_snapshot_url: mapSnapshotUrl,
+                }
               : branch
           )
         );
@@ -334,8 +345,9 @@ function AdminBranchManagement() {
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4 dark:bg-neutral-950`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 dark:bg-neutral-950`}
     >
       {/* Header - Reuse same structure as Branch_location.tsx */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -352,7 +364,17 @@ function AdminBranchManagement() {
         </div>
         <button
           onClick={handleAddBranch}
-          className="flex items-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+          className="
+    flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-lg
+    text-blue-800 dark:text-white
+    bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900
+    shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+    dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+    hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+    dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+    hover:scale-[1.05] active:scale-95
+    transition-all duration-300
+  "
         >
           <PlusIcon className="h-5 w-5" />
           Add Branch
@@ -369,7 +391,7 @@ function AdminBranchManagement() {
           <p>No branches found.</p>
         </div>
       ) : (
-        /* Grid Layout - Reuse same structure as Branch_location.tsx */
+        /* Grid Layout  */
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5">
           {branches.map((branch) => {
             return (
@@ -385,7 +407,7 @@ function AdminBranchManagement() {
                         onError={(e) => {
                           // Fallback to gradient if image fails to load
                           const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
+                          target.style.display = "none";
                           const parent = target.parentElement;
                           if (parent) {
                             parent.innerHTML = `
@@ -409,7 +431,7 @@ function AdminBranchManagement() {
                         onError={(e) => {
                           // Fallback to gradient if image fails to load
                           const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
+                          target.style.display = "none";
                           const parent = target.parentElement;
                           if (parent) {
                             parent.innerHTML = `
@@ -424,47 +446,83 @@ function AdminBranchManagement() {
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <LocationMarkerIcon className="h-16 w-16 text-white" />
+                        <LocationMarkerIcon className="h-16 w-16 mb text-white" />
                       </div>
                     )}
                     {branch.latitude && branch.longitude && (
-                      <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                        {branch.latitude.toFixed(4)}, {branch.longitude.toFixed(4)}
+                      <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-base px-2 py-1 rounded">
+                        {branch.latitude.toFixed(4)},{" "}
+                        {branch.longitude.toFixed(4)}
                       </div>
                     )}
                   </div>
 
                   {/* Content - Reuse same structure */}
                   <div className="p-6 flex-grow">
-                    <h5 className="text-4xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                    <h5 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                       {branch.location}
                     </h5>
 
-                    <div className="flex text-lg items-center text-gray-600 dark:text-gray-400 mb-2">
-                      <LocationMarkerIcon className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-500" />
-                      <span>{branch.address || "No address provided"}</span>
+                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400 mb-2 group relative">
+                      <LocationMarkerIcon className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+
+                      {/* Truncated text with tooltip */}
+                      <span className="truncate max-w-[200px] cursor-help">
+                        {branch.address || "No address provided"}
+                      </span>
+
+                      {/* Tooltip on full addresss */}
+                      {branch.address && (
+                        <div
+                          className="absolute left-7 bottom-full mb-1 hidden group-hover:block 
+                    whitespace-normal px-3 py-1 text-sm rounded-lg shadow-lg
+                    bg-gray-800 text-white dark:bg-gray-900 dark:text-gray-100 
+                    z-10 max-w-xs"
+                        >
+                          {branch.address}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {/* <div className="text-sm text-gray-500 dark:text-gray-400">
                       ID: {branch.id}
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Actions - Admin-specific */}
-                  <div className="p-4 bg-gray-100 dark:bg-neutral-700 mt-auto">
-                    <div className="flex gap-2">
+                  <div className="p-4 bg-gray-100 dark:bg-neutral-800 mt-auto rounded-b-2xl">
+                    <div className="flex gap-3">
+                      {/* Edit Button (Green Touch, Transparent) */}
                       <button
                         onClick={() => handleEditBranch(branch)}
-                        className="flex-1 font-bold bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 transition duration-300 flex items-center justify-center gap-2"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+      shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+      hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+      dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+      hover:scale-[1.05] active:scale-95
+      transition-all duration-300 text-lg font-semibold
+      bg-transparent
+      text-green-600 dark:text-green-300"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="h-5 w-5" />
                         Edit
                       </button>
+
+                      {/* Delete Button (Red Touch, Transparent) */}
                       <button
                         onClick={() => handleDeleteBranch(branch.id)}
-                        className="flex-1 font-bold bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300 flex items-center justify-center gap-2"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+      shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+      hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+      dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+      hover:scale-[1.05] active:scale-95
+      transition-all duration-300 text-lg font-semibold
+      bg-transparent
+      text-red-600 dark:text-red-300"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className="h-5 w-5" />
                         Delete
                       </button>
                     </div>
@@ -492,8 +550,7 @@ function AdminBranchManagement() {
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     {editingBranch
                       ? "Update the branch location and address information"
-                      : "Set up a new branch with precise location data"
-                    }
+                      : "Set up a new branch with precise location data"}
                   </p>
                 </div>
               </div>
@@ -509,27 +566,48 @@ function AdminBranchManagement() {
               {/* Progress Indicator */}
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${formData.location ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'
-                    }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      formData.location
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 dark:bg-gray-600 text-gray-500"
+                    }`}
+                  >
                     1
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Branch Name</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Branch Name
+                  </span>
                 </div>
                 <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                 <div className="flex items-center space-x-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${formData.address ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'
-                    }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      formData.address
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 dark:bg-gray-600 text-gray-500"
+                    }`}
+                  >
                     2
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Location</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Location
+                  </span>
                 </div>
                 <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600"></div>
                 <div className="flex items-center space-x-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${selectedCoordinates ? 'bg-green-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-500'
-                    }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      selectedCoordinates
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 dark:bg-gray-600 text-gray-500"
+                    }`}
+                  >
                     3
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Map</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Map
+                  </span>
                 </div>
               </div>
               <div>
@@ -571,13 +649,14 @@ function AdminBranchManagement() {
                   <button
                     type="button"
                     onClick={toggleMap}
-                    className={`px-4 py-2 rounded-lg transition duration-300 flex items-center gap-2 text-sm font-medium ${showMap
-                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                      }`}
+                    className={`px-4 py-2 rounded-lg transition duration-300 flex items-center gap-2 text-sm font-medium ${
+                      showMap
+                        ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                    }`}
                   >
                     <MapIcon className="h-4 w-4" />
-                    {showMap ? 'Hide Map' : 'Show Map'}
+                    {showMap ? "Hide Map" : "Show Map"}
                   </button>
                 </div>
 
@@ -598,7 +677,7 @@ function AdminBranchManagement() {
                       onChange={handleAddressChange}
                       onFocus={() => setShowSuggestions(suggestions.length > 0)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === "Enter") {
                           e.preventDefault(); // Prevent form submission
                         }
                       }}
@@ -609,11 +688,20 @@ function AdminBranchManagement() {
                     {/* Smart Status Indicator */}
                     <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
                       {isLoadingSuggestions ? (
-                        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" title="Loading suggestions..."></div>
+                        <div
+                          className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
+                          title="Loading suggestions..."
+                        ></div>
                       ) : selectedCoordinates ? (
-                        <div className="w-3 h-3 bg-green-500 rounded-full" title="Location selected"></div>
+                        <div
+                          className="w-3 h-3 bg-green-500 rounded-full"
+                          title="Location selected"
+                        ></div>
                       ) : formData.address ? (
-                        <div className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse" title="Address entered, select location on map"></div>
+                        <div
+                          className="w-3 h-3 bg-yellow-400 rounded-full animate-pulse"
+                          title="Address entered, select location on map"
+                        ></div>
                       ) : (
                         <div title="No location selected">
                           <MapIcon className="h-4 w-4 text-gray-400" />
@@ -641,17 +729,30 @@ function AdminBranchManagement() {
                           >
                             <div className="flex items-start space-x-3">
                               <div className="text-gray-400 mt-1">
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {suggestion.structured_formatting?.main_text || suggestion.description}
+                                  {suggestion.structured_formatting
+                                    ?.main_text || suggestion.description}
                                 </p>
-                                {suggestion.structured_formatting?.secondary_text && (
+                                {suggestion.structured_formatting
+                                  ?.secondary_text && (
                                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                    {suggestion.structured_formatting.secondary_text}
+                                    {
+                                      suggestion.structured_formatting
+                                        .secondary_text
+                                    }
                                   </p>
                                 )}
                               </div>
@@ -670,7 +771,8 @@ function AdminBranchManagement() {
                         Location selected
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                        {selectedCoordinates.lat.toFixed(6)}, {selectedCoordinates.lng.toFixed(6)}
+                        {selectedCoordinates.lat.toFixed(6)},{" "}
+                        {selectedCoordinates.lng.toFixed(6)}
                       </span>
                     </div>
                   )}
@@ -681,7 +783,9 @@ function AdminBranchManagement() {
                   <div className="flex items-start space-x-2">
                     <LightBulbIcon className="h-4 w-4 text-blue-500 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-blue-700 dark:text-blue-300">
-                      <span className="font-medium">Quick tip:</span> Type an address for suggestions, or click on the map to select a location. Drag the marker to fine-tune the position.
+                      <span className="font-medium">Quick tip:</span> Type an
+                      address for suggestions, or click on the map to select a
+                      location. Drag the marker to fine-tune the position.
                     </div>
                   </div>
                 </div>
@@ -707,7 +811,9 @@ function AdminBranchManagement() {
                         <div className="flex items-center justify-center h-80 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                           <div className="text-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Loading map...</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Loading map...
+                            </p>
                           </div>
                         </div>
                       )}
@@ -718,8 +824,12 @@ function AdminBranchManagement() {
                           <div className="flex items-center space-x-2">
                             <ExclamationCircleIcon className="h-5 w-5 text-red-500 flex-shrink-0" />
                             <div className="flex-1">
-                              <p className="text-sm text-red-700 dark:text-red-300 font-medium">Map Error</p>
-                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">{mapError}</p>
+                              <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                                Map Error
+                              </p>
+                              <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                                {mapError}
+                              </p>
                             </div>
                           </div>
                           <button
@@ -741,8 +851,8 @@ function AdminBranchManagement() {
                           <SimpleGoogleMapPicker
                             onLocationSelect={handleLocationSelect}
                             initialLocation={selectedCoordinates || undefined}
-                            initialAddress={formData.address || ''}
-                            externalAddress={formData.address || ''}
+                            initialAddress={formData.address || ""}
+                            externalAddress={formData.address || ""}
                             height="400px"
                             className="w-full"
                           />
@@ -771,8 +881,8 @@ function AdminBranchManagement() {
                       ? "Updating..."
                       : "Adding..."
                     : editingBranch
-                      ? "Update Branch"
-                      : "Add Branch"}
+                    ? "Update Branch"
+                    : "Add Branch"}
                 </button>
               </div>
             </form>

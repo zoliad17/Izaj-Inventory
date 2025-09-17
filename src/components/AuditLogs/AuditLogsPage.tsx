@@ -239,14 +239,20 @@ const AuditLogsPage = () => {
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes("LOGIN")) return "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700";
-    if (action.includes("SETUP")) return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
+    if (action.includes("LOGIN"))
+      return "bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700";
+    if (action.includes("SETUP"))
+      return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
     if (action.includes("REQUEST_CREATED"))
       return "bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-800/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700";
-    if (action.includes("APPROVED")) return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
-    if (action.includes("DENIED")) return "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700";
-    if (action.includes("TRANSFER")) return "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-700";
-    if (action.includes("RECEIVE")) return "bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-700";
+    if (action.includes("APPROVED"))
+      return "bg-gradient-to-r from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700";
+    if (action.includes("DENIED"))
+      return "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700";
+    if (action.includes("TRANSFER"))
+      return "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-700";
+    if (action.includes("RECEIVE"))
+      return "bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-800/20 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-700";
     return "bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700";
   };
 
@@ -347,17 +353,17 @@ const AuditLogsPage = () => {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4`}
     >
-      <div className="w-full px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-lg mb-3.5 shadow-md dark:shadow-gray-900/30">
+      <div className="w-full px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-2xl mb-4 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] transition-all duration-300">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center cursor-pointer text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex items-center px-3  rounded-xl text-gray-800 dark:text-gray-200 transition-all duration-200"
             >
               <ArrowLeft size={20} className="mr-1" />
             </button>
-            <h5 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <h5 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
               Audit Logs
             </h5>
           </div>
@@ -366,13 +372,13 @@ const AuditLogsPage = () => {
             <div className="flex items-center">
               <label
                 htmlFor="itemsPerPage"
-                className="mr-2 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                className="mr-2 text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
               >
                 Items per page:
               </label>
               <select
                 id="itemsPerPage"
-                className="border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)] focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -388,8 +394,7 @@ const AuditLogsPage = () => {
 
             {/* Export Button */}
             <button
-              // onClick={exportToExcel}
-              className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-gray-700 dark:text-gray-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
               title="Export to Excel"
             >
               <Download className="w-4 h-4" />
@@ -399,7 +404,7 @@ const AuditLogsPage = () => {
             <button
               onClick={refreshLogs}
               disabled={isLoading}
-              className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-gray-700 dark:text-gray-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] disabled:opacity-50 transition-all duration-200"
             >
               <RefreshCw
                 className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
@@ -410,29 +415,46 @@ const AuditLogsPage = () => {
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-700 mt-2.5 p-4 rounded-lg shadow dark:shadow-gray-900/30">
+        <div
+          className="bg-white dark:bg-gray-700 mt-3.5 p-4 rounded-2xl 
+    shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
+    dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
+    transition-all"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search - Responsive fix */}
-            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1 w-full min-w-0">
+            {/* Search */}
+            <div className="relative col-span-1 sm:col-span-2 lg:col-span-1 w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search logs..."
-                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+          bg-white dark:bg-gray-600 border border-transparent
+          text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+          focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+          transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             {/* Action Filter */}
-            <div className="relative w-full min-w-0">
+            <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Filter className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+          bg-white dark:bg-gray-600 border border-transparent
+          text-gray-900 dark:text-white
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+          focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+          transition-all"
                 value={selectedAction}
                 onChange={(e) => setSelectedAction(e.target.value)}
               >
@@ -448,27 +470,38 @@ const AuditLogsPage = () => {
             </div>
 
             {/* User Filter */}
-            <div className="relative w-full min-w-0">
+            <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+          bg-white dark:bg-gray-600 border border-transparent
+          text-gray-900 dark:text-white
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+          focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+          transition-all"
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
               >
                 <option value="ALL">All Users</option>
-                {/* This would be populated from a users API call */}
               </select>
             </div>
 
             {/* Entity Type Filter */}
-            <div className="relative w-full min-w-0">
+            <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Building className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="block w-full min-w-0 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+          bg-white dark:bg-gray-600 border border-transparent
+          text-gray-900 dark:text-white
+          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+          focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+          transition-all"
                 value={selectedEntityType}
                 onChange={(e) => setSelectedEntityType(e.target.value)}
               >
