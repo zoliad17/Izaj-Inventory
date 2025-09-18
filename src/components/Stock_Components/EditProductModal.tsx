@@ -178,13 +178,13 @@ const EditProductModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors text-gray-700 dark:text-gray-300"
+              className="px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors neumorphic-button-transparent dark:outline-0 outline-1 text-red-600 dark:text-red-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600  rounded-md hover:bg-blue-700 transition-colors neumorphic-button-transparent text-blue-600 dark:text-blue-500 outline-1 dark:outline-0"
             >
               Save Changes
             </button>

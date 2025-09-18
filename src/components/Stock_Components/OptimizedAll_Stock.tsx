@@ -1088,12 +1088,8 @@ function OptimizedAllStock() {
               {selectedProducts.length > 0 && (
                 <button
                   onClick={confirmBulkDelete}
-                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-base text-red-700 bg-transparent
-       shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-       dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
-       hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
-       dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
-       transition-all"
+                  className="flex items-center gap-2 px-4 py-3 rounded-2xl text-base text-red-500 outline-1 dark:outline-0 bg-transparent neumorphic-button-transparent 
+       "
                 >
                   <Trash2 className="w-6 h-6" />
                   <span className="hidden sm:inline">Delete</span>
@@ -1128,7 +1124,7 @@ function OptimizedAllStock() {
                 <button
                   key={idx}
                   onClick={btn.handler}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-base text-white
+                  className={`flex items-center gap-2 px-4 py-3 outline-1  dark:outline-0 font-bold rounded-2xl text-base text-white
        shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
        dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
        hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
@@ -1247,11 +1243,11 @@ function OptimizedAllStock() {
 
           {/* Products table */}
           {!isLoading && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white dark:bg-neutral-900 shadow-lg rounded-xl overflow-hidden">
+            <div className="w-full overflow-hidden">
+              <table className="w-full bg-white dark:bg-neutral-900 shadow-lg rounded-xl overflow-hidden table-auto break-words">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-neutral-800 text-base">
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100 w-12">
+                  <tr className="bg-gray-100 dark:bg-neutral-800 text-lg">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100 w-12">
                       <input
                         type="checkbox"
                         checked={
@@ -1263,25 +1259,25 @@ function OptimizedAllStock() {
                         className="h-5 w-5 text-blue-600 rounded-md border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
                       />
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Product ID
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Product Name
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Category
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Price
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Quantity
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Status
                     </th>
-                    <th className="px-5 py-4 text-left font-semibold text-gray-900 dark:text-gray-100">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
                       Actions
                     </th>
                   </tr>
@@ -1400,13 +1396,13 @@ function OptimizedAllStock() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2 rounded-md neumorphic-button-transparent hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 outline-1 dark:outline-0"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 neumorphic-button-transparent  text-red-600 dark:text-red-500 outline-1 dark:outline-0 rounded-md hover:bg-red-700"
               >
                 Delete
               </button>
@@ -1437,13 +1433,13 @@ function OptimizedAllStock() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsBulkDeleteModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2 rounded-md neumorphic-button-transparent hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 outline-1 dark:outline-0"
               >
                 Cancel
               </button>
               <button
                 onClick={handleBulkDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 neumorphic-button-transparent  text-red-600 dark:text-red-500 outline-1 dark:outline-0 rounded-md hover:bg-red-700"
               >
                 Delete
               </button>

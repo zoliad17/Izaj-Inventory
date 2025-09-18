@@ -408,11 +408,11 @@ const UserAuditLogsPage = () => {
               onClick={refreshLogs}
               disabled={isLoading}
               className="
-      flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-base
-      text-gray-800 dark:text-gray-100
+      flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-base
+      text-blue-800 dark:text-blue-500
       bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
       shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
-      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.0)]
       hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
       dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
       hover:scale-[1.05] active:scale-95
@@ -657,16 +657,16 @@ const UserAuditLogsPage = () => {
                               <button
                                 className="inline-flex items-center px-4 py-2 rounded-2xl 
                           shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
-                          dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
-                          bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 
-                          font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+                          dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.0)] 
+                          bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-500 
+                          font-bold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
                                 onClick={() =>
                                   navigate("/user-audit-log-details")
                                 }
                                 type="button"
                               >
                                 <Eye className="w-4 h-4 mr-2" />
-                                View Details
+                                View
                               </button>
                             ) : (
                               "—"

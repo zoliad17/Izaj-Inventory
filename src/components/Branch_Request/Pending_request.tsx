@@ -347,7 +347,7 @@ export default function PendingRequest() {
                           ].map((col) => (
                             <th
                               key={col}
-                              className="px-5 py-4 text-left text-lg font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider"
+                              className="px-5 py-4 text-left text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider"
                             >
                               {col}
                             </th>
@@ -357,16 +357,16 @@ export default function PendingRequest() {
                       <tbody className="bg-white dark:bg-neutral-800 divide-y divide-gray-200 dark:divide-neutral-700">
                         {request.items.map((item, idx) => (
                           <tr key={idx}>
-                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                            <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
                               {item.product_name}
                             </td>
-                            <td className="px-5 py-4 text-xl text-gray-700 dark:text-gray-300">
+                            <td className="px-5 py-4 text-base text-gray-700 dark:text-gray-300">
                               {item.category_name}
                             </td>
-                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                            <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
                               {item.quantity}
                             </td>
-                            <td className="px-5 py-4 text-xl">
+                            <td className="px-5 py-4 text-base">
                               <span
                                 className={`${
                                   item.quantity <= item.available_quantity
@@ -377,10 +377,10 @@ export default function PendingRequest() {
                                 {item.available_quantity}
                               </span>
                             </td>
-                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                            <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
                               ₱{item.price.toFixed(2)}
                             </td>
-                            <td className="px-5 py-4 text-xl font-medium text-gray-900 dark:text-gray-100">
+                            <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
                               ₱{(item.price * item.quantity).toFixed(2)}
                             </td>
                           </tr>
@@ -399,10 +399,10 @@ export default function PendingRequest() {
                       <div className="flex items-start gap-2">
                         <MessageSquare className="h-6 w-6 text-gray-500 dark:text-gray-400 mt-0.5" />
                         <div>
-                          <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                          <p className="text-base font-medium text-gray-700 dark:text-gray-300">
                             Notes:
                           </p>
-                          <p className="text-lg text-gray-600 dark:text-gray-400">
+                          <p className="text-base text-gray-600 dark:text-gray-400">
                             {request.notes}
                           </p>
                         </div>
@@ -415,14 +415,9 @@ export default function PendingRequest() {
                     <button
                       onClick={() => handleReviewRequest(request, "denied")}
                       disabled={isProcessing === request.request_id}
-                      className="flex items-center gap-2 px-5 py-2.5 text-lg text-red-600 dark:text-red-500
-                         border border-red-300 dark:border-red-700 rounded-2xl
-                         bg-transparent
-                         shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-                         dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
-                         hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
-                         dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
-                         disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                      className="flex items-center gap-2 px-5 py-2.5 text-lg font-bold text-red-600 dark:text-red-500
+                          neumorphic-button-transparent outline-1 dark:outline-0
+                        "
                     >
                       <XCircle className="h-6 w-6" />
                       Deny
@@ -430,14 +425,9 @@ export default function PendingRequest() {
                     <button
                       onClick={() => handleReviewRequest(request, "approved")}
                       disabled={isProcessing === request.request_id}
-                      className="flex items-center gap-2 px-5 py-2.5 text-lg text-white
-                         rounded-2xl
-                         shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-                         dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
-                         hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
-                         dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
-                         bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800
-                         disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                      className="flex items-center gap-2 px-5 py-2.5 text-lg font-bold text-green-600
+     rounded-2xl
+     neumorphic-button-transparent outline-1 dark:outline-0"
                     >
                       <CheckCircle2 className="h-6 w-6" />
                       Approve
@@ -486,24 +476,42 @@ export default function PendingRequest() {
               </div>
 
               <div className="flex justify-end gap-3">
+                {/* Cancel Button */}
                 <button
                   onClick={() => setShowReviewModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-neutral-600 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors text-base"
+                  className="px-4 py-2 rounded-xl text-red-700 dark:text-red-400 font-bold
+               bg-transparent  outline-1 outline-red-300 dark:outline-red-500
+               shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(255,255,255,0.7)]
+               dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.7),inset_-2px_-2px_6px_rgba(60,60,60,0.3)]
+               hover:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.1),inset_-4px_-4px_10px_rgba(255,255,255,0.5)]
+               dark:hover:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.8),inset_-4px_-4px_10px_rgba(40,40,40,0.5)]
+               active:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.5)]
+               transition-all duration-300 text-base"
                 >
                   Cancel
                 </button>
+
+                {/* Confirm Button */}
                 <button
                   onClick={confirmReview}
                   disabled={isProcessing === selectedRequest.request_id}
-                  className={`px-4 py-2 text-white rounded-md transition-colors text-base ${
-                    reviewAction === "approved"
-                      ? "bg-green-600 hover:bg-green-700"
-                      : "bg-red-600 hover:bg-red-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`px-4 py-2 rounded-xl text-base font-bold transition-all duration-300
+                bg-transparent  outline-1 
+                ${
+                  reviewAction === "approved"
+                    ? "outline-green-300 dark:outline-green-500 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
+                    : "outline-red-300 dark:outline-red-500 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                }
+                shadow-[inset_2px_2px_6px_rgba(0,0,0,0.05),inset_-2px_-2px_6px_rgba(255,255,255,0.7)]
+                dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.7),inset_-2px_-2px_6px_rgba(60,60,60,0.3)]
+                hover:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.1),inset_-4px_-4px_10px_rgba(255,255,255,0.5)]
+                dark:hover:shadow-[inset_4px_4px_10px_rgba(0,0,0,0.8),inset_-4px_-4px_10px_rgba(40,40,40,0.5)]
+                active:shadow-[inset_1px_1px_3px_rgba(0,0,0,0.2),inset_-1px_-1px_3px_rgba(255,255,255,0.5)]
+                disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isProcessing === selectedRequest.request_id ? (
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                       Processing...
                     </div>
                   ) : (

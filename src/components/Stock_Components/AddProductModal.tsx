@@ -48,52 +48,57 @@ const AddProductModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) {
       return; // Prevent double submission
     }
-    
+
     // Debug logging
     console.log("Form submitted with data:", newProduct);
-    
+
     // Validate required fields
     if (!newProduct.name.trim()) {
       alert("Product name is required");
       return;
     }
-    
+
     if (newProduct.category === 0) {
       alert("Please select a category");
       return;
     }
-    
+
     if (!newProduct.price || Number(newProduct.price) <= 0) {
       alert("Please enter a valid price");
       return;
     }
-    
+
     if (!newProduct.stock || Number(newProduct.stock) < 0) {
       alert("Please enter a valid stock quantity");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Pass branch_id as a second argument if available
       let branchId = localStorage.getItem("branchId");
       console.log("Branch ID from localStorage:", branchId);
-      
+
       if (branchId) {
         branchId = String(Number(branchId)); // Always save as number string
         localStorage.setItem("branchId", branchId); // Overwrite with number string
-        console.log("Calling onAddProduct with:", { ...newProduct }, "and branchId:", Number(branchId));
+        console.log(
+          "Calling onAddProduct with:",
+          { ...newProduct },
+          "and branchId:",
+          Number(branchId)
+        );
         await onAddProduct({ ...newProduct }, Number(branchId));
       } else {
         console.log("Calling onAddProduct with:", newProduct);
         await onAddProduct(newProduct);
       }
-      
+
       onClose();
       // Reset form
       setNewProduct({
@@ -224,14 +229,14 @@ const AddProductModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 transition-colors text-gray-700 dark:text-gray-300"
+              className="px-4 py-2  rounded-md hover:bg-gray-50 dark:hover:bg-neutral-700 transition-color dark:outline-0 outline-1 neumorphic-button-transparent text-red-600 dark:text-red-500"
             >
-              Cancel
+              Cance
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-blue-600rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed neumorphic-button-transparent text-blue-600 dark:text-blue-500 outline-1 dark:outline-0"
             >
               {isSubmitting ? "Adding..." : "Add Product"}
             </button>

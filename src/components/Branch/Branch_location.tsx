@@ -171,12 +171,7 @@ function BranchLocation() {
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 p-2 rounded-xl
-          shadow-[4px_4px_8px_rgba(0,0,0,0.1),-4px_-4px_8px_rgba(255,255,255,0.7)]
-          dark:shadow-[4px_4px_8px_rgba(0,0,0,0.7),-4px_-4px_8px_rgba(50,50,50,0.6)]
-          hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.15),inset_-4px_-4px_8px_rgba(255,255,255,0.9)]
-          dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.8),inset_-4px_-4px_8px_rgba(70,70,70,0.7)]
-          hover:scale-105 active:scale-95 transition-all duration-300
-          text-gray-700 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400"
+         "
           >
             <ArrowLeft size={26} />
           </button>

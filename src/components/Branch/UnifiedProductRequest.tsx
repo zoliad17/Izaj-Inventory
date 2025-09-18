@@ -12,6 +12,8 @@ import {
   ShoppingCart,
   CheckCircle2,
   XCircle,
+  Download,
+  ChevronDown,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../utils/apiClient";
@@ -460,7 +462,7 @@ export default function UnifiedProductRequest() {
             {requestItems.length > 0 && (
               <button
                 onClick={() => setShowRequestSummary(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors neumorphic-button-transparent dark:text-blue-600 text-blue-600 dark:outline-0 outline-1"
               >
                 <ShoppingCart className="h-4 w-4" />
                 Request Cart ({requestItems.length})
@@ -495,14 +497,22 @@ export default function UnifiedProductRequest() {
 
         <div className="p-6">
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+          {/* Search, Filters, and Export Section */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 w-full">
             {/* Search Bar */}
-            <div className="relative flex-grow w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <div
+              className="relative flex-grow w-full rounded-xl bg-transparent
+    shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+    dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.7),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+    hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+    dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+    transition-all duration-300"
+            >
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search products..."
-                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="pl-10 pr-4 py-3 w-full bg-transparent text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -512,10 +522,17 @@ export default function UnifiedProductRequest() {
             </div>
 
             {/* Category Filter */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
-              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <div
+              className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent
+    shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+    dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.7),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+    hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+    dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+    transition-all duration-300 w-full sm:w-auto"
+            >
+              <Filter className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <select
-                className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="appearance-none w-full bg-transparent text-gray-900 dark:text-gray-100 pl-1 pr-6 py-1 rounded-xl focus:outline-none"
                 value={categoryFilter}
                 onChange={(e) => {
                   setCategoryFilter(e.target.value);
@@ -523,18 +540,32 @@ export default function UnifiedProductRequest() {
                 }}
               >
                 {categories.map((category) => (
-                  <option key={category} value={category}>
+                  <option
+                    key={category}
+                    value={category}
+                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  >
                     {category}
                   </option>
                 ))}
               </select>
+              <div className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2">
+                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </div>
             </div>
 
             {/* Status Filter */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg">
-              <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <div
+              className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent
+    shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+    dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.7),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+    hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+    dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+    transition-all duration-300 w-full sm:w-auto"
+            >
+              <Filter className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <select
-                className="text-sm focus:outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="appearance-none w-full bg-transparent text-gray-900 dark:text-gray-100 pl-1 pr-6 py-1 rounded-xl focus:outline-none"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -542,227 +573,199 @@ export default function UnifiedProductRequest() {
                 }}
               >
                 {statuses.map((status) => (
-                  <option key={status} value={status}>
+                  <option
+                    key={status}
+                    value={status}
+                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  >
                     {status}
                   </option>
                 ))}
               </select>
+              <div className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2">
+                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </div>
             </div>
 
             {/* Export Button */}
             <button
               onClick={mockExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition-colors whitespace-nowrap"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-green-600 dark:text-green-500 font-bold bg-transparent
+      shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+      dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.7),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+      hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.1),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
+      dark:hover:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.7),inset_-4px_-4px_8px_rgba(40,40,40,0.5)]
+      transition-all duration-300 whitespace-nowrap"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                ></path>
-              </svg>
+              <Download className="w-5 h-5" />
               Export
             </button>
           </div>
 
           {/* Products Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white dark:bg-gray-900">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Product ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Product Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Available
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Reserved
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {currentProducts.length > 0 ? (
-                  currentProducts.map((product) => {
-                    const isInRequest = requestItems.some(
-                      (item) => item.product_id === product.id
-                    );
-                    return (
-                      <tr
-                        key={product.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
+          <div
+            className="p-4 max-w-full mx-auto bg-white dark:bg-gray-900 rounded-2xl
+                shadow-[8px_8px_16px_rgba(0,0,0,0.1),-8px_-8px_16px_rgba(255,255,255,0.7)]
+                dark:shadow-[8px_8px_16px_rgba(0,0,0,0.7),-8px_-8px_16px_rgba(60,60,60,0.1)]
+                transition-all duration-300 overflow-hidden"
+          >
+            <div className="overflow-x-auto md:overflow-x-hidden">
+              <table className="w-full table-auto rounded-xl border-separate border-spacing-0 text-base">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-gray-800 rounded-xl">
+                    {[
+                      "ID",
+                      "Name",
+                      "Category",
+                      "Price",
+                      "Available",
+                      "Reserved",
+                      "Total",
+                      "Status",
+                      "Actions",
+                    ].map((col) => (
+                      <th
+                        key={col}
+                        className="px-3 py-3 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {product.id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                          {product.product_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                          {product.category_name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                          ₱{product.price.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">
-                          <span className="font-medium">
-                            {product.quantity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-600 dark:text-orange-400">
-                          <span className="font-medium">
-                            {product.reserved_quantity || 0}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 dark:text-blue-400">
-                          <span className="font-medium">
-                            {product.total_quantity || product.quantity}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              product.status === "In Stock"
-                                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-400"
-                                : product.status === "Low Stock"
-                                ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-400"
-                                : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-400"
-                            }`}
-                          >
-                            {product.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          {isInRequest ? (
-                            <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                              <CheckCircle2 className="h-4 w-4" />
-                              In Cart
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => addToRequest(product)}
-                              disabled={product.quantity <= 0}
-                              className={`px-4 py-2 rounded-md font-medium transition-colors
-                                    ${
-                                      product.quantity <= 0
-                                        ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white hover:from-blue-600 hover:to-blue-800 dark:from-blue-400 dark:to-blue-700 dark:hover:from-blue-500 dark:hover:to-blue-800"
-                                    }`}
-                            >
-                              Request
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={9}
-                      className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-300"
-                    >
-                      No products found
-                    </td>
+                        {col}
+                      </th>
+                    ))}
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {currentProducts.length > 0 ? (
+                    currentProducts.map((product) => {
+                      const isInRequest = requestItems.some(
+                        (item) => item.product_id === product.id
+                      );
+                      return (
+                        <tr
+                          key={product.id}
+                          className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-300 rounded-xl"
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap text-sm md:text-base font-medium text-gray-900 dark:text-gray-100">
+                            {product.id}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate max-w-[120px]">
+                            {product.product_name}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate max-w-[100px]">
+                            {product.category_name}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300">
+                            ₱{product.price.toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-green-600 dark:text-green-400 font-medium">
+                            {product.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-orange-600 dark:text-orange-400 font-medium">
+                            {product.reserved_quantity || 0}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base text-blue-600 dark:text-blue-400 font-medium">
+                            {product.total_quantity || product.quantity}
+                          </td>
+                          <td className="px-3 py-2 text-sm md:text-base">
+                            <span
+                              className={`
+      px-3 py-1 rounded-full font-semibold text-xs md:text-sm
+      transition-all duration-200
+      ${
+        product.status === "In Stock"
+          ? "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900 shadow-neumorphic-green"
+          : product.status === "Low Stock"
+          ? "text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900 shadow-neumorphic-yellow"
+          : "text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900 shadow-neumorphic-red"
+      }
+    `}
+                            >
+                              {product.status}
+                            </span>
+                          </td>
+
+                          <td className="px-3 py-2 text-sm md:text-base font-medium">
+                            {isInRequest ? (
+                              <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                <CheckCircle2 className="h-5 w-5" /> In Cart
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => addToRequest(product)}
+                                disabled={product.quantity <= 0}
+                                className={`px-3 py-1 rounded-md font-medium text-sm md:text-base neumorphic-button-transparent dark:text-blue-600 text-blue-600 dark:outline-0 outline-1
+                        ${
+                          product.quantity <= 0
+                            ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-blue-500 cursor-not-allowed"
+                            : "bg-blue-500 text-blue hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
+                        }`}
+                              >
+                                Request
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="px-3 py-4 text-center text-sm md:text-base text-gray-500 dark:text-gray-300"
+                      >
+                        No products found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
+              {/* Mobile / Small Screens */}
+              {/* <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
-                  Previous
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
+                <span className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                  {currentPage} / {totalPages}
+                </span>
                 <button
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-700 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
-                  Next
+                  <ChevronRight className="h-5 w-5" />
                 </button>
-              </div>
+              </div> */}
+
+              {/* Desktop / Larger Screens */}
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    Showing{" "}
-                    <span className="font-medium">
-                      {indexOfFirstProduct + 1}
-                    </span>{" "}
-                    to{" "}
-                    <span className="font-medium">
-                      {Math.min(indexOfLastProduct, filteredProducts.length)}
-                    </span>{" "}
-                    of{" "}
-                    <span className="font-medium">
-                      {filteredProducts.length}
-                    </span>{" "}
-                    results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                    <button
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? "z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-300"
-                              : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      )
-                    )}
-                    <button
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </nav>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  Page <span className="font-medium">{currentPage}</span> of{" "}
+                  <span className="font-medium">{totalPages}</span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-3 py-2 border rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-3 py-2 border rounded-md border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -772,33 +775,37 @@ export default function UnifiedProductRequest() {
 
       {/* Request Summary Modal */}
       {showRequestSummary && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 dark:bg-black/70 z-50">
+          <div
+            className="bg-gray-200 dark:bg-gray-900 rounded-3xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto
+               shadow-neumorphic-light dark:shadow-neumorphic-dark transition-all duration-300"
+          >
+            {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                <ShoppingCart className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 Request Summary
               </h3>
               <button
                 onClick={() => setShowRequestSummary(false)}
-                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
                 <XCircle className="h-6 w-6" />
               </button>
             </div>
 
             {/* Branch Info */}
-            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-md">
-              <div className="flex items-center gap-2 mb-2">
-                <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <span className="font-medium text-blue-900 dark:text-blue-200">
+            <div className="mb-6 p-5 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-2xl shadow-neumorphic-inner">
+              <div className="flex items-center gap-3 mb-3">
+                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <span className="font-semibold text-blue-900 dark:text-blue-200">
                   Requesting from:
                 </span>
-                <span className="text-blue-700 dark:text-blue-300">
+                <span className="text-blue-700 dark:text-blue-300 font-medium">
                   {branchName}
                 </span>
               </div>
-              <div className="text-sm text-blue-600 dark:text-blue-300">
+              <div className="text-base text-blue-700 dark:text-blue-300 space-y-1">
                 <p>• Products will be reserved until approval</p>
                 <p>• Branch Manager will review your request</p>
                 <p>• You'll be notified of the decision</p>
@@ -806,35 +813,36 @@ export default function UnifiedProductRequest() {
             </div>
 
             {/* Request Items */}
-            <div className="mb-4">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-4">
                 Request Items:
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {requestItems.map((item) => (
                   <div
                     key={item.product_id}
-                    className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 shadow-neumorphic-inner hover:shadow-neumorphic-hover transition-shadow"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h5 className="font-medium text-gray-900 dark:text-gray-100">
+                        <h5 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
                           {item.product_name}
                         </h5>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-gray-600 dark:text-gray-300">
                           {item.category_name}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-gray-600 dark:text-gray-300">
                           ₱{item.price.toFixed(2)} each
                         </p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() =>
                               updateQuantity(item.product_id, item.quantity - 1)
                             }
-                            className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center
+                               hover:bg-gray-50 dark:hover:bg-gray-800 shadow-neumorphic-btn transition-all"
                           >
                             -
                           </button>
@@ -847,26 +855,30 @@ export default function UnifiedProductRequest() {
                               const newQuantity = parseInt(e.target.value) || 1;
                               updateQuantity(item.product_id, newQuantity);
                             }}
-                            className="w-16 text-center border border-gray-300 dark:border-gray-700 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-20 text-center border border-gray-300 dark:border-gray-700 rounded-lg px-2 py-2 text-base
+                               focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                               focus:border-blue-500 dark:focus:border-blue-400 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                               shadow-neumorphic-inner transition-all"
                           />
                           <button
                             onClick={() =>
                               updateQuantity(item.product_id, item.quantity + 1)
                             }
-                            className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800"
+                            className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-700 flex items-center justify-center
+                               hover:bg-gray-50 dark:hover:bg-gray-800 shadow-neumorphic-btn transition-all"
                           >
                             +
                           </button>
                         </div>
                         <button
                           onClick={() => removeFromRequest(item.product_id)}
-                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-5 w-5" />
                         </button>
                       </div>
                     </div>
-                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div className="mt-2 text-gray-600 dark:text-gray-300 text-base">
                       Available: {item.available_quantity} | Total: ₱
                       {(item.price * item.quantity).toFixed(2)}
                     </div>
@@ -876,26 +888,29 @@ export default function UnifiedProductRequest() {
             </div>
 
             {/* Notes */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            <div className="mb-6">
+              <label className="block text-base font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Additional Notes (Optional)
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="w-full p-3 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                rows={4}
+                className="w-full p-4 border border-gray-300 dark:border-gray-700 rounded-2xl text-base
+                   focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                   focus:border-blue-500 dark:focus:border-blue-400 bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                   shadow-neumorphic-inner transition-all"
                 placeholder="Add any additional information about this request..."
               />
             </div>
 
             {/* Summary */}
-            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                <Package className="h-4 w-4" />
+            <div className="mb-6 p-5 bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-neumorphic-inner text-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Request Summary
               </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-5 text-base">
                 <div>
                   <span className="font-medium text-gray-700 dark:text-gray-200">
                     Total Items:
@@ -937,36 +952,33 @@ export default function UnifiedProductRequest() {
                   </p>
                 </div>
               </div>
-              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-md">
-                <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                  <strong>Note:</strong> This request will be sent to the Branch
-                  Manager of {branchName} for review. You will receive a
-                  notification once the request is processed.
-                </p>
-              </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowRequestSummary(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="px-5 py-3 text-base rounded-2xl text-red-600 neumorphic-button-transparent bg-gray-200 dark:bg-gray-800  dark:text-red-600
+                   shadow-neumorphic-btn  transition-all dark:outline-0 outline-1"
               >
                 Cancel
               </button>
+
               <button
                 onClick={handleSubmitRequest}
                 disabled={isSubmitting || requestItems.length === 0}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 px-6 py-3 text-base rounded-2xl
+                   bg-blue-600 dark:bg-blue-400 neumorphic-button-transparent hover:shadow-neumorphic-hover
+                   disabled:opacity-50 disabled:cursor-not-allowed transition-all dark:outline-0 outline-1 dark:text-blue-600 text-blue-600"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                     Submitting...
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4" />
+                    <Send className="h-5 w-5" />
                     Submit Request
                   </>
                 )}

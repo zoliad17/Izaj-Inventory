@@ -117,7 +117,7 @@ export default function Requested_Item() {
       case "approved":
         return "text-green-600 bg-green-100";
       case "denied":
-        return "text-red-600 bg-red-100";
+        return "text-red-400 bg-red-100";
       case "arrived":
         return "text-blue-600 bg-blue-100";
       default:
@@ -288,7 +288,7 @@ export default function Requested_Item() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-base text-gray-600 dark:text-gray-400">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400">
                         <div className="flex items-center gap-2">
                           <User className="h-5 w-5" />
                           <span>
@@ -345,7 +345,7 @@ export default function Requested_Item() {
                         <span className="font-medium text-gray-700 dark:text-gray-300">
                           Total Quantity:
                         </span>
-                        <p className="text-gray-600 dark:text-gray-400">
+                        <p className="text-gray-600 text base dark:text-gray-400">
                           {request.items.reduce(
                             (sum, item) => sum + item.quantity,
                             0
@@ -425,7 +425,7 @@ export default function Requested_Item() {
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
           <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-neutral-700">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 Request Details #{selectedRequest.request_id}
               </h3>
               <button
@@ -437,30 +437,30 @@ export default function Requested_Item() {
             </div>
 
             {/* Request Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-base leading-relaxed">
+              <div className="space-y-4">
                 <div>
-                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     Recipient:
                   </span>
-                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
+                  <p className="text-gray-900 dark:text-gray-100">
                     {selectedRequest.recipient.name}
                   </p>
                 </div>
                 <div>
-                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     Branch:
                   </span>
-                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
+                  <p className="text-gray-900 dark:text-gray-100">
                     {selectedRequest.recipient_branch}
                   </p>
                 </div>
                 <div>
-                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     Status:
                   </span>
                   <span
-                    className={`ml-2 px-2 py-1 rounded-full text-sm md:text-base font-semibold ${getStatusColor(
+                    className={`ml-2 px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(
                       selectedRequest.status
                     )}`}
                   >
@@ -468,31 +468,31 @@ export default function Requested_Item() {
                   </span>
                 </div>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     Sent Date:
                   </span>
-                  <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
+                  <p className="text-gray-900 dark:text-gray-100">
                     {formatDate(selectedRequest.created_at)}
                   </p>
                 </div>
                 {selectedRequest.reviewed_at && (
                   <div>
-                    <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
                       Reviewed Date:
                     </span>
-                    <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
+                    <p className="text-gray-900 dark:text-gray-100">
                       {formatDate(selectedRequest.reviewed_at)}
                     </p>
                   </div>
                 )}
                 {selectedRequest.reviewer_name && (
                   <div>
-                    <span className="font-semibold text-lg text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
                       Reviewed By:
                     </span>
-                    <p className="text-gray-700 dark:text-gray-200 text-base md:text-lg">
+                    <p className="text-gray-900 dark:text-gray-100">
                       {selectedRequest.reviewer_name}
                     </p>
                   </div>
@@ -502,26 +502,26 @@ export default function Requested_Item() {
 
             {/* Items Table */}
             <div className="mb-6">
-              <h4 className="font-semibold text-xl text-gray-900 dark:text-gray-100 mb-3">
-                Requested Items:
+              <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-3">
+                Requested Items
               </h4>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 text-base md:text-lg">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 text-base">
                   <thead className="bg-gray-50 dark:bg-neutral-800">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Product
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Category
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Quantity
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Price
                       </th>
-                      <th className="px-4 py-2 text-left text-sm md:text-base font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Total
                       </th>
                     </tr>
@@ -529,19 +529,19 @@ export default function Requested_Item() {
                   <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-neutral-700">
                     {selectedRequest.items.map((item, index) => (
                       <tr key={index}>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
                           {item.product_name}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-700 dark:text-gray-300">
+                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
                           {item.category_name}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
                           {item.quantity}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
                           ₱{item.price.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2 text-base md:text-lg text-gray-900 dark:text-gray-100">
+                        <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
                           ₱{(item.price * item.quantity).toFixed(2)}
                         </td>
                       </tr>
@@ -551,11 +551,11 @@ export default function Requested_Item() {
                     <tr>
                       <td
                         colSpan={4}
-                        className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100 text-right"
+                        className="px-4 py-2 text-right font-medium text-gray-900 dark:text-gray-100"
                       >
                         Total Value:
                       </td>
-                      <td className="px-4 py-2 text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      <td className="px-4 py-2 font-semibold text-gray-900 dark:text-gray-100">
                         ₱{getTotalValue(selectedRequest.items).toFixed(2)}
                       </td>
                     </tr>
@@ -566,10 +566,10 @@ export default function Requested_Item() {
               {/* Review Notes */}
               {selectedRequest.notes && (
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-md mt-4">
-                  <h4 className="font-semibold text-lg text-blue-700 dark:text-blue-300 mb-2">
-                    Review Notes:
+                  <h4 className="font-semibold text-base text-blue-700 dark:text-blue-300 mb-2">
+                    Review Notes
                   </h4>
-                  <p className="text-blue-700 dark:text-blue-400 text-base md:text-lg">
+                  <p className="text-gray-800 dark:text-gray-200 text-base">
                     {selectedRequest.notes}
                   </p>
                 </div>
@@ -599,14 +599,14 @@ export default function Requested_Item() {
                         }
 
                         toast.success("Items marked as arrived successfully");
-                        loadSentRequests(); // Refresh the requests
+                        loadSentRequests();
                         setShowDetailsModal(false);
                       } catch (error) {
                         console.error("Error marking items as arrived:", error);
                         toast.error("Failed to mark items as arrived");
                       }
                     }}
-                    className="px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 text-base md:text-lg font-semibold"
+                    className="px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 text-base font-medium"
                   >
                     <Package className="h-5 w-5" />
                     Mark as Arrived
@@ -614,7 +614,7 @@ export default function Requested_Item() {
                 )}
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="px-5 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-base md:text-lg font-semibold"
+                  className=" bg-gray-600 outline-1 dark:outline-0 text-black dark:text-white mt-5 neumorphic-button-transparent rounded-md hover:bg-gray-700 transition-colors text-base font-medium"
                 >
                   Close
                 </button>
