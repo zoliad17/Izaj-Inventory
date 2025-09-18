@@ -28,16 +28,39 @@ interface AuditLogDetail {
   metadata?: any;
   old_values?: any;
   new_values?: any;
+  // Request-specific fields
+  request_id?: string;
+  request_status?: string;
+  requester_name?: string;
+  requester_role?: string;
+  requester_branch?: string;
+  request_date?: string;
+  requested_items?: {
+    product_name: string;
+    quantity: number;
+    unit: string;
+    status: string;
+  }[];
+  approver_name?: string;
+  approval_date?: string;
+  rejected_reason?: string;
+  user_id: string;  // UUID of the user who performed the action
   user_name?: string;
   user_email?: string;
   user_status?: string;
   role_name?: string;
+  role_id?: number;
+  branch_id?: number;
   branch_location?: string;
   branch_address?: string;
   action_category?: string;
   severity_level?: string;
   seconds_ago?: number;
   time_period?: string;
+  // Additional user-related fields
+  department?: string;
+  last_login?: string;
+  created_at?: string;
 }
 
 interface AuditLogDetailViewProps {
@@ -116,45 +139,7 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
     return `${Math.floor(seconds / 86400)} days ago`;
   };
 
-  const renderJsonData = (data: any, title: string) => {
-    if (!data) return null;
 
-    return (
-      <div className="space-y-2">
-        <button
-          onClick={() =>
-            toggleSection(
-              title
-                .toLowerCase()
-                .replace(" ", "") as keyof typeof expandedSections
-            )
-          }
-          className="flex items-center justify-between w-full p-3 text-left bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <span className="font-medium text-gray-700">{title}</span>
-          {expandedSections[
-            title
-              .toLowerCase()
-              .replace(" ", "") as keyof typeof expandedSections
-          ] ? (
-            <ChevronUp className="w-4 h-4" />
-          ) : (
-            <ChevronDown className="w-4 h-4" />
-          )}
-        </button>
-
-        {expandedSections[
-          title.toLowerCase().replace(" ", "") as keyof typeof expandedSections
-        ] && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap overflow-x-auto">
-              {JSON.stringify(data, null, 2)}
-            </pre>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   const { date, time } = formatTimestamp(log.timestamp);
 
@@ -262,39 +247,138 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
                 <User className="w-5 h-5 mr-2" />
                 User Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-6">
+                {/* Personal Information */}
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Name
-                  </p>
-                  <p className="text-gray-900 dark:text-white">
-                    {log.user_name || "Unknown"}
-                  </p>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Personal Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Full Name
+                      </p>
+                      <p className="text-gray-900 dark:text-white font-medium">
+                        {log.user_name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        ID: {log.user_id}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Email Address
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {log.user_email}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Role Information
+                      </p>
+                      <p className="text-gray-900 dark:text-white capitalize">
+                        {log.role_name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Role ID: {log.role_id}
+                      </p>
+                    </div>
+                    {log.department && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Department
+                        </p>
+                        <p className="text-gray-900 dark:text-white">
+                          {log.department}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Account Status
+                      </p>
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                        ${log.user_status?.toLowerCase() === 'active' 
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`
+                      }>
+                        {log.user_status}
+                      </div>
+                    </div>
+                    {log.created_at && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Account Created
+                        </p>
+                        <p className="text-gray-900 dark:text-white">
+                          {new Date(log.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Branch Information */}
                 <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Email
-                  </p>
-                  <p className="text-gray-900 dark:text-white">
-                    {log.user_email || "Unknown"}
-                  </p>
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Branch Details
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Branch Information
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {log.branch_location}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Branch ID: {log.branch_id}
+                      </p>
+                    </div>
+                    {log.branch_address && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                          Branch Address
+                        </p>
+                        <p className="text-gray-900 dark:text-white">
+                          {log.branch_address}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Role
-                  </p>
-                  <p className="text-gray-900 dark:text-white">
-                    {log.role_name || "Unknown"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Branch
-                  </p>
-                  <p className="text-gray-900 dark:text-white">
-                    {log.branch_location || "Unknown"}
-                  </p>
-                </div>
+
+                {/* Action Context */}
+                {(log.action_category || log.time_period || log.seconds_ago) && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                      Action Context
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                      {log.action_category && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Activity Type
+                          </p>
+                          <p className="text-gray-900 dark:text-white capitalize">
+                            {log.action_category}
+                          </p>
+                        </div>
+                      )}
+                      {(log.time_period || log.seconds_ago) && (
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            Time Period
+                          </p>
+                          <p className="text-gray-900 dark:text-white">
+                            {log.time_period || (log.seconds_ago && formatTimeAgo(log.seconds_ago))}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -316,29 +400,199 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
               </button>
 
               {expandedSections.technical && (
-                <div className="mt-4 space-y-4">
-                  {log.ip_address && (
-                    <div className="flex items-center space-x-3">
-                      <Globe className="w-4 h-4 text-gray-400" />
+                <div className="mt-4 space-y-6">
+                  {/* Connection Info */}
+                  <div className="space-y-4">
+                    {log.ip_address && (
+                      <div className="flex items-center space-x-3">
+                        <Globe className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                            IP Address
+                          </p>
+                          <p className="text-gray-900 dark:text-white font-mono">
+                            {log.ip_address}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {log.user_agent && (
                       <div>
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          IP Address
+                          User Agent
                         </p>
-                        <p className="text-gray-900 dark:text-white font-mono">
-                          {log.ip_address}
+                        <p className="text-gray-900 dark:text-white text-sm break-all">
+                          {log.user_agent}
                         </p>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {log.user_agent && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        User Agent
-                      </p>
-                      <p className="text-gray-900 dark:text-white text-sm break-all">
-                        {log.user_agent}
-                      </p>
+                  {/* Data Changes Section */}
+                  {(log.metadata || log.old_values || log.new_values) && (
+                    <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+                      <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">
+                        Data Changes
+                      </h4>
+                      
+                      {/* Request Information */}
+                      {log.entity_type === 'product_requisition' && (
+                        <div className="mb-4 space-y-4">
+                          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Request Information
+                          </h5>
+                          
+                          {/* Request Overview */}
+                          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  Request ID
+                                </p>
+                                <p className="text-base text-gray-900 dark:text-white font-medium">
+                                  {log.request_id || log.entity_id}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  Status
+                                </p>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  log.request_status?.toLowerCase() === 'approved' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                    : log.request_status?.toLowerCase() === 'rejected'
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                }`}>
+                                  {log.request_status}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  Requester Information
+                                </p>
+                                <p className="text-base text-gray-900 dark:text-white">
+                                  {log.requester_name}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {log.requester_role} • {log.requester_branch}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                  Request Date
+                                </p>
+                                <p className="text-base text-gray-900 dark:text-white">
+                                  {log.request_date && new Date(log.request_date).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Requested Items */}
+                          {log.requested_items && log.requested_items.length > 0 && (
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                              <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                Requested Items
+                              </h6>
+                              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                                {log.requested_items.map((item, index) => (
+                                  <div key={index} className="py-3 first:pt-0 last:pb-0">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                        <p className="text-base font-medium text-gray-900 dark:text-white">
+                                          {item.product_name}
+                                        </p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                          Quantity: {item.quantity} {item.unit}
+                                        </p>
+                                      </div>
+                                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        item.status?.toLowerCase() === 'approved' 
+                                          ? 'bg-green-100 text-green-800'
+                                          : item.status?.toLowerCase() === 'rejected'
+                                          ? 'bg-red-100 text-red-800'
+                                          : 'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {item.status}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Approval Information */}
+                          {(log.approver_name || log.rejected_reason) && (
+                            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
+                              <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                                {log.request_status === 'REJECTED' ? 'Rejection Details' : 'Approval Details'}
+                              </h6>
+                              <div className="space-y-3">
+                                {log.approver_name && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                      {log.request_status === 'REJECTED' ? 'Rejected by' : 'Approved by'}
+                                    </p>
+                                    <p className="text-base text-gray-900 dark:text-white">
+                                      {log.approver_name}
+                                    </p>
+                                    {log.approval_date && (
+                                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                                        on {new Date(log.approval_date).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                                {log.rejected_reason && (
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                      Reason for Rejection
+                                    </p>
+                                    <p className="text-base text-red-600 dark:text-red-400">
+                                      {log.rejected_reason}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Changes Comparison */}
+                      {(log.old_values || log.new_values) && (
+                        <div>
+                          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Changes Made
+                          </h5>
+                          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-3">
+                            {Object.keys({ ...log.old_values, ...log.new_values }).map((key) => (
+                              <div key={key} className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  {key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">Previous Value</span>
+                                    <div className="text-sm text-red-600 dark:text-red-400">
+                                      {log.old_values?.[key] !== undefined ? String(log.old_values[key]) : '—'}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">New Value</span>
+                                    <div className="text-sm text-green-600 dark:text-green-400">
+                                      {log.new_values?.[key] !== undefined ? String(log.new_values[key]) : '—'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -354,24 +608,17 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
                 <p className="text-gray-700 dark:text-gray-300">{log.notes}</p>
               </div>
             )}
-
-            {/* Data Changes */}
-            <div className="space-y-4">
-              {renderJsonData(log.metadata, "Metadata")}
-              {renderJsonData(log.old_values, "Old Values")}
-              {renderJsonData(log.new_values, "New Values")}
-            </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-          >
-            Close
-          </button>
+          {/* Footer */}
+          <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

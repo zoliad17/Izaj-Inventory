@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as XLSX from 'xlsx';
 
 import {
   Search,
@@ -52,6 +53,8 @@ interface AuditLog {
   severity_level?: string;
   seconds_ago?: number;
   time_period?: string;
+  role_id?: number;
+  branch_id?: number;
   user?: {
     name: string;
     email: string;
@@ -305,6 +308,37 @@ const AuditLogsPage = () => {
     }
   };
 
+  // Handle Excel export
+  const handleExportToExcel = () => {
+    // Transform logs data for Excel
+    const excelData = sortedLogs.map(log => ({
+      'Date': new Date(log.timestamp).toLocaleDateString(),
+      'Time': new Date(log.timestamp).toLocaleTimeString(),
+      'Action': log.action.replace(/_/g, ' '),
+      'Description': log.description,
+      'Notes': log.notes || '',
+      'Entity Type': log.entity_type || '',
+      'Entity ID': log.entity_id || '',
+      'User': log.user_name || 'Unknown',
+      'Email': log.user_email || log.user_id || '',
+      'Role': log.role_name || '',
+      'Branch': log.branch_location || '',
+      'Severity': log.severity_level || '',
+      'Category': log.action_category || ''
+    }));
+
+    // Create workbook and worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Audit Logs');
+
+    // Generate Excel file
+    const today = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `audit_logs_${today}.xlsx`);
+  };
+
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
@@ -394,7 +428,9 @@ const AuditLogsPage = () => {
 
             {/* Export Button */}
             <button
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-gray-700 dark:text-gray-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
+              onClick={handleExportToExcel}
+              disabled={isLoading || sortedLogs.length === 0}
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-gray-700 dark:text-gray-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Export to Excel"
             >
               <Download className="w-4 h-4" />
@@ -656,19 +692,19 @@ const AuditLogsPage = () => {
                         </td>
                         <td className="px-2 sm:px-4 lg:px-6 py-4">
                           <div className="text-base font-medium text-gray-900 dark:text-white break-words">
-                            {log.user?.name || "Unknown"}
+                            {log.user_name || "Unknown"}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 break-words mt-1">
-                            {log.user?.email || log.user_id}
+                            {log.user_email || log.user_id}
                           </div>
-                          {log.user?.role?.role_name && (
+                          {log.role_name && (
                             <div className="text-sm text-blue-600 dark:text-blue-400 break-words mt-1 font-medium">
-                              {log.user.role.role_name}
+                              {log.role_name}
                             </div>
                           )}
-                          {log.user?.branch?.location && (
+                          {log.branch_location && (
                             <div className="text-sm text-gray-500 dark:text-gray-400 break-words mt-1">
-                              {log.user.branch.location}
+                              {log.branch_location}
                             </div>
                           )}
                         </td>

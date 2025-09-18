@@ -1655,80 +1655,93 @@ app.get("/api/product-requests/all", async (req, res) => {
 // GET audit logs for admin (all users) - enhanced with view data
 app.get("/api/audit-logs", async (req, res) => {
   try {
-    const { page = 1, limit = 10, action, user_id, entity_type, start_date, end_date } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      action,
+      user_id,
+      entity_type,
+      start_date,
+      end_date
+    } = req.query;
+
     const offset = (page - 1) * limit;
 
-    // Use direct table query with joins instead of view
     let query = supabase
-      .from("audit_logs")
-      .select(`
-        *,
-        user:user_id (
-          name,
-          email,
-          role:role_id (
-            role_name
-          ),
-          branch:branch_id (
-            location,
-            address
-          )
-        )
-      `)
-      .order('timestamp', { ascending: false });
+      .from("v_audit_logs_detailed")
+      .select("*", { count: "exact" })
+      .order("timestamp", { ascending: false });
 
     // Apply filters
-    if (action) {
-      query = query.eq('action', action);
-    }
-    if (user_id) {
-      query = query.eq('user_id', user_id);
-    }
-    if (entity_type) {
-      query = query.eq('entity_type', entity_type);
-    }
-    if (start_date) {
-      query = query.gte('timestamp', start_date);
-    }
-    if (end_date) {
-      query = query.lte('timestamp', end_date);
-    }
+    if (action) query = query.eq("action", action);
+    if (user_id) query = query.eq("user_id", user_id);
+    if (entity_type) query = query.eq("entity_type", entity_type);
+    if (start_date) query = query.gte("timestamp", start_date);
+    if (end_date) query = query.lte("timestamp", end_date);
 
-    // Get total count for pagination
-    const { count } = await query.select('*', { count: 'exact', head: true });
+    // Get total count
+    const { count } = await query.select("*", { count: "exact", head: true });
 
     // Get paginated results
-    const { data, error } = await query
-      .range(offset, offset + limit - 1);
-
+    const { data, error } = await query.range(offset, offset + limit - 1);
     if (error) throw error;
 
-    // Transform data to match expected format
-    const transformedData = (data || []).map(log => ({
+    const transformedData = await Promise.all(
+    (data || []).map(async (log) => {
+    const enrichedLog = {
       ...log,
-      user_name: log.user?.name || 'Unknown',
-      user_email: log.user?.email || '',
-      role_name: log.user?.role?.role_name || 'Unknown',
-      branch_location: log.user?.branch?.location || 'Unknown',
-      branch_address: log.user?.branch?.address || '',
-      action_category: log.action === 'INSERT' ? 'Create' :
-        log.action === 'UPDATE' ? 'Modify' :
-          log.action === 'DELETE' ? 'Delete' :
-            log.action?.includes('LOGIN') ? 'Authentication' :
-              log.action?.includes('PRODUCT') ? 'Product Management' :
-                log.action?.includes('REQUEST') ? 'Request Management' :
-                  log.action?.includes('USER') ? 'User Management' :
-                    log.action?.includes('BRANCH') ? 'Branch Management' :
-                      log.action?.includes('CATEGORY') ? 'Category Management' : 'Other',
+      user_name: log.user_name || 'Unknown',
+      user_email: log.user_email || '',
+      user_status: log.user_status || 'Unknown',
+      role_name: log.role_name || 'Unknown',
+      branch_location: log.branch_location || 'Unknown',
+      branch_address: log.branch_address || '',
+      action_category: log.action?.includes('LOGIN') ? 'Authentication' :
+        log.action?.includes('INSERT') ? 'Create' :
+        log.action?.includes('UPDATE') ? 'Modify' :
+        log.action?.includes('DELETE') ? 'Delete' :
+        log.action?.includes('PRODUCT') ? 'Product Management' :
+        log.action?.includes('USER') ? 'User Management' :
+        log.action?.includes('BRANCH') ? 'Branch Management' :
+        log.action?.includes('CATEGORY') ? 'Category Management' : 'Other',
       severity_level: log.action?.includes('DELETE') || log.action?.includes('REMOVE') ? 'High' :
         log.action?.includes('UPDATE') || log.action?.includes('EDIT') ? 'Medium' :
-          log.action?.includes('CREATE') || log.action?.includes('ADD') ? 'Low' :
-            log.action?.includes('LOGIN') || log.action?.includes('VIEW') ? 'Info' : 'Medium',
+        log.action?.includes('CREATE') || log.action?.includes('ADD') ? 'Low' :
+        log.action?.includes('LOGIN') || log.action?.includes('VIEW') ? 'Info' : 'Medium',
       time_period: new Date(log.timestamp) > new Date(Date.now() - 60 * 60 * 1000) ? 'Just now' :
         new Date(log.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000) ? 'Today' :
-          new Date(log.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? 'This week' :
-            new Date(log.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) ? 'This month' : 'Older'
-    }));
+        new Date(log.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) ? 'This week' :
+        new Date(log.timestamp) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) ? 'This month' : 'Older',
+      seconds_ago: Math.floor((Date.now() - new Date(log.timestamp).getTime()) / 1000),
+    };
+
+    // Fetch requisition details only if it's a requisition log
+    if (log.entity_type === 'product_requisition' && log.entity_id) {
+      const { data: requisitionData, error: requisitionError } = await supabase
+        .from("v_product_requisition_details") // you must create this view
+        .select("*")
+        .eq("request_id", log.entity_id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!requisitionError && requisitionData) {
+        enrichedLog.request_id = requisitionData.request_id;
+        enrichedLog.request_status = requisitionData.request_status;
+        enrichedLog.request_date = requisitionData.request_date;
+        enrichedLog.requester_name = requisitionData.requester_name;
+        enrichedLog.requester_role = requisitionData.requester_role_id; // or join with role_name
+        enrichedLog.requester_branch = requisitionData.requester_branch_location;
+        enrichedLog.approver_name = requisitionData.approver_name;
+        enrichedLog.rejected_reason = requisitionData.notes;
+        enrichedLog.approval_date = requisitionData.reviewed_at;
+        enrichedLog.requested_items = requisitionData.requested_items || [];
+      }
+    }
+
+    return enrichedLog;
+  })
+);
+
 
     res.json({
       logs: transformedData,
@@ -1746,52 +1759,37 @@ app.get("/api/audit-logs", async (req, res) => {
 });
 
 
+
+
 // GET audit logs for specific user
 app.get("/api/audit-logs/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 10, action, entity_type, start_date, end_date } = req.query;
+    const {
+      page = 1,
+      limit = 10,
+      action,
+      entity_type,
+      start_date,
+      end_date
+    } = req.query;
+
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from("audit_logs")
-      .select(`
-        *,
-        user:user_id (
-          name,
-          email,
-          role:role_id (
-            role_name
-          ),
-          branch:branch_id (
-            location
-          )
-        )
-      `)
-      .eq('user_id', userId)
-      .order('timestamp', { ascending: false });
+      .from("v_audit_logs_detailed")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .order("timestamp", { ascending: false });
 
-    // Apply filters
-    if (action) {
-      query = query.eq('action', action);
-    }
-    if (entity_type) {
-      query = query.eq('entity_type', entity_type);
-    }
-    if (start_date) {
-      query = query.gte('timestamp', start_date);
-    }
-    if (end_date) {
-      query = query.lte('timestamp', end_date);
-    }
+    if (action) query = query.eq("action", action);
+    if (entity_type) query = query.eq("entity_type", entity_type);
+    if (start_date) query = query.gte("timestamp", start_date);
+    if (end_date) query = query.lte("timestamp", end_date);
 
-    // Get total count for pagination
-    const { count } = await query.select('*', { count: 'exact', head: true });
+    const { count } = await query.select("*", { count: "exact", head: true });
 
-    // Get paginated results
-    const { data, error } = await query
-      .range(offset, offset + limit - 1);
-
+    const { data, error } = await query.range(offset, offset + limit - 1);
     if (error) throw error;
 
     res.json({
@@ -1808,6 +1806,7 @@ app.get("/api/audit-logs/user/:userId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user audit logs" });
   }
 });
+
 
 // GET dashboard statistics
 app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
