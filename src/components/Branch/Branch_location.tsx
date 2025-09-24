@@ -187,13 +187,6 @@ function BranchLocation() {
             </h5>
           </div>
         </div>
-
-        {user?.branch_id && (
-          <p className="text-base text-gray-600 dark:text-gray-400 mt-2 sm:mt-0">
-            Showing other branches available for requests (excluding your
-            branch)
-          </p>
-        )}
       </div>
 
       {/* Loading State */}
