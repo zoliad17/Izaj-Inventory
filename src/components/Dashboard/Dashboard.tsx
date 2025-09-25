@@ -1,4 +1,5 @@
 import { useSidebar } from "../Sidebar/SidebarContext";
+
 import {
   Package,
   Lightbulb,
@@ -165,6 +166,7 @@ const chartConfig = {
 
 function Dashboard() {
   const { isCollapsed } = useSidebar();
+
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const { isSuperAdmin, isBranchManager, isAdmin } = useRole(); // Use the hook
@@ -255,6 +257,16 @@ function Dashboard() {
       } p-2 sm:p-4 `}
     >
       <div className="mt-2 mb-8">
+        {/* Welcome Message */}
+
+        <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome back, {User.name || "User"} 👋
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Here’s a quick overview of your dashboard today.
+          </p>
+        </div>
         {isSuperAdmin() ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {/* Branches Card */}

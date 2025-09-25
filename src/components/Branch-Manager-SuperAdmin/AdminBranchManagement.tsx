@@ -365,15 +365,15 @@ function AdminBranchManagement() {
         <button
           onClick={handleAddBranch}
           className="
-    flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-lg
-    text-blue-800 dark:text-white
-    bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-900
-    shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
-    dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
-    hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
-    dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
-    hover:scale-[1.05] active:scale-95
-    transition-all duration-300
+    flex items-center gap-2 px-6 py-3 rounded-2xl 
+   shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+      dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+      hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+      dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+      hover:scale-[1.05] active:scale-95
+      transition-all duration-300 text-lg font-bold
+      bg-transparent
+      text-blue-600 dark:text-blue-300
   "
         >
           <PlusIcon className="h-5 w-5" />
@@ -459,7 +459,7 @@ function AdminBranchManagement() {
 
                   {/* Content - Reuse same structure */}
                   <div className="p-6 flex-grow">
-                    <h5 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+                    <h5 className="text-2xl font-bold mb-2 text-gray-900 dark:text-gray-100">
                       {branch.location}
                     </h5>
 
@@ -495,7 +495,7 @@ function AdminBranchManagement() {
                       {/* Edit Button (Green Touch, Transparent) */}
                       <button
                         onClick={() => handleEditBranch(branch)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+                        className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-xl
       shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
       dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
       hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
@@ -512,7 +512,7 @@ function AdminBranchManagement() {
                       {/* Delete Button (Red Touch, Transparent) */}
                       <button
                         onClick={() => handleDeleteBranch(branch.id)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl
+                        className="flex-1 flex items-center justify-center gap-2 px-2 py-2 rounded-xl
       shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
       dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
       hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
