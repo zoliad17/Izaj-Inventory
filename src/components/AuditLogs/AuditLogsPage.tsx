@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 import {
   Search,
@@ -311,20 +311,20 @@ const AuditLogsPage = () => {
   // Handle Excel export
   const handleExportToExcel = () => {
     // Transform logs data for Excel
-    const excelData = sortedLogs.map(log => ({
-      'Date': new Date(log.timestamp).toLocaleDateString(),
-      'Time': new Date(log.timestamp).toLocaleTimeString(),
-      'Action': log.action.replace(/_/g, ' '),
-      'Description': log.description,
-      'Notes': log.notes || '',
-      'Entity Type': log.entity_type || '',
-      'Entity ID': log.entity_id || '',
-      'User': log.user_name || 'Unknown',
-      'Email': log.user_email || log.user_id || '',
-      'Role': log.role_name || '',
-      'Branch': log.branch_location || '',
-      'Severity': log.severity_level || '',
-      'Category': log.action_category || ''
+    const excelData = sortedLogs.map((log) => ({
+      Date: new Date(log.timestamp).toLocaleDateString(),
+      Time: new Date(log.timestamp).toLocaleTimeString(),
+      Action: log.action.replace(/_/g, " "),
+      Description: log.description,
+      Notes: log.notes || "",
+      "Entity Type": log.entity_type || "",
+      "Entity ID": log.entity_id || "",
+      User: log.user_name || "Unknown",
+      Email: log.user_email || log.user_id || "",
+      Role: log.role_name || "",
+      Branch: log.branch_location || "",
+      Severity: log.severity_level || "",
+      Category: log.action_category || "",
     }));
 
     // Create workbook and worksheet
@@ -332,10 +332,10 @@ const AuditLogsPage = () => {
     const ws = XLSX.utils.json_to_sheet(excelData);
 
     // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, 'Audit Logs');
+    XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
 
     // Generate Excel file
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     XLSX.writeFile(wb, `audit_logs_${today}.xlsx`);
   };
 
@@ -671,7 +671,10 @@ const AuditLogsPage = () => {
                           </span>
                         </td>
                         <td className="px-2 sm:px-4 lg:px-6 py-4">
-                          <div className="text-base font-medium text-gray-900 dark:text-white break-words">
+                          <div
+                            className="text-base line-clamp-2 font-medium text-gray-900 dark:text-white break-words"
+                            title={log.description}
+                          >
                             {log.description}
                           </div>
                           {log.notes && (
@@ -680,13 +683,18 @@ const AuditLogsPage = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                        <td className="px-2 sm:px-4 mr-1.5 lg:px-6 py-4">
                           <div className="text-base text-gray-900 dark:text-white">
                             <span className="font-semibold">Type:</span>{" "}
                             {log.entity_type || "—"}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            <span className="font-medium">ID:</span>{" "}
+                            <span
+                              className="font-medium line-clamp-1"
+                              title={log.entity_id}
+                            >
+                              ID:
+                            </span>{" "}
                             {log.entity_id || "—"}
                           </div>
                         </td>
