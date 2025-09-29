@@ -1851,6 +1851,43 @@ app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
       .select("*", { count: 'exact', head: true });
     if (branchesError) throw branchesError;
 
+    // Get total users count
+    console.log("Fetching users count...");
+    let totalUsers = 0;
+    
+    try {
+      // Try to get all users and count them (most reliable method)
+      const { data: allUsers, error: allUsersError } = await supabase
+        .from("user")
+        .select("user_id");
+      
+      if (allUsersError) {
+        console.error("Error fetching users:", allUsersError);
+        // Fallback: try count method
+        const { count: countResult, error: countError } = await supabase
+          .from("user")
+          .select("*", { count: 'exact', head: true });
+        
+        if (countError) {
+          console.error("Error with count method too:", countError);
+          totalUsers = 0;
+        } else {
+          totalUsers = countResult || 0;
+        }
+      } else {
+        totalUsers = allUsers ? allUsers.length : 0;
+        console.log("Successfully fetched users count:", totalUsers);
+        if (allUsers && allUsers.length > 0) {
+          console.log("Sample users:", allUsers.slice(0, 3));
+        }
+      }
+    } catch (error) {
+      console.error("Unexpected error fetching users:", error);
+      totalUsers = 0;
+    }
+    
+    console.log("Final user count:", totalUsers);
+
     // Get low stock products count
     let lowStockQuery = supabase
       .from("centralized_product")
@@ -1893,6 +1930,7 @@ app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
       totalProducts: totalProducts || 0,
       totalCategories: totalCategories || 0,
       totalBranches: totalBranches || 0,
+      totalUsers: totalUsers || 0,
       lowStockCount: lowStockCount || 0,
       outOfStockCount: outOfStockCount || 0,
       recentActivity: recentActivity || 0,

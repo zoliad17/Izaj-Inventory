@@ -5,6 +5,7 @@ interface DashboardStats {
     totalProducts: number;
     totalCategories: number;
     totalBranches: number;
+    totalUsers: number;
     lowStockCount: number;
     outOfStockCount: number;
     recentActivity: number;

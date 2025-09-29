@@ -312,9 +312,12 @@ function Dashboard() {
                 <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
                   Users
                 </h5>
+                {isLoading && (
+                  <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                )}
               </div>
               <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-                12
+                {isLoading ? "..." : error ? "Error" : stats?.totalUsers || "0"}
               </h6>
               <p className="text-sm text-gray-500 mt-1">
                 Total registered users
