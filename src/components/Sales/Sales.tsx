@@ -9,6 +9,7 @@ import {
   LineChartIcon,
   RefreshCw,
   Download,
+  Upload,
   Filter,
   Coins,
 } from "lucide-react";
@@ -49,10 +50,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import * as XLSX from "xlsx";
 
 export const description = "A sales dashboard with statistics and charts";
 
 const Sales: React.FC = () => {
+  // Import and Export functionality
+  const handleExport = () => {
+    try {
+      // Prepare data for export
+      const exportData = products.map((product) => ({
+        "Product ID": product.id,
+        "Product Name": product.name,
+        Category: product.category,
+        Price: product.price,
+        Stock: product.stock,
+        Status:
+          product.status === "in-stock"
+            ? "In Stock"
+            : product.status === "low-stock"
+            ? "Low Stock"
+            : "Out of Stock",
+      }));
+
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Data");
+
+      // Generate filename with current date
+      const currentDate = new Date().toISOString().split("T")[0];
+      const filename = `sales_data_${currentDate}.xlsx`;
+
+      // Export the file
+      XLSX.writeFile(workbook, filename);
+      console.log(`Sales data exported successfully as ${filename}`);
+    } catch (error) {
+      console.error("Error exporting sales data:", error);
+      alert("Failed to export sales data. Please try again.");
+    }
+  };
+
+  const handleImport = () => {
+    alert(
+      "Import functionality would be implemented here in a real application.\n\nIn a complete implementation, this would:\n1. Open a file dialog to select an Excel file\n2. Parse the file contents\n3. Validate the data format\n4. Update the sales data with the imported information"
+    );
+    console.log("Import functionality triggered");
+  };
   // Bar chart options for lighting products
   const bar_chartData = [
     { category: "LED Bulbs", sales: 18600 },
@@ -168,6 +212,24 @@ const Sales: React.FC = () => {
             <ArrowLeft size={20} className="mr-1" />
           </button>
           <h5 className="text-xl md:text-2xl font-bold">Sales Dashboard</h5>
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={handleImport}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-blue-700 dark:text-blue-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
+              title="Import Sales Data"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-green-700 dark:text-green-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
+              title="Export Sales Data"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+          </div>
         </div>
 
         {/* Sales Statistic Cards */}
