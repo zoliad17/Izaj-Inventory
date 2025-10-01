@@ -1,21 +1,30 @@
-import { ArrowLeft, Clock, Lightbulb } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Lightbulb,
+  TrendingUp,
+  ShoppingCart,
+  Calendar,
+  BarChartIcon,
+  LineChartIcon,
+  RefreshCw,
+  Download,
+  Filter,
+  Coins,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   LabelList,
-  Radar,
-  RadialBar,
-  RadialBarChart,
+  Line,
+  LineChart,
   XAxis,
 } from "recharts";
 
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { Toaster } from "react-hot-toast";
-("use client");
 import * as React from "react";
-import { TrendingUp } from "lucide-react";
-import { Pie, PieChart, PolarAngleAxis, PolarGrid, RadarChart } from "recharts";
 import {
   Card,
   CardContent,
@@ -29,131 +38,56 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import { useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export const description = "A pie chart with stacked sections";
+export const description = "A sales dashboard with statistics and charts";
 
 const Sales: React.FC = () => {
-  // Bar chart options
+  // Bar chart options for lighting products
   const bar_chartData = [
-    { month: "January", desktop: 186 },
-    { month: "February", desktop: 305 },
-    { month: "March", desktop: 237 },
-    { month: "April", desktop: 73 },
-    { month: "May", desktop: 209 },
-    { month: "June", desktop: 214 },
-    { month: "July", desktop: 254 },
-    { month: "August", desktop: 234 },
-    { month: "September", desktop: 150 },
-    { month: "October", desktop: 244 },
-    { month: "November", desktop: 114 },
-    { month: "December", desktop: 200 },
+    { category: "LED Bulbs", sales: 18600 },
+    { category: "Smart Lighting", sales: 30500 },
+    { category: "Decorative", sales: 23700 },
+    { category: "Outdoor", sales: 7300 },
+    { category: "Lamps", sales: 20900 },
   ];
   const bar_chartConfig = {
-    desktop: {
-      label: "Desktop",
+    sales: {
+      label: "Sales (₱)",
       color: "var(--chart-2)",
     },
   } satisfies ChartConfig;
 
-  // Radar chart options
-  const radar_chartData = [
-    { month: "January", desktop: 186 },
-    { month: "February", desktop: 285 },
-    { month: "March", desktop: 237 },
-    { month: "April", desktop: 203 },
-    { month: "May", desktop: 209 },
-    { month: "June", desktop: 264 },
+  // Line chart data for lighting products sales
+  const line_chartData = [
+    { month: "January", sales: 18600, products: 120 },
+    { month: "February", sales: 30500, products: 180 },
+    { month: "March", sales: 23700, products: 150 },
+    { month: "April", sales: 7300, products: 80 },
+    { month: "May", sales: 20900, products: 140 },
+    { month: "June", sales: 21400, products: 160 },
   ];
-  const radar_chartConfig = {
-    desktop: {
-      label: "Desktop",
-      color: "var(--chart-2)",
-    },
-  } satisfies ChartConfig;
-  //  pie chart options
-
-  const desktopData = [
-    { month: "january", desktop: 186, fill: "var(--color-january)" },
-    { month: "february", desktop: 305, fill: "var(--color-february)" },
-    { month: "march", desktop: 237, fill: "var(--color-march)" },
-    { month: "april", desktop: 173, fill: "var(--color-april)" },
-    { month: "may", desktop: 209, fill: "var(--color-may)" },
-  ];
-  const mobileData = [
-    { month: "january", mobile: 80, fill: "var(--color-january)" },
-    { month: "february", mobile: 200, fill: "var(--color-february)" },
-    { month: "march", mobile: 120, fill: "var(--color-march)" },
-    { month: "april", mobile: 190, fill: "var(--color-april)" },
-    { month: "may", mobile: 130, fill: "var(--color-may)" },
-  ];
-  const chartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    desktop: {
-      label: "Desktop",
-    },
-    mobile: {
-      label: "Mobile",
-    },
-    january: {
-      label: "January",
+  const line_chartConfig = {
+    sales: {
+      label: "Sales (₱)",
       color: "var(--chart-1)",
     },
-    february: {
-      label: "February",
+    products: {
+      label: "Products Sold",
       color: "var(--chart-2)",
-    },
-    march: {
-      label: "March",
-      color: "var(--chart-3)",
-    },
-    april: {
-      label: "April",
-      color: "var(--chart-4)",
-    },
-    may: {
-      label: "May",
-      color: "var(--chart-5)",
     },
   } satisfies ChartConfig;
 
-  // radical chart options
-
-  const radical_chartData = [
-    { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-    { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-    { browser: "firefox", visitors: 187, fill: "var(--color-firefox)" },
-    { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
-    { browser: "other", visitors: 90, fill: "var(--color-other)" },
-  ];
-  const radical_chartConfig = {
-    visitors: {
-      label: "Visitors",
-    },
-    chrome: {
-      label: "Chrome",
-      color: "var(--chart-2)",
-    },
-    safari: {
-      label: "Safari",
-      color: "var(--chart-2)",
-    },
-    firefox: {
-      label: "Firefox",
-      color: "var(--chart-3)",
-    },
-    edge: {
-      label: "Edge",
-      color: "var(--chart-4)",
-    },
-    other: {
-      label: "Other",
-      color: "var(--chart-5)",
-    },
-  } satisfies ChartConfig;
   // Product data
   interface Product {
     id: string;
@@ -169,7 +103,7 @@ const Sales: React.FC = () => {
       id: "001",
       name: "LED Bulb",
       category: "Bulbs",
-      price: "Php 5.99",
+      price: "₱5.99",
       stock: 100,
       status: "in-stock",
     },
@@ -177,7 +111,7 @@ const Sales: React.FC = () => {
       id: "002",
       name: "Smart Light Strip",
       category: "Smart Lighting",
-      price: "Php 29.99",
+      price: "₱29.99",
       stock: 50,
       status: "in-stock",
     },
@@ -185,7 +119,7 @@ const Sales: React.FC = () => {
       id: "003",
       name: "Chandelier",
       category: "Decorative",
-      price: "Php 199.99",
+      price: "₱199.99",
       stock: 10,
       status: "low-stock",
     },
@@ -193,7 +127,7 @@ const Sales: React.FC = () => {
       id: "004",
       name: "Floodlight",
       category: "Outdoor",
-      price: "Php 49.99",
+      price: "₱49.99",
       stock: 25,
       status: "in-stock",
     },
@@ -201,7 +135,7 @@ const Sales: React.FC = () => {
       id: "005",
       name: "Desk Lamp",
       category: "Lamps",
-      price: "Php 39.99",
+      price: "₱39.99",
       stock: 0,
       status: "out-of-stock",
     },
@@ -236,187 +170,304 @@ const Sales: React.FC = () => {
           <h5 className="text-xl md:text-2xl font-bold">Sales Dashboard</h5>
         </div>
 
-        {/* Top Row - Pie and Radar Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Pie Chart Card */}
-          <Card className="flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle>Pie Chart - Stacked</CardTitle>
-              <CardDescription>January - June 2024</CardDescription>
+        {/* Sales Statistic Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {/* Total Sales Card */}
+          <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
+                <Coins
+                  className="text-green-600 dark:text-green-400"
+                  size={22}
+                />
+              </div>
+              <div>
+                <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <Coins className="h-5 w-5" />
+                  Total Sales
+                </h5>
+              </div>
+            </div>
+            <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+              ₱24,560
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Lifetime sales</p>
+            <div className="flex items-center gap-1 mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
+              <TrendingUp size={16} />
+              <span>12.5% from last month</span>
+            </div>
+          </div>
+
+          {/* Monthly Sales Card */}
+          <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
+                <Calendar
+                  className="text-blue-600 dark:text-blue-400"
+                  size={22}
+                />
+              </div>
+              <div>
+                <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  Monthly Sales
+                </h5>
+              </div>
+            </div>
+            <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+              ₱4,250
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">This month</p>
+            <div className="flex items-center gap-1 mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
+              <TrendingUp size={16} />
+              <span>8.2% from last month</span>
+            </div>
+          </div>
+
+          {/* Orders Card */}
+          <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-tr from-purple-500/20 to-purple-700/20 dark:from-purple-800/30 dark:to-purple-600/30">
+                <ShoppingCart
+                  className="text-purple-600 dark:text-purple-400"
+                  size={22}
+                />
+              </div>
+              <div>
+                <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  Orders
+                </h5>
+              </div>
+            </div>
+            <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+              142
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Total orders</p>
+            <div className="flex items-center gap-1 mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
+              <TrendingUp size={16} />
+              <span>5.3% from last month</span>
+            </div>
+          </div>
+
+          {/* Average Order Value Card */}
+          <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-700/20 dark:from-amber-800/30 dark:to-amber-600/30">
+                <Coins
+                  className="text-amber-600 dark:text-amber-400"
+                  size={22}
+                />
+              </div>
+              <div>
+                <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  Avg. Order Value
+                </h5>
+              </div>
+            </div>
+            <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+              ₱172
+            </h6>
+            <p className="text-sm text-gray-500 mt-1">Per order</p>
+            <div className="flex items-center gap-1 mt-2 text-green-600 dark:text-green-400 text-sm font-medium">
+              <TrendingUp size={16} />
+              <span>3.1% from last month</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle Row - Charts */}
+        <div className="space-y-6">
+          {/* Line Chart - Sales Trend */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChartIcon className="h-5 w-5 text-blue-500" />
+                  Sales Trend
+                </CardTitle>
+                <CardDescription>
+                  Monthly sales and products sold for lighting products
+                </CardDescription>
+              </div>
+              <div className="flex gap-2 items-center">
+                <Select defaultValue="6m">
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1m">1 month</SelectItem>
+                    <SelectItem value="3m">3 months</SelectItem>
+                    <SelectItem value="6m">6 months</SelectItem>
+                    <SelectItem value="1y">1 year</SelectItem>
+                  </SelectContent>
+                </Select>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <Filter className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <Download className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
+              </div>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent>
               <ChartContainer
-                config={chartConfig}
-                className="mx-auto aspect-square max-h-[200px]"
+                config={line_chartConfig}
+                className="h-[200px] w-[100%]"
               >
-                <PieChart>
+                <LineChart
+                  height={200}
+                  accessibilityLayer
+                  data={line_chartData}
+                  margin={{
+                    top: 20,
+                  }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={5}
+                    axisLine={false}
+                    tickFormatter={(value) => value.slice(0, 3)}
+                  />
                   <ChartTooltip
+                    cursor={false}
                     content={
                       <ChartTooltipContent
-                        labelKey="visitors"
-                        nameKey="month"
                         indicator="line"
-                        labelFormatter={(_, payload) => {
-                          return chartConfig[
-                            payload?.[0].dataKey as keyof typeof chartConfig
-                          ].label;
-                        }}
+                        className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-3"
                       />
                     }
                   />
-                  <Pie data={desktopData} dataKey="desktop" outerRadius={60} />
-                  <Pie
-                    data={mobileData}
-                    dataKey="mobile"
-                    innerRadius={70}
-                    outerRadius={90}
+                  <ChartLegend
+                    content={
+                      <ChartLegendContent className="flex gap-4 justify-center" />
+                    }
                   />
-                </PieChart>
+                  <Line
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="var(--color-sales)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Sales (₱)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="products"
+                    stroke="var(--color-products)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                    name="Products Sold"
+                  />
+                </LineChart>
               </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2 leading-none font-medium">
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+              <div className="flex gap-2 leading-none font-medium">
                 Trending up by 5.2% this month{" "}
                 <TrendingUp className="h-4 w-4" />
               </div>
               <div className="text-muted-foreground leading-none">
-                Showing total visitors for the last 6 months
+                Showing sales trend for the last 6 months
               </div>
             </CardFooter>
           </Card>
 
-          {/* Radar Chart Card */}
+          {/* Bar Chart - Product Category Sales */}
           <Card>
-            <CardHeader className="items-center pb-4">
-              <CardTitle>Radar Chart - Grid Circle Filled</CardTitle>
-              <CardDescription>
-                Showing total visitors for the last 6 months
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pb-0">
-              <ChartContainer
-                config={radar_chartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
-              >
-                <RadarChart data={radar_chartData}>
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent />}
-                  />
-                  <PolarGrid
-                    className="fill-(--color-desktop) opacity-20"
-                    gridType="circle"
-                  />
-                  <PolarAngleAxis dataKey="month" />
-                  <Radar
-                    dataKey="desktop"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.5}
-                  />
-                </RadarChart>
-              </ChartContainer>
-            </CardContent>
-            <CardFooter className="flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2 leading-none font-medium">
-                Trending up by 5.2% this month{" "}
-                <TrendingUp className="h-4 w-4" />
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChartIcon className="h-5 w-5 text-green-500" />
+                  Product Category Performance
+                </CardTitle>
+                <CardDescription>
+                  Sales by lighting product category
+                </CardDescription>
               </div>
-              <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                January - June 2024
+              <div className="flex gap-2 items-center">
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="top5">Top 5</SelectItem>
+                    <SelectItem value="bottom5">Bottom 5</SelectItem>
+                  </SelectContent>
+                </Select>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <Filter className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <Download className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
+                <button className="p-2 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                  <RefreshCw className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                </button>
               </div>
-            </CardFooter>
-          </Card>
-
-          {/* radical Chart*/}
-          <Card className="flex flex-col">
-            <CardHeader className="items-center pb-0">
-              <CardTitle>Radial Chart</CardTitle>
-              <CardDescription>January - June 2024</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent>
               <ChartContainer
-                config={radical_chartConfig}
-                className="mx-auto aspect-square max-h-[250px]"
+                config={bar_chartConfig}
+                className="h-[200px] w-[100%]"
               >
-                <RadialBarChart
-                  data={radical_chartData}
-                  innerRadius={30}
-                  outerRadius={110}
+                <BarChart
+                  height={200}
+                  accessibilityLayer
+                  data={bar_chartData}
+                  margin={{
+                    top: 20,
+                  }}
                 >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="category"
+                    tickLine={false}
+                    tickMargin={5}
+                    axisLine={false}
+                  />
                   <ChartTooltip
                     cursor={false}
                     content={
-                      <ChartTooltipContent hideLabel nameKey="browser" />
+                      <ChartTooltipContent
+                        indicator="dashed"
+                        className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-3"
+                      />
                     }
                   />
-                  <RadialBar dataKey="visitors" background />
-                </RadialBarChart>
+                  <ChartLegend
+                    content={
+                      <ChartLegendContent className="flex gap-4 justify-center" />
+                    }
+                  />
+                  <Bar dataKey="sales" fill="var(--color-sales)" radius={8}>
+                    <LabelList
+                      position="top"
+                      offset={12}
+                      className="fill-foreground"
+                      fontSize={12}
+                    />
+                  </Bar>
+                </BarChart>
               </ChartContainer>
             </CardContent>
-            <CardFooter className="flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2 leading-none font-medium">
-                Trending up by 5.2% this month{" "}
+            <CardFooter className="flex-col items-start gap-2 text-sm">
+              <div className="flex gap-2 leading-none font-medium">
+                Best performing category: Smart Lighting{" "}
                 <TrendingUp className="h-4 w-4" />
               </div>
               <div className="text-muted-foreground leading-none">
-                Showing total visitors for the last 6 months
+                Showing sales by product category
               </div>
             </CardFooter>
           </Card>
         </div>
-
-        {/* Middle Row - Bar Chart */}
-
-        <Card className=" mb-6">
-          <CardHeader>
-            <CardTitle>Bar Chart - Label</CardTitle>
-            <CardDescription>January - June 2024</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={bar_chartConfig}
-              className="h-[200px] w-[100%]"
-            >
-              <BarChart
-                height={200}
-                accessibilityLayer
-                data={bar_chartData}
-                margin={{
-                  top: 20,
-                }}
-              >
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={5}
-                  axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8}>
-                  <LabelList
-                    position="top"
-                    offset={12}
-                    className="fill-foreground"
-                    fontSize={12}
-                  />
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          </CardContent>
-          <CardFooter className="flex-col items-start gap-2 text-sm">
-            <div className="flex gap-2 leading-none font-medium">
-              Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-            </div>
-            <div className="text-muted-foreground leading-none">
-              Showing total visitors for the last 6 months
-            </div>
-          </CardFooter>
-        </Card>
 
         {/* Bottom Row - Products Table */}
         <Card className="mt-6">
@@ -426,7 +477,7 @@ const Sales: React.FC = () => {
                 className="text-gray-500 dark:text-gray-400"
                 size={20}
               />
-              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              <h5 className="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 Top Products
               </h5>
             </div>
