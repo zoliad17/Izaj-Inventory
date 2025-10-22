@@ -26,6 +26,9 @@ import { useAuth, useRole } from "../../contexts/AuthContext";
 // theme
 import { useTheme } from "../ThemeContext/ThemeContext";
 
+// Import the new hook for branch request counts
+import { useBranchRequestCounts } from "../../hooks/useBranchRequestCounts";
+
 // Define types for the navigation items
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -87,6 +90,19 @@ function Sidebar() {
   const [branches, setBranches] = useState<Branch[]>([]);
 
   const { logout } = useAuth();
+
+  // Use the branch request counts hook
+  const {
+    totalCount: branchRequestCount,
+    pendingCount,
+    transferredCount,
+    requestedCount,
+  } = useBranchRequestCounts({
+    userId: user?.user_id,
+    branchId: user?.branch_id ? user.branch_id : undefined,
+    refreshInterval: 300000, // Refresh every 5 minutes
+    enabled: hasRole(["Admin", "Branch Manager"]),
+  });
 
   const handleLogout = () => {
     logout();
@@ -318,40 +334,57 @@ function Sidebar() {
                     <>
                       <button
                         onClick={toggleDropdown}
-                        className={`group flex items-center w-full font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
+                        className={`group flex items-center cursor-pointer w-full font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out relative ${
                           isCollapsed ? "p-3 justify-center" : "p-3"
                         }`}
                         title={item.label}
                         disabled={isCollapsed}
                       >
-                        <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                        <div className="relative flex items-center">
+                          <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                          {/* For collapsed state, show badge overlaid on top-right of icon */}
+                          {isCollapsed &&
+                            item.label === "Branch Request" &&
+                            branchRequestCount > 0 && (
+                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                                {branchRequestCount}
+                              </span>
+                            )}
+                        </div>
                         {!isCollapsed && (
-                          <>
-                            <span className="ml-3 flex-grow text-left whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                              {item.label}
-                            </span>
-                            <svg
-                              className={`ml-2 w-4 h-4 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${
-                                isDropdownOpen ? "rotate-180" : ""
-                              }`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                          </>
+                          <span className="ml-3 flex-grow text-left whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
+                            <span className="truncate">{item.label}</span>
+                            {/* Notification badge for Branch Request - positioned beside the nav text */}
+                            {item.label === "Branch Request" &&
+                              branchRequestCount > 0 && (
+                                <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                                  {branchRequestCount}
+                                </span>
+                              )}
+                          </span>
+                        )}
+                        {!isCollapsed && (
+                          <svg
+                            className={`ml-2 w-4 h-4 transition-all duration-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex-shrink-0 ${
+                              isDropdownOpen ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         )}
                       </button>
 
                       {/* Dropdown content */}
-                      {!isCollapsed && item.subItems && (
+                      {item.subItems && (
                         <div
                           className={`overflow-hidden transition-all duration-300 ${
                             isDropdownOpen ? "max-h-40" : "max-h-0"
@@ -359,15 +392,68 @@ function Sidebar() {
                         >
                           <ul className="ml-2 pl-6 border-l-2 border-blue-200 dark:border-blue-700">
                             {item.subItems.map((subItem, subIndex) => (
-                              <li key={subIndex}>
+                              <li key={subIndex} className="relative">
                                 <Link
                                   to={subItem.path}
-                                  className="group flex items-center px-3 py-2 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] rounded-lg transition-all duration-300 ease-in-out"
+                                  className="group flex items-center px-3 py-2 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] rounded-lg transition-all duration-300 ease-in-out relative"
                                 >
-                                  <subItem.icon className="h-5 w-5 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
-                                  <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                                    {subItem.label}
-                                  </span>
+                                  <div className="relative flex items-center">
+                                    <subItem.icon className="h-5 w-5 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                                    {/* For collapsed state, show badge overlaid on top-right of icon */}
+                                    {isCollapsed &&
+                                      item.label === "Branch Request" && (
+                                        <>
+                                          {subItem.label ===
+                                            "Pending Request" &&
+                                            pendingCount > 0 && (
+                                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                                                {pendingCount}
+                                              </span>
+                                            )}
+                                          {subItem.label === "Transferred" &&
+                                            transferredCount > 0 && (
+                                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                                                {transferredCount}
+                                              </span>
+                                            )}
+                                          {subItem.label === "Requested Item" &&
+                                            requestedCount > 0 && (
+                                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                                                {requestedCount}
+                                              </span>
+                                            )}
+                                        </>
+                                      )}
+                                  </div>
+                                  {!isCollapsed && (
+                                    <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
+                                      {subItem.label}
+                                      {/* Individual count badges for Branch Request sub-items - positioned beside the nav text */}
+                                      {item.label === "Branch Request" && (
+                                        <>
+                                          {subItem.label ===
+                                            "Pending Request" &&
+                                            pendingCount > 0 && (
+                                              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                                                {pendingCount}
+                                              </span>
+                                            )}
+                                          {subItem.label === "Transferred" &&
+                                            transferredCount > 0 && (
+                                              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                                                {transferredCount}
+                                              </span>
+                                            )}
+                                          {subItem.label === "Requested Item" &&
+                                            requestedCount > 0 && (
+                                              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                                                {requestedCount}
+                                              </span>
+                                            )}
+                                        </>
+                                      )}
+                                    </span>
+                                  )}
                                 </Link>
                               </li>
                             ))}
