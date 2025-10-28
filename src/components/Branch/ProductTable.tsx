@@ -10,6 +10,8 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../utils/apiClient";
 import { Branch, Product as ApiProduct } from "../../types/api";
+import * as XLSX from "xlsx";
+import { toast, Toaster } from "react-hot-toast";
 
 // Define interface for Product data
 interface Product {
@@ -51,14 +53,16 @@ function ProductTable() {
       try {
         const { data: branches, error } = await api.getBranches();
         if (!error && Array.isArray(branches)) {
-          const branch = branches.find((b: Branch) => b.id === Number(branchId));
+          const branch = branches.find(
+            (b: Branch) => b.id === Number(branchId)
+          );
           setBranchName(branch?.location || "");
         } else {
           setBranchName("");
-          console.error('Error fetching branch:', error);
+          console.error("Error fetching branch:", error);
         }
       } catch (error) {
-        console.error('Error fetching branch:', error);
+        console.error("Error fetching branch:", error);
         setBranchName("");
       }
     };
@@ -79,16 +83,20 @@ function ProductTable() {
               category: p.category_name || "",
               price: p.price ? `Php ${Number(p.price).toFixed(2)}` : "",
               stock: p.quantity,
-              status: p.quantity === 0 ? 'Out of Stock' :
-                     p.quantity < 20 ? 'Low Stock' : 'In Stock',
+              status:
+                p.quantity === 0
+                  ? "Out of Stock"
+                  : p.quantity < 20
+                  ? "Low Stock"
+                  : "In Stock",
             }))
           );
         } else {
-          console.error('Error fetching products:', error);
+          console.error("Error fetching products:", error);
           setProducts([]);
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching products:", error);
         setProducts([]);
       }
     };
@@ -182,15 +190,15 @@ function ProductTable() {
     console.log("Request submitted:", {
       products: currentRequestProduct
         ? [
-          {
-            productId: currentRequestProduct.id,
-            quantity: requestQuantity[currentRequestProduct.id] || 1,
-          },
-        ]
+            {
+              productId: currentRequestProduct.id,
+              quantity: requestQuantity[currentRequestProduct.id] || 1,
+            },
+          ]
         : selectedProducts.map((id) => ({
-          productId: id,
-          quantity: requestQuantity[id] || 1,
-        })),
+            productId: id,
+            quantity: requestQuantity[id] || 1,
+          })),
     });
 
     // Reset and close modal
@@ -200,19 +208,40 @@ function ProductTable() {
     alert("Request submitted successfully!");
   };
 
-  //mock export function
+  // Excel export function
   const mockExport = () => {
-    alert(
-      "Export to Excel functionality would be implemented here in a real application"
-    );
-    console.log("Data that would be exported:", filteredProducts);
+    try {
+      const exportData = filteredProducts.map((product) => ({
+        "Product ID": product.id,
+        "Product Name": product.name,
+        Category: product.category,
+        Price: product.price,
+        Quantity: product.stock,
+        Status: product.status,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `products_branch_${branchId}_${timestamp}.xlsx`;
+
+      XLSX.writeFile(workbook, filename);
+      toast.success("Excel file exported successfully!");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export to Excel");
+    }
   };
 
   return (
     <div
-      className={`transition-all duration-300 ${isCollapsed ? "ml-5" : "ml-1"
-        } p-2 sm:p-4 dark:bg-neutral-900`}
+      className={`transition-all duration-300 ${
+        isCollapsed ? "ml-5" : "ml-1"
+      } p-2 sm:p-4 dark:bg-neutral-900`}
     >
+      <Toaster position="top-center" />
       {/* Request Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -481,12 +510,13 @@ function ProductTable() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.status === "In Stock"
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              product.status === "In Stock"
                                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                                 : product.status === "Low Stock"
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                  : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                              }`}
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                            }`}
                           >
                             {product.status}
                           </span>
@@ -570,10 +600,11 @@ function ProductTable() {
                         <button
                           key={page}
                           onClick={() => handlePageChange(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === page
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            currentPage === page
                               ? "z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-300"
                               : "bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-700"
-                            }`}
+                          }`}
                         >
                           {page}
                         </button>

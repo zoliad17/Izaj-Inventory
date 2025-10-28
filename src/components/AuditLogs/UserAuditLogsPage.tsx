@@ -667,7 +667,7 @@ const UserAuditLogsPage = () => {
                           bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-500 
                           font-bold hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
                                 onClick={() =>
-                                  navigate("/user-audit-log-details")
+                                  navigate(`/user-audit-log-details/${log.id}`)
                                 }
                                 type="button"
                               >

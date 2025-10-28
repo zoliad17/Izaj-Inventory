@@ -267,7 +267,7 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="/user-audit-log-details"
+                path="/user-audit-log-details/:id"
                 element={
                   <ProtectedRoute allowedRoles={routeRoles.myActivity}>
                     <Layout>

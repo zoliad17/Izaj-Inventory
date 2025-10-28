@@ -9,11 +9,11 @@ import {
   Building,
   Hash,
   Info,
-  Globe,
-  Monitor,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { useState, useEffect } from "react";
+import { toast } from "react-hot-toast";
 
 // Detailed audit log entry data structure
 interface AuditLogDetail {
@@ -30,6 +30,14 @@ interface AuditLogDetail {
   notes?: string;
   timestamp: string;
   created_at: string;
+  // Flat fields from database view
+  user_name?: string;
+  user_email?: string;
+  user_status?: string;
+  role_name?: string;
+  branch_location?: string;
+  branch_address?: string;
+  // Nested structure for compatibility
   user?: {
     name: string;
     email: string;
@@ -42,76 +50,33 @@ interface AuditLogDetail {
   };
 }
 
-// Mock detailed data for a specific audit log entry
-const auditLogDetail: AuditLogDetail = {
-  id: 125,
-  user_id: "USR00125",
-  action: "PRODUCT_REQUEST_CREATED",
-  description: "Created a new product request for LED Bulbs",
-  entity_type: "product_requisition",
-  entity_id: "REQ00456",
-  ip_address: "192.168.1.45",
-  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-  old_values: null,
-  new_values: {
-    product_id: "PRD00789",
-    quantity: 50,
-    branch_id: "BR002",
-    status: "pending",
-    notes: "Urgent request for upcoming project",
-  },
-  notes: "Request submitted for approval by branch manager",
-  timestamp: "2024-06-15T14:32:18.000Z",
-  created_at: "2024-06-15T14:32:18.000Z",
-  user: {
-    name: "Alice Wong",
-    email: "alice.wong@izajlighting.com",
-    role: {
-      role_name: "Branch Staff",
-    },
-    branch: {
-      location: "Manila Branch",
-    },
-  },
-};
+// Helper function to parse change history from old_values and new_values
+function parseChangeHistory(oldValues: any, newValues: any): any[] {
+  if (!oldValues || !newValues) return [];
 
-// Change history data
-const changeHistory = [
-  {
-    id: 1,
-    field: "Status",
-    oldValue: "Draft",
-    newValue: "Pending Approval",
-    changedAt: "2024-06-15 14:32:18",
-    changedBy: "Alice Wong",
-  },
-  {
-    id: 2,
-    field: "Quantity",
-    oldValue: "25",
-    newValue: "50",
-    changedAt: "2024-06-15 14:35:22",
-    changedBy: "Alice Wong",
-  },
-];
+  const changes: any[] = [];
+  const keys = Object.keys(newValues);
 
-// Related activities
-const relatedActivities = [
-  {
-    id: 1,
-    action: "PRODUCT_REQUEST_APPROVED",
-    description: "Product request approved by branch manager",
-    timestamp: "2024-06-15 15:45:30",
-    user: "Robert Chen",
-  },
-  {
-    id: 2,
-    action: "INVENTORY_TRANSFER",
-    description: "50 units of LED Bulbs transferred to Manila Branch",
-    timestamp: "2024-06-16 09:15:45",
-    user: "System",
-  },
-];
+  keys.forEach((key) => {
+    const oldVal = oldValues[key];
+    const newVal = newValues[key];
+
+    if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+      changes.push({
+        id: changes.length + 1,
+        field: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
+        oldValue:
+          oldVal !== null && oldVal !== undefined ? String(oldVal) : "-",
+        newValue:
+          newVal !== null && newVal !== undefined ? String(newVal) : "-",
+        changedAt: new Date().toLocaleString(),
+        changedBy: "System",
+      });
+    }
+  });
+
+  return changes;
+}
 
 function getActionColor(action: string) {
   if (action.includes("LOGIN")) return "bg-blue-100 text-blue-800";
@@ -152,6 +117,125 @@ function formatTimestamp(timestamp: string) {
 export default function UserAuditLogsDetailView() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+  const { id } = useParams<{ id: string }>();
+  const [auditLogDetail, setAuditLogDetail] = useState<AuditLogDetail | null>(
+    null
+  );
+  const [changeHistory, setChangeHistory] = useState<any[]>([]);
+  const [relatedActivities, setRelatedActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuditLogDetail = async () => {
+      if (!id) {
+        toast.error("Invalid log ID");
+        navigate(-1);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+
+        // Fetch the audit log detail
+        const response = await fetch(
+          `http://localhost:5000/api/audit-logs/${id}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audit log: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform flat structure to nested structure for compatibility
+        const transformedData: AuditLogDetail = {
+          ...data,
+          user: {
+            name: data.user_name || "",
+            email: data.user_email || "",
+            role: {
+              role_name: data.role_name || "",
+            },
+            branch: {
+              location: data.branch_location || "",
+            },
+          },
+        };
+
+        setAuditLogDetail(transformedData);
+
+        // Parse change history from old_values and new_values
+        if (data.old_values && data.new_values) {
+          const changes = parseChangeHistory(data.old_values, data.new_values);
+          setChangeHistory(changes);
+        }
+
+        // Fetch related activities for the same entity
+        if (data.entity_type && data.entity_id) {
+          const relatedResponse = await fetch(
+            `http://localhost:5000/api/audit-logs/related/${data.entity_type}/${data.entity_id}`
+          );
+
+          if (relatedResponse.ok) {
+            const relatedData = await relatedResponse.json();
+            // Filter out the current log and transform
+            const filtered = relatedData
+              .filter((log: any) => log.id !== parseInt(id))
+              .slice(0, 2)
+              .map((log: any) => ({
+                id: log.id,
+                action: log.action,
+                description: log.description || log.action.replace(/_/g, " "),
+                timestamp: new Date(log.timestamp).toLocaleString(),
+                user: log.user_name || "Unknown User",
+              }));
+            setRelatedActivities(filtered);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching audit log detail:", error);
+        toast.error("Failed to load audit log details");
+        navigate(-1);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAuditLogDetail();
+  }, [id, navigate]);
+
+  if (isLoading) {
+    return (
+      <div
+        className={`transition-all duration-300 ${
+          isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">
+            Loading audit log details...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!auditLogDetail) {
+    return (
+      <div
+        className={`transition-all duration-300 ${
+          isCollapsed ? "ml-5" : "ml-1"
+        } p-2 sm:p-4`}
+      >
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-600 dark:text-gray-400">
+            Audit log not found
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const { date, time } = formatTimestamp(auditLogDetail.timestamp);
 
@@ -370,7 +454,9 @@ export default function UserAuditLogsDetailView() {
                     Name:
                   </span>
                   <span className="text-gray-900 dark:text-gray-100">
-                    {auditLogDetail.user?.name}
+                    {auditLogDetail.user?.name ||
+                      auditLogDetail.user_name ||
+                      "—"}
                   </span>
                 </div>
 
@@ -379,7 +465,9 @@ export default function UserAuditLogsDetailView() {
                     Email:
                   </span>
                   <span className="text-gray-900 dark:text-gray-100">
-                    {auditLogDetail.user?.email}
+                    {auditLogDetail.user?.email ||
+                      auditLogDetail.user_email ||
+                      "—"}
                   </span>
                 </div>
 
@@ -388,7 +476,9 @@ export default function UserAuditLogsDetailView() {
                     Role:
                   </span>
                   <span className="text-gray-900 dark:text-gray-100">
-                    {auditLogDetail.user?.role?.role_name}
+                    {auditLogDetail.user?.role?.role_name ||
+                      auditLogDetail.role_name ||
+                      "—"}
                   </span>
                 </div>
 
@@ -398,41 +488,9 @@ export default function UserAuditLogsDetailView() {
                   </span>
                   <span className="text-gray-900 dark:text-gray-100 flex items-center">
                     <Building className="w-4 h-4 mr-1" />
-                    {auditLogDetail.user?.branch?.location}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* System Information */}
-            <div
-              className="rounded-2xl bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
-              shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.7)]
-              dark:shadow-[8px_8px_16px_rgba(0,0,0,0.7),-8px_-8px_16px_rgba(40,40,40,0.6)]
-              transition-all duration-300 p-6"
-            >
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center">
-                <Monitor className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                System Information
-              </h3>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">
-                    IP Address:
-                  </span>
-                  <span className="text-gray-900 dark:text-gray-100 flex items-center">
-                    <Globe className="w-4 h-4 mr-1" />
-                    {auditLogDetail.ip_address}
-                  </span>
-                </div>
-
-                <div className="flex items-start justify-between py-2">
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">
-                    User Agent:
-                  </span>
-                  <span className="text-gray-900 dark:text-gray-100 text-right max-w-[180px] text-sm">
-                    {auditLogDetail.user_agent}
+                    {auditLogDetail.user?.branch?.location ||
+                      auditLogDetail.branch_location ||
+                      "—"}
                   </span>
                 </div>
               </div>

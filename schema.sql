@@ -457,6 +457,48 @@ LEFT JOIN public.role r ON u.role_id = r.id
 LEFT JOIN public.branch b ON u.branch_id = b.id
 ORDER BY al.timestamp DESC;
 
+-- Create detailed audit logs view (used by backend API)
+-- Drop the view first if it exists to avoid column name conflicts
+DROP VIEW IF EXISTS public.v_audit_logs_detailed CASCADE;
+
+CREATE VIEW public.v_audit_logs_detailed AS
+SELECT 
+    al.id,
+    al.user_id,
+    al.action,
+    al.description,
+    al.metadata,
+    al.entity_type,
+    al.entity_id,
+    al.ip_address,
+    al.user_agent,
+    al.old_values,
+    al.new_values,
+    al.notes,
+    al.timestamp,
+    al.created_at,
+    
+    -- User information
+    u.name as user_name,
+    u.email as user_email,
+    u.status as user_status,
+    u.branch_id,
+    u.role_id,
+    
+    -- Role information
+    r.role_name,
+    r.id as role_table_id,
+    
+    -- Branch information
+    b.location as branch_location,
+    b.address as branch_address
+    
+FROM public.audit_logs al
+LEFT JOIN public.user u ON al.user_id = u.user_id
+LEFT JOIN public.role r ON u.role_id = r.id
+LEFT JOIN public.branch b ON u.branch_id = b.id
+ORDER BY al.timestamp DESC;
+
 -- Create a summary view for dashboard statistics
 CREATE OR REPLACE VIEW public.audit_summary AS
 SELECT 

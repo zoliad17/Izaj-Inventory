@@ -21,6 +21,7 @@ import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import SuccessNotification from "../ui/SuccessNotification";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import * as XLSX from "xlsx";
 
 interface Product {
   id: number;
@@ -404,12 +405,33 @@ export default function UnifiedProductRequest() {
     }
   };
 
-  // Mock export function
+  // Excel export function
   const mockExport = () => {
-    alert(
-      "Export to Excel functionality would be implemented here in a real application"
-    );
-    console.log("Data that would be exported:", filteredProducts);
+    try {
+      const exportData = filteredProducts.map((product) => ({
+        "Product ID": product.id,
+        "Product Name": product.product_name,
+        Category: product.category_name,
+        Price: `₱${product.price.toFixed(2)}`,
+        "Available Quantity": product.quantity,
+        "Reserved Quantity": product.reserved_quantity || 0,
+        "Total Quantity": product.total_quantity || product.quantity,
+        Status: product.status,
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `products_branch_${branchId}_${timestamp}.xlsx`;
+
+      XLSX.writeFile(workbook, filename);
+      toast.success("Excel file exported successfully!");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Failed to export to Excel");
+    }
   };
 
   if (isLoading) {

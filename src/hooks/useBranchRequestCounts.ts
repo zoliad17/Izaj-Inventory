@@ -85,7 +85,11 @@ export function useBranchRequestCounts(
         }
 
         const requestedData = await requestedResponse.json();
-        setRequestedCount(requestedData.length);
+        // Only count pending requests for notification
+        const pendingRequests = requestedData.filter(
+          (request: any) => request.status === "pending"
+        );
+        setRequestedCount(pendingRequests.length);
       } catch (err) {
         console.error("Error fetching branch request counts:", err);
         setError(
