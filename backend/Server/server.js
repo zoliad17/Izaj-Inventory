@@ -136,6 +136,11 @@ app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 // ✅ Rate limiter
 app.use(rateLimits.general);
 
+// ✅ Test route
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running on Render!");
+});
+
 // GET all products from Supabase (filtered by branch_id)
 app.get("/api/products", rateLimits.stockMonitoring, async (req, res) => {
   let branchId = req.query.branch_id;
@@ -3032,10 +3037,6 @@ app.use("*", (req, res) => {
   });
 });
 
-// ✅ Test route
-app.get("/", (req, res) => {
-  res.send("✅ Backend is running on Render!");
-});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

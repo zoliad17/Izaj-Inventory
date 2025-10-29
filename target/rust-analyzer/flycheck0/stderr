@@ -1,148 +1,16 @@
-    Blocking waiting for file lock on package cache
-    Blocking waiting for file lock on package cache
-    Blocking waiting for file lock on package cache
-   5.710223900s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("izaj_lib", ["staticlib", "cdylib", "rlib"], "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\lib.rs", Edition2024) }
-   5.710304800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\monfe\Documents\Izaj-Inventory\src-tauri\target\debug\.fingerprint\izajlightingcentre-772be7257b354d55\lib-izaj_lib`
-
-Caused by:
-    The system cannot find the file specified. (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_path
-   6: git_filter_source_path
-   7: git_filter_source_path
-   8: git_filter_source_path
-   9: git_filter_source_repo
-  10: git_filter_source_repo
-  11: git_filter_source_repo
-  12: git_filter_source_repo
-  13: git_filter_source_repo
-  14: <unknown>
-  15: <unknown>
-  16: git_midx_writer_dump
-  17: git_filter_source_repo
-  18: git_midx_writer_dump
-  19: BaseThreadInitThunk
-  20: RtlUserThreadStart
-   5.745638400s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/RunCustomBuild/TargetInner { ..: custom_build_target("build-script-build", "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\build.rs", Edition2024) }
-   5.745679200s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\monfe\Documents\Izaj-Inventory\src-tauri\target\debug\.fingerprint\izajlightingcentre-9ed26e93a376f329\run-build-script-build-script-build`
-
-Caused by:
-    The system cannot find the file specified. (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_path
-   6: git_filter_source_repo
-   7: git_filter_source_path
-   8: git_filter_source_path
-   9: git_filter_source_path
-  10: git_filter_source_path
-  11: git_filter_source_repo
-  12: git_filter_source_repo
-  13: git_filter_source_repo
-  14: git_filter_source_repo
-  15: git_filter_source_repo
-  16: <unknown>
-  17: <unknown>
-  18: git_midx_writer_dump
-  19: git_filter_source_repo
-  20: git_midx_writer_dump
-  21: BaseThreadInitThunk
-  22: RtlUserThreadStart
-   5.746855800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Build/TargetInner { ..: custom_build_target("build-script-build", "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\build.rs", Edition2024) }
-   5.746901600s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="build-script-build"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\monfe\Documents\Izaj-Inventory\src-tauri\target\debug\.fingerprint\izajlightingcentre-b1713cad51ff9a4f\build-script-build-script-build`
-
-Caused by:
-    The system cannot find the file specified. (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_path
-   6: git_filter_source_path
-   7: git_filter_source_path
-   8: git_filter_source_path
-   9: git_filter_source_path
-  10: git_filter_source_path
-  11: git_filter_source_repo
-  12: git_filter_source_repo
-  13: git_filter_source_repo
-  14: git_filter_source_repo
-  15: git_filter_source_repo
-  16: <unknown>
-  17: <unknown>
-  18: git_midx_writer_dump
-  19: git_filter_source_repo
-  20: git_midx_writer_dump
-  21: BaseThreadInitThunk
-  22: RtlUserThreadStart
-  10.328847800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("izaj_lib", ["staticlib", "cdylib", "rlib"], "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\lib.rs", Edition2024) }
-  10.328883800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\monfe\Documents\Izaj-Inventory\src-tauri\target\debug\.fingerprint\izajlightingcentre-59a6570a5704af3d\test-lib-izaj_lib`
-
-Caused by:
-    The system cannot find the file specified. (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_path
-   6: git_filter_source_path
-   7: git_filter_source_path
-   8: git_filter_source_path
-   9: git_filter_source_repo
-  10: git_filter_source_repo
-  11: git_filter_source_repo
-  12: git_filter_source_repo
-  13: git_filter_source_repo
-  14: <unknown>
-  15: <unknown>
-  16: git_midx_writer_dump
-  17: git_filter_source_repo
-  18: git_midx_writer_dump
-  19: BaseThreadInitThunk
-  20: RtlUserThreadStart
-  10.333117400s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: false }/TargetInner { name: "izajlightingcentre", doc: true, ..: with_path("C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\main.rs", Edition2024) }
-  10.333163800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\monfe\Documents\Izaj-Inventory\src-tauri\target\debug\.fingerprint\izajlightingcentre-189e55bc73fd44ac\bin-izajlightingcentre`
-
-Caused by:
-    The system cannot find the file specified. (os error 2)
-
-Stack backtrace:
-   0: git_midx_writer_dump
-   1: git_midx_writer_dump
-   2: git_midx_writer_dump
-   3: git_midx_writer_dump
-   4: git_filter_source_repo
-   5: git_filter_source_path
-   6: git_filter_source_path
-   7: git_filter_source_path
-   8: git_filter_source_path
-   9: git_filter_source_repo
-  10: git_filter_source_repo
-  11: git_filter_source_repo
-  12: git_filter_source_repo
-  13: git_filter_source_repo
-  14: <unknown>
-  15: <unknown>
-  16: git_midx_writer_dump
-  17: git_filter_source_repo
-  18: git_midx_writer_dump
-  19: BaseThreadInitThunk
-  20: RtlUserThreadStart
-  10.336303900s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint: fingerprint error for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: true }/TargetInner { name: "izajlightingcentre", doc: true, ..: with_path("C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\main.rs", Edition2024) }
+   1.727346000s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\build\\izajlightingcentre-9ed26e93a376f329\\out\\44063a71328c8d195e2f303e057b74a9a3ebf3f685abbcef9085fed4ce56a6a9"
+   1.727828800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\.fingerprint\\izajlightingcentre-772be7257b354d55\\dep-lib-izaj_lib"
+   1.727836200s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13406227583, nanos: 586521500 } < FileTime { seconds: 13406227585, nanos: 296429500 }
+   1.730775000s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: false }/TargetInner { ..: lib_target("izaj_lib", ["staticlib", "cdylib", "rlib"], "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\lib.rs", Edition2024) }
+   1.731018700s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\.fingerprint\\izajlightingcentre-772be7257b354d55\\dep-lib-izaj_lib", reference_mtime: FileTime { seconds: 13406227583, nanos: 586521500 }, stale: "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\build\\izajlightingcentre-9ed26e93a376f329\\out\\44063a71328c8d195e2f303e057b74a9a3ebf3f685abbcef9085fed4ce56a6a9", stale_mtime: FileTime { seconds: 13406227585, nanos: 296429500 } }))
+   1.901386300s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\build\\izajlightingcentre-9ed26e93a376f329\\out\\44063a71328c8d195e2f303e057b74a9a3ebf3f685abbcef9085fed4ce56a6a9"
+   1.901412600s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\.fingerprint\\izajlightingcentre-59a6570a5704af3d\\dep-test-lib-izaj_lib"
+   1.901420700s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13406227583, nanos: 587524800 } < FileTime { seconds: 13406227585, nanos: 296429500 }
+   1.902150700s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint: fingerprint dirty for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: true }/TargetInner { ..: lib_target("izaj_lib", ["staticlib", "cdylib", "rlib"], "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\lib.rs", Edition2024) }
+   1.902224500s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izaj_lib"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\.fingerprint\\izajlightingcentre-59a6570a5704af3d\\dep-test-lib-izaj_lib", reference_mtime: FileTime { seconds: 13406227583, nanos: 587524800 }, stale: "C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\target\\debug\\build\\izajlightingcentre-9ed26e93a376f329\\out\\44063a71328c8d195e2f303e057b74a9a3ebf3f685abbcef9085fed4ce56a6a9", stale_mtime: FileTime { seconds: 13406227585, nanos: 296429500 } }))
+   1.905934800s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint: fingerprint dirty for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: false }/TargetInner { name: "izajlightingcentre", doc: true, ..: with_path("C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\main.rs", Edition2024) }
+   1.905996000s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "izaj_lib" })
+   1.911901700s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint: fingerprint dirty for izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)/Check { test: true }/TargetInner { name: "izajlightingcentre", doc: true, ..: with_path("C:\\Users\\monfe\\Documents\\Izaj-Inventory\\src-tauri\\src\\main.rs", Edition2024) }
+   1.911950500s  INFO prepare_target{force=false package_id=izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri) target="izajlightingcentre"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleDepFingerprint { name: "izaj_lib" })
+    Checking izajlightingcentre v0.3.0 (C:\Users\monfe\Documents\Izaj-Inventory\src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.03s
