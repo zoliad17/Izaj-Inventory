@@ -25,6 +25,7 @@ import { useAuth, useRole } from "../../contexts/AuthContext";
 
 // theme
 import { useTheme } from "../ThemeContext/ThemeContext";
+import { API_BASE_URL } from "../../config/config";
 
 // Import the new hook for branch request counts
 import { useBranchRequestCounts } from "../../hooks/useBranchRequestCounts";
@@ -72,7 +73,7 @@ function Sidebar() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/branches");
+        const response = await fetch(`${API_BASE_URL}/api/branches`);
         if (!response.ok) {
           throw new Error("Failed to fetch branches");
         }

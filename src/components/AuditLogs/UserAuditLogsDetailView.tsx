@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { API_BASE_URL } from "../../config/config";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 
@@ -137,9 +138,7 @@ export default function UserAuditLogsDetailView() {
         setIsLoading(true);
 
         // Fetch the audit log detail
-        const response = await fetch(
-          `http://localhost:5000/api/audit-logs/${id}`
-        );
+        const response = await fetch(`${API_BASE_URL}/api/audit-logs/${id}`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch audit log: ${response.status}`);
@@ -173,7 +172,7 @@ export default function UserAuditLogsDetailView() {
         // Fetch related activities for the same entity
         if (data.entity_type && data.entity_id) {
           const relatedResponse = await fetch(
-            `http://localhost:5000/api/audit-logs/related/${data.entity_type}/${data.entity_id}`
+            `${API_BASE_URL}/api/audit-logs/related/${data.entity_type}/${data.entity_id}`
           );
 
           if (relatedResponse.ok) {

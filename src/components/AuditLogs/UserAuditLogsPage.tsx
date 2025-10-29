@@ -21,6 +21,7 @@ import {
   Eye,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { API_BASE_URL } from "../../config/config";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -120,7 +121,7 @@ const UserAuditLogsPage = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/audit-logs/user/${currentUserId}?${params}`
+          `${API_BASE_URL}/api/audit-logs/user/${currentUserId}?${params.toString()}`
         );
 
         if (!response.ok) {
@@ -265,7 +266,7 @@ const UserAuditLogsPage = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/audit-logs/user/${currentUserId}?${params}`
+        `${API_BASE_URL}/api/audit-logs/user/${currentUserId}?${params.toString()}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch user audit logs");

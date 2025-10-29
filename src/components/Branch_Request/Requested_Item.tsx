@@ -17,6 +17,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "../../config/config";
 
 interface RequestItem {
   id: number;
@@ -80,7 +81,7 @@ export default function Requested_Item() {
       console.log("Loading sent requests for user:", currentUser.user_id);
       setIsLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/product-requests/sent/${currentUser.user_id}`
+        `${API_BASE_URL}/api/product-requests/sent/${currentUser.user_id}`
       );
       if (!response.ok) throw new Error("Failed to fetch sent requests");
 
@@ -581,7 +582,7 @@ export default function Requested_Item() {
                     onClick={async () => {
                       try {
                         const response = await fetch(
-                          `http://localhost:5000/api/product-requests/${selectedRequest.request_id}/mark-arrived`,
+                          `${API_BASE_URL}/api/product-requests/${selectedRequest.request_id}/mark-arrived`,
                           {
                             method: "PUT",
                             headers: {

@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import { Branch, BranchFormData } from "../../types";
 import SimpleGoogleMapPicker from "../ui/SimpleGoogleMapPicker";
 import { generateStaticMapUrl, MapCoordinates } from "../../utils/mapUtils";
+import { API_BASE_URL } from "../../config/config";
 
 // Google Maps type declarations
 declare global {
@@ -56,7 +57,7 @@ function AdminBranchManagement() {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/branches");
+        const response = await fetch(`${API_BASE_URL}/api/branches`);
         if (!response.ok) throw new Error("Failed to fetch branches");
         const data = await response.json();
         setBranches(data || []);
@@ -101,7 +102,7 @@ function AdminBranchManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/branches/${branchToDelete}`,
+        `${API_BASE_URL}/api/branches/${branchToDelete}`,
         {
           method: "DELETE",
         }
@@ -303,8 +304,8 @@ function AdminBranchManagement() {
       };
 
       const url = editingBranch
-        ? `http://localhost:5000/api/branches/${editingBranch.id}`
-        : "http://localhost:5000/api/branches";
+        ? `${API_BASE_URL}/api/branches/${editingBranch.id}`
+        : `${API_BASE_URL}/api/branches`;
 
       const method = editingBranch ? "PUT" : "POST";
 

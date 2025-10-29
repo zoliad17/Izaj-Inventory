@@ -25,6 +25,7 @@ import {
   Download,
 } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { API_BASE_URL } from "../../config/config";
 import { useNavigate } from "react-router-dom";
 import AuditLogDetailView from "./AuditLogDetailView";
 
@@ -116,7 +117,7 @@ const AuditLogsPage = () => {
         }
 
         const response = await fetch(
-          `http://localhost:5000/api/audit-logs?${params}`
+          `${API_BASE_URL}/api/audit-logs?${params}`
         );
         if (!response.ok) {
           throw new Error("Failed to fetch audit logs");
@@ -290,7 +291,7 @@ const AuditLogsPage = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/audit-logs?${params}`
+        `${API_BASE_URL}/api/audit-logs?${params.toString()}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch audit logs");

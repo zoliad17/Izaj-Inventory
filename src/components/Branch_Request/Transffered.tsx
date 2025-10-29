@@ -15,6 +15,7 @@ import { Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useErrorHandler } from "../../utils/errorHandler";
+import { API_BASE_URL } from "../../config/config";
 
 // Define interface for Transferred Product data
 interface TransferredProduct {
@@ -77,7 +78,7 @@ const Transferred = memo(() => {
       setError(null);
 
       const response = await fetch(
-        `http://localhost:5000/api/transfers/${currentUser.branch_id}`,
+        `${API_BASE_URL}/api/transfers/${currentUser.branch_id}`,
         {
           method: "GET",
           headers: {

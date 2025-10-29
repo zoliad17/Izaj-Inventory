@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "react-toastify/dist/ReactToastify.css";
+import { API_BASE_URL } from "../../config/config";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import {
   ArrowLeft,
@@ -67,14 +68,14 @@ function UserManagement() {
   // Fetch users from API
   const fetchUsers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/get_users");
+      const response = await fetch(`${API_BASE_URL}/api/get_users`);
       if (!response.ok) throw new Error("Failed to fetch users");
       const data = await response.json();
 
       // Get branch and role information separately
       const [branchesResponse, rolesResponse] = await Promise.all([
-        fetch("http://localhost:5000/api/branches"),
-        fetch("http://localhost:5000/api/roles"),
+        fetch(`${API_BASE_URL}/api/branches`),
+        fetch(`${API_BASE_URL}/api/roles`),
       ]);
 
       const branchesData = branchesResponse.ok
@@ -105,7 +106,7 @@ function UserManagement() {
   useEffect(() => {
     async function fetchRoles() {
       try {
-        const response = await fetch("http://localhost:5000/api/roles");
+        const response = await fetch(`${API_BASE_URL}/api/roles`);
         if (response.ok) {
           const data = await response.json();
           setRoles(data || []);
@@ -123,7 +124,7 @@ function UserManagement() {
   useEffect(() => {
     async function fetchBranches() {
       try {
-        const response = await fetch("http://localhost:5000/api/branches");
+        const response = await fetch(`${API_BASE_URL}/api/branches`);
         if (response.ok) {
           const data = await response.json();
           setBranches(data || []);
@@ -188,19 +189,16 @@ function UserManagement() {
   // Handle updating the user
   const handleUpdate = async (userId: string) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/users/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...editedUser,
-            user_id: userId, // Include user_id in the update payload
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...editedUser,
+          user_id: userId, // Include user_id in the update payload
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -227,7 +225,7 @@ function UserManagement() {
     try {
       console.log("Deleting user with ID:", userIdToDelete); // Debug log
       const response = await fetch(
-        `http://localhost:5000/api/users/${userIdToDelete}`,
+        `${API_BASE_URL}/api/users/${userIdToDelete}`,
         {
           method: "DELETE",
           headers: {
@@ -293,16 +291,13 @@ function UserManagement() {
 
       console.log("Creating pending user with data:", userData);
 
-      const response = await fetch(
-        "http://localhost:5000/api/create_pending_user",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(userData),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/create_pending_user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+      });
 
       const data = await response.json();
 

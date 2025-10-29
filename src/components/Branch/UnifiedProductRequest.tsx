@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../utils/apiClient";
+import { API_BASE_URL } from "../../config/config";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
 import SuccessNotification from "../ui/SuccessNotification";
@@ -175,7 +176,7 @@ export default function UnifiedProductRequest() {
 
         // If validation passes, fetch products
         const response = await fetch(
-          `http://localhost:5000/api/branches/${branchId}/products`
+          `${API_BASE_URL}/api/branches/${branchId}/products`
         );
         if (!response.ok) throw new Error("Failed to fetch products");
 

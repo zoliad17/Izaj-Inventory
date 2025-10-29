@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { API_BASE_URL } from "../config/config";
 
 interface UseBranchRequestCountsOptions {
   userId?: string;
@@ -43,7 +44,7 @@ export function useBranchRequestCounts(
 
         // Fetch pending requests count
         const pendingResponse = await fetch(
-          `http://localhost:5000/api/product-requests/pending/${userId}`
+          `${API_BASE_URL}/api/product-requests/pending/${userId}`
         );
 
         if (!pendingResponse.ok) {
@@ -57,7 +58,7 @@ export function useBranchRequestCounts(
 
         // Fetch transferred items count
         const transferredResponse = await fetch(
-          `http://localhost:5000/api/transfers/${branchId}`
+          `${API_BASE_URL}/api/transfers/${branchId}`
         );
 
         if (!transferredResponse.ok) {
@@ -75,7 +76,7 @@ export function useBranchRequestCounts(
 
         // Fetch requested items count
         const requestedResponse = await fetch(
-          `http://localhost:5000/api/product-requests/sent/${userId}`
+          `${API_BASE_URL}/api/product-requests/sent/${userId}`
         );
 
         if (!requestedResponse.ok) {

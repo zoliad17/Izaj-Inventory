@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/config";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
@@ -54,7 +55,9 @@ function SetupAccount() {
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/user_by_token/${token}`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/user_by_token/${token}`
+        );
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.error || "Failed to fetch user data");
@@ -64,7 +67,9 @@ function SetupAccount() {
         setUserData(data);
       } catch (error) {
         console.error("Error fetching user data:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to fetch user data");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to fetch user data"
+        );
         navigate("/login");
       } finally {
         setLoading(false);
@@ -88,9 +93,9 @@ function SetupAccount() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -113,7 +118,7 @@ function SetupAccount() {
     setSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/complete_user_setup", {
+      const response = await fetch(`${API_BASE_URL}/api/complete_user_setup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -134,10 +139,11 @@ function SetupAccount() {
       setTimeout(() => {
         navigate("/login");
       }, 2000);
-
     } catch (error) {
       console.error("Error completing setup:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to complete setup");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to complete setup"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -159,8 +165,12 @@ function SetupAccount() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Setup Link</h2>
-          <p className="text-gray-600 mb-4">This setup link is invalid or has expired.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Invalid Setup Link
+          </h2>
+          <p className="text-gray-600 mb-4">
+            This setup link is invalid or has expired.
+          </p>
           <button
             onClick={() => navigate("/login")}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -199,15 +209,20 @@ function SetupAccount() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="text-center mb-6">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900">Set Up Your Account</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Set Up Your Account
+            </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Welcome, {userData.name}! Please set up your password to complete your account.
+              Welcome, {userData.name}! Please set up your password to complete
+              your account.
             </p>
           </div>
 
           {/* User Information Display */}
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Account Information</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Account Information
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Name:</span>
@@ -235,7 +250,10 @@ function SetupAccount() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="mt-1 relative">
@@ -265,26 +283,78 @@ function SetupAccount() {
 
             {/* Password Requirements */}
             <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Password Requirements</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">
+                Password Requirements
+              </h4>
               <div className="space-y-2 text-sm">
-                <div className={`flex items-center gap-2 ${passwordValidation.length ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordValidation.length ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.length
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {passwordValidation.length ? (
+                    <CheckCircle size={16} />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
                   At least 8 characters long
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordValidation.uppercase ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.uppercase
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {passwordValidation.uppercase ? (
+                    <CheckCircle size={16} />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
                   Contains uppercase letter
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordValidation.lowercase ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.lowercase
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {passwordValidation.lowercase ? (
+                    <CheckCircle size={16} />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
                   Contains lowercase letter
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.number ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordValidation.number ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.number
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {passwordValidation.number ? (
+                    <CheckCircle size={16} />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
                   Contains number
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.special ? 'text-green-600' : 'text-gray-500'}`}>
-                  {passwordValidation.special ? <CheckCircle size={16} /> : <XCircle size={16} />}
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.special
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {passwordValidation.special ? (
+                    <CheckCircle size={16} />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
                   Contains special character
                 </div>
               </div>
@@ -292,7 +362,10 @@ function SetupAccount() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <div className="mt-1 relative">
@@ -303,12 +376,13 @@ function SetupAccount() {
                   required
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${formData.confirmPassword && !passwordsMatch
-                    ? 'border-red-300'
-                    : formData.confirmPassword && passwordsMatch
-                      ? 'border-green-300'
-                      : 'border-gray-300'
-                    }`}
+                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                    formData.confirmPassword && !passwordsMatch
+                      ? "border-red-300"
+                      : formData.confirmPassword && passwordsMatch
+                      ? "border-green-300"
+                      : "border-gray-300"
+                  }`}
                   placeholder="Confirm your password"
                 />
                 <button
@@ -324,7 +398,9 @@ function SetupAccount() {
                 </button>
               </div>
               {formData.confirmPassword && !passwordsMatch && (
-                <p className="mt-1 text-sm text-red-600">Passwords do not match</p>
+                <p className="mt-1 text-sm text-red-600">
+                  Passwords do not match
+                </p>
               )}
               {formData.confirmPassword && passwordsMatch && (
                 <p className="mt-1 text-sm text-green-600">Passwords match</p>
@@ -335,10 +411,11 @@ function SetupAccount() {
               <button
                 type="submit"
                 disabled={!isPasswordValid || !passwordsMatch || submitting}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${isPasswordValid && passwordsMatch && !submitting
-                  ? 'bg-blue-600 hover:bg-blue-700'
-                  : 'bg-gray-300 cursor-not-allowed'
-                  }`}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  isPasswordValid && passwordsMatch && !submitting
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
               >
                 {submitting ? (
                   <div className="flex items-center">
@@ -346,7 +423,7 @@ function SetupAccount() {
                     Setting up account...
                   </div>
                 ) : (
-                  'Complete Setup'
+                  "Complete Setup"
                 )}
               </button>
             </div>

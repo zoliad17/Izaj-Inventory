@@ -15,6 +15,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "../../config/config";
 
 interface RequestItem {
   id: number;
@@ -81,7 +82,7 @@ export default function PendingRequest() {
       console.log("Loading pending requests for user:", currentUser.user_id);
       setIsLoading(true);
       const response = await fetch(
-        `http://localhost:5000/api/product-requests/pending/${currentUser.user_id}`
+        `${API_BASE_URL}/api/product-requests/pending/${currentUser.user_id}`
       );
       if (!response.ok) throw new Error("Failed to fetch pending requests");
 
@@ -113,7 +114,7 @@ export default function PendingRequest() {
       setIsProcessing(selectedRequest.request_id);
 
       const response = await fetch(
-        `http://localhost:5000/api/product-requests/${selectedRequest.request_id}/review`,
+        `${API_BASE_URL}/api/product-requests/${selectedRequest.request_id}/review`,
         {
           method: "PUT",
           headers: {
