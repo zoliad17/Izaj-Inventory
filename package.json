@@ -10,6 +10,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri dev",
+    "build:tauri": "tauri build",
     "start:bun": "cd backend/Server && bun dev",
     "start:npm": "cd backend/Server && npm run dev",
     "create:superadmin": "cd backend/Server && node scripts/create-superadmin.js",

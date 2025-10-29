@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import light1 from "/src/assets/image/light1.jpg";
+import light1 from "/dist/assets/image/light1.jpg";
 import { useSidebar } from "../Sidebar/SidebarContext";
 
 // Define interface for Product data

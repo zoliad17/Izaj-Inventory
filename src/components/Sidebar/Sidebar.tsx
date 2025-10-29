@@ -256,7 +256,7 @@ function Sidebar() {
                 </button>
               ) : (
                 <img
-                  src="/src/assets/image/logo.jpg"
+                  src="/dist/assets/image/logo.jpg"
                   alt="Logo"
                   className="w-10 h-10 rounded-full object-cover"
                 />
@@ -281,7 +281,7 @@ function Sidebar() {
                 </button>
               ) : (
                 <img
-                  src="/src/assets/image/logo.jpg"
+                  src="/dist/assets/image/logo.jpg"
                   alt="Logo"
                   className="w-10 h-10 rounded-full object-cover"
                 />

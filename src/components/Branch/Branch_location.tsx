@@ -229,16 +229,16 @@ function BranchLocation() {
                 src={
                   branch.map_snapshot_url ||
                   branch.image ||
-                  "/src/assets/image/logo.jpg"
+                  "/dist/assets/image/logo.jpg"
                 }
                 className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"
                 alt={`${branch.name || branch.location} Map`}
                 onError={(e) => {
                   if (
                     branch.map_snapshot_url &&
-                    e.currentTarget.src !== "/src/assets/image/logo.jpg"
+                    e.currentTarget.src !== "/dist/assets/image/logo.jpg"
                   ) {
-                    e.currentTarget.src = "/src/assets/image/logo.jpg";
+                    e.currentTarget.src = "/dist/assets/image/logo.jpg";
                   }
                 }}
               />

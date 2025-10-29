@@ -22,7 +22,7 @@ function Branch_category() {
     id: "led-1",
     name: "LED Lights",
     type: "Category",
-    image: "/src/assets/image/light1.jpg",
+    image: "/dist/assets/image/light1.jpg",
     features: [
       "Energy-efficient and long-lasting",
       "Available in various colors and styles",

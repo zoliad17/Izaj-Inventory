@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
+import light1 from "@/assets/image/light1.jpg";
+import logo from "@/assets/image/logo.jpg";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -61,7 +63,7 @@ function Login() {
   return (
     <div
       className="flex justify-center items-center min-h-screen bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/src/assets/image/light1.jpg')" }}
+      style={{ backgroundImage: `url(${light1})` }}
     >
       <Toaster
         position="top-center"
@@ -82,7 +84,7 @@ function Login() {
             <div className="flex flex-col items-center mb-6">
               <div className="bg-white/30 dark:bg-gray-700/30 backdrop-blur-sm rounded-full p-4 shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.2)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.3),-6px_-6px_12px_rgba(60,60,60,0.1)] mb-6 border border-white/20">
                 <img
-                  src="/src/assets/image/logo.jpg"
+                  src={logo}
                   alt="Logo"
                   className="w-20 h-20 rounded-full object-cover"
                 />

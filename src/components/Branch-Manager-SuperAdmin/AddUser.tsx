@@ -77,7 +77,7 @@ function AddUser() {
       name: "Killua Zoldick",
       username: "killua_z",
       email: "killua@hunter.com",
-      image: "/src/assets/image/user.png",
+      image: "/dist/assets/image/user.png",
       location: "123 Main Street, Lucena City",
       contact: "(042) 123-4567",
       isVerified: true,
