@@ -134,7 +134,8 @@ const corsOptions = {
             'http://127.0.0.1:3000',
             'http://127.0.0.1:5173',
             'tauri://localhost', // Tauri desktop app
-            'https://tauri.localhost' // Tauri HTTPS
+            'https://tauri.localhost', // Tauri HTTPS
+            'https://izaj-inventory.onrender.com'
         ];
 
         // Allow requests with no origin (like mobile apps or curl requests)
