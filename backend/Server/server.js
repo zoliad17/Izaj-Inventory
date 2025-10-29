@@ -1,7 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 const bcrypt = require("bcrypt");
+const dotenv = require("dotenv");
 const { createClient } = require("@supabase/supabase-js");
 const { supabase } = require("./supabase.node.js");
 const {
@@ -14,7 +16,6 @@ const { validateRequest, schemas } = require("./utils/validation");
 const {
   rateLimits,
   securityHeaders,
-  corsOptions,
   requestLogger,
   errorHandler,
   requestSizeLimiter,
@@ -93,34 +94,46 @@ const createAuditMessage = (action, context) => {
 };
 
 const path = require("path");
-const envPath = path.join(__dirname, "../../.env");
-const envLocalPath = path.join(__dirname, "../../.env.local");
+const envPath = path.join(process.cwd(), ".env");
+const envLocalPath = path.join(process.cwd(), ".env.local");
 
-if (require("fs").existsSync(envPath)) {
-  require("dotenv").config({ path: envPath });
-} else if (require("fs").existsSync(envLocalPath)) {
-  require("dotenv").config({ path: envLocalPath });
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+} else if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
 } else {
-  console.log("No .env file found, using default values");
+  dotenv.config(); // Render automatically injects env vars
+  console.log("No local .env file found — using Render env variables");
 }
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-const FRONTEND_PORT = process.env.FRONTEND_PORT || "5173";
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || `http://localhost:${FRONTEND_PORT}`;
 
-// Security middleware
-app.use(securityHeaders);
+// ✅ Create Express app
+const app = express();
+
+// ✅ Dynamic port (Render provides this automatically)
+const PORT = process.env.PORT || 5000;
+
+// ✅ Handle frontend CORS
+const FRONTEND_URL =
+  process.env.FRONTEND_URL || `http://localhost:${process.env.FRONTEND_PORT || 5173}`;
+
+const corsOptions = {
+  origin: FRONTEND_URL,
+  credentials: true,
+};
+
 app.use(cors(corsOptions));
+
+// ✅ Security middleware (make sure these are imported or defined)
+app.use(securityHeaders);
 app.use(requestLogger);
 app.use(requestSizeLimiter("10mb"));
 
-// Body parsing middleware
+// ✅ Body parsing middleware
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
-// General rate limiting
+// ✅ Rate limiter
 app.use(rateLimits.general);
 
 // GET all products from Supabase (filtered by branch_id)
@@ -3019,7 +3032,11 @@ app.use("*", (req, res) => {
   });
 });
 
-// Start the server
+// ✅ Test route
+app.get("/", (req, res) => {
+  res.send("✅ Backend is running on Render!");
+});
+
 app.listen(PORT, () => {
-  console.log(`Express server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
