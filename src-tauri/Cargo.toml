@@ -3,7 +3,9 @@ name = "izajlightingcentre"
 version = "0.3.0"
 description = "A Tauri App"
 authors = ["Aurex"]
-edition = "2024"
+
+#change it back to 2024 if its not working for you!!
+edition = "2021" 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

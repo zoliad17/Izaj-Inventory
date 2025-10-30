@@ -106,7 +106,6 @@ if (fs.existsSync(envPath)) {
   console.log("No local .env file found — using Render env variables");
 }
 
-
 // ✅ Create Express app
 const app = express();
 
@@ -114,6 +113,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const isDev = process.env.NODE_ENV === "development";
+
+// Frontend base URL used in links sent via email
+const FRONTEND_URL = (
+  process.env.FRONTEND_URL || "http://localhost:5173"
+).replace(/\/$/, "");
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -126,7 +130,7 @@ const corsOptions = {
       // Or restrict to your web frontend: callback(null, origin === "https://yourwebapp.com");
     }
   },
-  methods: ["GET","POST","PUT","DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
 
@@ -1066,7 +1070,9 @@ app.post(
           {
             user_id: requestTo,
             title: "New Product Request",
-            message: `New product request #${requestData.request_id} from ${requesterData?.name || "Unknown"}`,
+            message: `New product request #${requestData.request_id} from ${
+              requesterData?.name || "Unknown"
+            }`,
             link: "/pending_request",
             type: "product_request",
             read: false,
@@ -1078,7 +1084,10 @@ app.post(
           },
         ]);
       } catch (notifErr) {
-        console.error("Failed to create notification for product request:", notifErr);
+        console.error(
+          "Failed to create notification for product request:",
+          notifErr
+        );
       }
 
       // Log audit trail
@@ -1118,10 +1127,16 @@ app.post(
       // Create notification for requester when request is approved/denied
       if (action === "approved" || action === "denied") {
         try {
-          const notifTitle = action === "approved" ? "Request Approved" : "Request Denied";
-          const notifMessage = action === "approved"
-            ? `Your request #${requestId} was approved by ${reviewerData?.name || 'Reviewer'}`
-            : `Your request #${requestId} was denied by ${reviewerData?.name || 'Reviewer'}`;
+          const notifTitle =
+            action === "approved" ? "Request Approved" : "Request Denied";
+          const notifMessage =
+            action === "approved"
+              ? `Your request #${requestId} was approved by ${
+                  reviewerData?.name || "Reviewer"
+                }`
+              : `Your request #${requestId} was denied by ${
+                  reviewerData?.name || "Reviewer"
+                }`;
 
           await supabase.from("notifications").insert([
             {
@@ -1129,7 +1144,8 @@ app.post(
               title: notifTitle,
               message: notifMessage,
               link: action === "approved" ? "/transferred" : "/requested_item",
-              type: action === "approved" ? "request_approved" : "request_denied",
+              type:
+                action === "approved" ? "request_approved" : "request_denied",
               read: false,
               metadata: {
                 request_id: requestId,
@@ -1139,7 +1155,10 @@ app.post(
             },
           ]);
         } catch (notifErr) {
-          console.error("Failed to create notification for request review:", notifErr);
+          console.error(
+            "Failed to create notification for request review:",
+            notifErr
+          );
         }
       }
 
@@ -3099,7 +3118,9 @@ app.get(
       const { link } = req.query;
 
       if (!userId) {
-        return res.status(400).json({ error: "Authenticated user id not found" });
+        return res
+          .status(400)
+          .json({ error: "Authenticated user id not found" });
       }
 
       let query = supabase
@@ -3119,7 +3140,9 @@ app.get(
       }
 
       // count will be provided when using { count: 'exact' }
-      res.json({ count: typeof count === "number" ? count : (data ? data.length : 0) });
+      res.json({
+        count: typeof count === "number" ? count : data ? data.length : 0,
+      });
     } catch (err) {
       console.error("Unexpected error in unread notifications route:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -3131,7 +3154,8 @@ app.get(
 app.get("/api/notifications", authenticateUser, async (req, res) => {
   try {
     const userId = req.user?.user_id;
-    if (!userId) return res.status(400).json({ error: "Authenticated user id not found" });
+    if (!userId)
+      return res.status(400).json({ error: "Authenticated user id not found" });
 
     const limit = Math.min(Number(req.query.limit) || 20, 100);
     const offset = Number(req.query.offset) || 0;
@@ -3139,13 +3163,16 @@ app.get("/api/notifications", authenticateUser, async (req, res) => {
 
     let query = supabase
       .from("notifications")
-      .select("id, title, message, link, type, read, metadata, created_at", { count: "exact" })
+      .select("id, title, message, link, type, read, metadata, created_at", {
+        count: "exact",
+      })
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
     if (link) query = query.eq("link", link);
-    if (typeof read !== "undefined") query = query.eq("read", read === "true" || read === true);
+    if (typeof read !== "undefined")
+      query = query.eq("read", read === "true" || read === true);
 
     const { data, error, count } = await query;
     if (error) {
@@ -3153,7 +3180,10 @@ app.get("/api/notifications", authenticateUser, async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json({ notifications: data || [], total: typeof count === "number" ? count : (data ? data.length : 0) });
+    res.json({
+      notifications: data || [],
+      total: typeof count === "number" ? count : data ? data.length : 0,
+    });
   } catch (err) {
     console.error("Unexpected error in notifications list route:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -3214,7 +3244,6 @@ app.use("*", (req, res) => {
     message: "The requested resource was not found",
   });
 });
-
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
