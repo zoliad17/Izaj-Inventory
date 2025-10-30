@@ -277,6 +277,8 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Notifications page removed — notifications are surfaced via sidebar badges */}
+
               {/* Public Route: Unauthorized Page */}
               <Route path="/unauthorized" element={<Unauthorized />} />
 

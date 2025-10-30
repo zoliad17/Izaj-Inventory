@@ -23,7 +23,7 @@
     "@googlemaps/react-wrapper": "^1.2.0",
     "@heroicons/react": "^1.0.6",
     "@radix-ui/react-select": "^2.2.5",
-    "@supabase/supabase-js": "^2.49.8",
+    "@supabase/supabase-js": "^2.77.0",
     "@tailwindcss/vite": "^4.1.11",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",

@@ -113,12 +113,20 @@ const app = express();
 // ✅ Dynamic port (Render provides this automatically)
 const PORT = process.env.PORT || 5000;
 
-// ✅ Handle frontend CORS
-const FRONTEND_URL =
-  process.env.FRONTEND_URL || `http://localhost:${process.env.FRONTEND_PORT || 5173}`;
+const isDev = process.env.NODE_ENV === "development";
 
 const corsOptions = {
-  origin: FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (isDev) {
+      // Allow localhost for dev
+      callback(null, true);
+    } else {
+      // Allow all origins in production (Tauri app)
+      callback(null, true);
+      // Or restrict to your web frontend: callback(null, origin === "https://yourwebapp.com");
+    }
+  },
+  methods: ["GET","POST","PUT","DELETE"],
   credentials: true,
 };
 
@@ -1052,6 +1060,27 @@ app.post(
         console.log("Request notification email result:", emailResult);
       }
 
+      // Create a realtime notification for the recipient (Branch Manager)
+      try {
+        await supabase.from("notifications").insert([
+          {
+            user_id: requestTo,
+            title: "New Product Request",
+            message: `New product request #${requestData.request_id} from ${requesterData?.name || "Unknown"}`,
+            link: "/pending_request",
+            type: "product_request",
+            read: false,
+            metadata: {
+              request_id: requestData.request_id,
+              item_count: items.length,
+              total_quantity: items.reduce((s, it) => s + it.quantity, 0),
+            },
+          },
+        ]);
+      } catch (notifErr) {
+        console.error("Failed to create notification for product request:", notifErr);
+      }
+
       // Log audit trail
       const { error: auditError } = await supabase.from("audit_logs").insert([
         {
@@ -1084,6 +1113,34 @@ app.post(
 
       if (auditError) {
         console.error("Error logging audit trail:", auditError);
+      }
+
+      // Create notification for requester when request is approved/denied
+      if (action === "approved" || action === "denied") {
+        try {
+          const notifTitle = action === "approved" ? "Request Approved" : "Request Denied";
+          const notifMessage = action === "approved"
+            ? `Your request #${requestId} was approved by ${reviewerData?.name || 'Reviewer'}`
+            : `Your request #${requestId} was denied by ${reviewerData?.name || 'Reviewer'}`;
+
+          await supabase.from("notifications").insert([
+            {
+              user_id: requestData.request_from,
+              title: notifTitle,
+              message: notifMessage,
+              link: action === "approved" ? "/transferred" : "/requested_item",
+              type: action === "approved" ? "request_approved" : "request_denied",
+              read: false,
+              metadata: {
+                request_id: requestId,
+                reviewer: reviewerData?.name || null,
+                notes: notes || null,
+              },
+            },
+          ]);
+        } catch (notifErr) {
+          console.error("Failed to create notification for request review:", notifErr);
+        }
       }
 
       res.status(201).json({
@@ -3026,6 +3083,127 @@ app.post("/api/branches", async (req, res) => {
       details: error.message,
       stack: error.stack,
     });
+  }
+});
+
+// Mark notifications as read for a user (optionally filtered by link)
+// Get unread notifications count for a user (optionally filtered by link)
+// Get unread notifications count for the authenticated user (optionally filtered by link)
+app.get(
+  "/api/notifications/unread/:userId",
+  authenticateUser,
+  async (req, res) => {
+    try {
+      // Derive user id from authenticated token to prevent forging
+      const userId = req.user?.user_id;
+      const { link } = req.query;
+
+      if (!userId) {
+        return res.status(400).json({ error: "Authenticated user id not found" });
+      }
+
+      let query = supabase
+        .from("notifications")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+        .eq("read", false);
+
+      if (link) {
+        query = query.eq("link", link);
+      }
+
+      const { data, error, count } = await query;
+      if (error) {
+        console.error("Error fetching unread notifications:", error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      // count will be provided when using { count: 'exact' }
+      res.json({ count: typeof count === "number" ? count : (data ? data.length : 0) });
+    } catch (err) {
+      console.error("Unexpected error in unread notifications route:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// List notifications for authenticated user (paged)
+app.get("/api/notifications", authenticateUser, async (req, res) => {
+  try {
+    const userId = req.user?.user_id;
+    if (!userId) return res.status(400).json({ error: "Authenticated user id not found" });
+
+    const limit = Math.min(Number(req.query.limit) || 20, 100);
+    const offset = Number(req.query.offset) || 0;
+    const { link, read } = req.query; // optional filters
+
+    let query = supabase
+      .from("notifications")
+      .select("id, title, message, link, type, read, metadata, created_at", { count: "exact" })
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (link) query = query.eq("link", link);
+    if (typeof read !== "undefined") query = query.eq("read", read === "true" || read === true);
+
+    const { data, error, count } = await query;
+    if (error) {
+      console.error("Error fetching notifications list:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ notifications: data || [], total: typeof count === "number" ? count : (data ? data.length : 0) });
+  } catch (err) {
+    console.error("Unexpected error in notifications list route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Simple endpoint to return authenticated user's id (used by clients to scope realtime subscriptions)
+app.get("/api/whoami", authenticateUser, (req, res) => {
+  try {
+    const userId = req.user?.user_id || null;
+    res.json({ user_id: userId });
+  } catch (err) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Mark notifications as read for a user (optionally filtered by link)
+app.put("/api/notifications/mark-read", authenticateUser, async (req, res) => {
+  try {
+    // Derive user id from authenticated token; ignore any user_id supplied in body
+    const user_id = req.user?.user_id;
+    const { link } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: "Authenticated user id not found" });
+    }
+
+    let query = supabase.from("notifications").update({ read: true });
+
+    // Filter by authenticated user
+    query = query.eq("user_id", user_id);
+
+    // If a link is provided, only mark notifications with that link
+    if (link) {
+      query = query.eq("link", link);
+    }
+
+    // Only update unread notifications
+    query = query.eq("read", false);
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error marking notifications read:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ updated: data?.length || 0 });
+  } catch (err) {
+    console.error("Unexpected error in mark-read route:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

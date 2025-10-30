@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
+import logo from "@/assets/image/logo.jpg";
 import {
   LogOutIcon,
   MenuIcon,
@@ -29,6 +30,8 @@ import { API_BASE_URL } from "../../config/config";
 
 // Import the new hook for branch request counts
 import { useBranchRequestCounts } from "../../hooks/useBranchRequestCounts";
+// Import notifications hook to show global unread badge in the sidebar
+import useNotifications from "../../hooks/useNotifications";
 
 // Define types for the navigation items
 interface NavItem {
@@ -94,16 +97,89 @@ function Sidebar() {
 
   // Use the branch request counts hook
   const {
-    totalCount: branchRequestCount,
+    // totalCount (branchRequestCount) is intentionally not used for the parent badge
+    // because we compute the displayed badge from individual sub-item counts
     pendingCount,
     transferredCount,
     requestedCount,
+    refetch,
   } = useBranchRequestCounts({
     userId: user?.user_id,
     branchId: user?.branch_id ? user.branch_id : undefined,
     refreshInterval: 300000, // Refresh every 5 minutes
     enabled: hasRole(["Admin", "Branch Manager"]),
   });
+
+  // Global notifications unread count (used for sidebar badge)
+  const { unreadCount: notificationsUnread } = useNotifications({
+    pollInterval: 30000,
+    realtime: true,
+  });
+
+  // Local flag to clear the transferred badge when the user opens the Transferred tab
+  const [clearedTransferred, setClearedTransferred] = useState(false);
+  const prevTransferredRef = useRef<number>(transferredCount);
+  const [unreadTransferredCount, setUnreadTransferredCount] =
+    useState<number>(0);
+  // Local flags to clear pending/requested badges when the user opens those tabs
+  const [clearedPending, setClearedPending] = useState(false);
+  const prevPendingRef = useRef<number>(pendingCount);
+
+  const [clearedRequested, setClearedRequested] = useState(false);
+  const prevRequestedRef = useRef<number>(requestedCount);
+
+  // Compute the parent Branch Request badge count based on individual sub-item counts
+  // and cleared flags. This lets the parent badge hide immediately when sub-items
+  // have been locally cleared by navigation actions.
+  const displayedBranchBadge =
+    (clearedPending ? 0 : pendingCount) +
+    (clearedTransferred ? 0 : unreadTransferredCount) +
+    (clearedRequested ? 0 : requestedCount);
+
+  const fetchUnreadTransferred = useCallback(async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/transferred`,
+        { credentials: "include" }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch unread transferred notifications");
+      }
+      const json = await res.json();
+      setUnreadTransferredCount(json.count || 0);
+    } catch (err) {
+      console.error("Error fetching unread transferred notifications:", err);
+    }
+  }, [user?.user_id]);
+
+  // Reset the cleared flag when the transferredCount or unreadTransferredCount changes (new items arrive or notifications change)
+  useEffect(() => {
+    if (transferredCount !== prevTransferredRef.current) {
+      setClearedTransferred(false);
+      prevTransferredRef.current = transferredCount;
+    }
+  }, [transferredCount, unreadTransferredCount]);
+
+  // Reset cleared flags when pending/requested counts change
+  useEffect(() => {
+    if (pendingCount !== prevPendingRef.current) {
+      setClearedPending(false);
+      prevPendingRef.current = pendingCount;
+    }
+  }, [pendingCount]);
+
+  useEffect(() => {
+    if (requestedCount !== prevRequestedRef.current) {
+      setClearedRequested(false);
+      prevRequestedRef.current = requestedCount;
+    }
+  }, [requestedCount]);
+
+  // Fetch unread transferred notifications on mount and when user changes
+  useEffect(() => {
+    fetchUnreadTransferred();
+  }, [fetchUnreadTransferred]);
 
   const handleLogout = () => {
     logout();
@@ -114,6 +190,21 @@ function Sidebar() {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  // Helper to mark notifications for a particular link as read
+  const markNotificationsReadByLink = async (link: string) => {
+    if (!user?.user_id) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/notifications/mark-read`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ link }),
+      });
+    } catch (err) {
+      console.error(`Failed to mark notifications for ${link} as read`, err);
+    }
+  };
+
   // Navigation items data with proper typing and role permissions
   const navItems: NavItem[] = [
     {
@@ -122,6 +213,7 @@ function Sidebar() {
       path: "/dashboard",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
+    // Notifications page removed — we rely on the sidebar badge instead
     {
       icon: MapPin,
       label: "Branch",
@@ -257,7 +349,7 @@ function Sidebar() {
                 </button>
               ) : (
                 <img
-                  src="/dist/assets/image/logo.jpg"
+                  src={logo}
                   alt="Logo"
                   className="w-10 h-10 rounded-full object-cover"
                 />
@@ -282,7 +374,7 @@ function Sidebar() {
                 </button>
               ) : (
                 <img
-                  src="/dist/assets/image/logo.jpg"
+                  src={logo}
                   alt="Logo"
                   className="w-10 h-10 rounded-full object-cover"
                 />
@@ -322,9 +414,22 @@ function Sidebar() {
                     title={item.label}
                   >
                     <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                    {isCollapsed &&
+                      item.label === "Notifications" &&
+                      notificationsUnread > 0 && (
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                          {notificationsUnread}
+                        </span>
+                      )}
                     {!isCollapsed && (
-                      <span className="ml-3 whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                        {item.label}
+                      <span className="ml-3 whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
+                        <span>{item.label}</span>
+                        {item.label === "Notifications" &&
+                          notificationsUnread > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                              {notificationsUnread}
+                            </span>
+                          )}
                       </span>
                     )}
                   </Link>
@@ -346,9 +451,9 @@ function Sidebar() {
                           {/* For collapsed state, show badge overlaid on top-right of icon */}
                           {isCollapsed &&
                             item.label === "Branch Request" &&
-                            branchRequestCount > 0 && (
+                            displayedBranchBadge > 0 && (
                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                {branchRequestCount}
+                                {displayedBranchBadge}
                               </span>
                             )}
                         </div>
@@ -357,9 +462,9 @@ function Sidebar() {
                             <span className="truncate">{item.label}</span>
                             {/* Notification badge for Branch Request - positioned beside the nav text */}
                             {item.label === "Branch Request" &&
-                              branchRequestCount > 0 && (
+                              displayedBranchBadge > 0 && (
                                 <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                  {branchRequestCount}
+                                  {displayedBranchBadge}
                                 </span>
                               )}
                           </span>
@@ -396,6 +501,55 @@ function Sidebar() {
                               <li key={subIndex} className="relative">
                                 <Link
                                   to={subItem.path}
+                                  onClick={async () => {
+                                    try {
+                                      if (subItem.path === "/transferred") {
+                                        await fetch(
+                                          `${API_BASE_URL}/api/notifications/mark-read`,
+                                          {
+                                            method: "PUT",
+                                            headers: {
+                                              "Content-Type":
+                                                "application/json",
+                                            },
+                                            credentials: "include",
+                                            body: JSON.stringify({
+                                              link: "/transferred",
+                                            }),
+                                          }
+                                        );
+                                        // Clear local badge until counts change
+                                        setClearedTransferred(true);
+                                        // Also clear the unread transferred count locally
+                                        setUnreadTransferredCount(0);
+                                      } else if (
+                                        subItem.path === "/pending_request"
+                                      ) {
+                                        await markNotificationsReadByLink(
+                                          "/pending_request"
+                                        );
+                                        setClearedPending(true);
+                                      } else if (
+                                        subItem.path === "/requested_item"
+                                      ) {
+                                        await markNotificationsReadByLink(
+                                          "/requested_item"
+                                        );
+                                        setClearedRequested(true);
+                                      }
+                                    } catch (err) {
+                                      console.error(
+                                        "Failed to mark notifications read on navigation",
+                                        err
+                                      );
+                                    }
+                                    // Trigger a refresh of counts if available
+                                    try {
+                                      refetch && refetch();
+                                    } catch (e) {
+                                      /* ignore */
+                                    }
+                                  }}
                                   className="group flex items-center px-3 py-2 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] rounded-lg transition-all duration-300 ease-in-out relative"
                                 >
                                   <div className="relative flex items-center">
@@ -406,21 +560,33 @@ function Sidebar() {
                                         <>
                                           {subItem.label ===
                                             "Pending Request" &&
-                                            pendingCount > 0 && (
+                                            (clearedPending
+                                              ? 0
+                                              : pendingCount) > 0 && (
                                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                                {pendingCount}
+                                                {clearedPending
+                                                  ? 0
+                                                  : pendingCount}
                                               </span>
                                             )}
                                           {subItem.label === "Transferred" &&
-                                            transferredCount > 0 && (
+                                            (clearedTransferred
+                                              ? 0
+                                              : unreadTransferredCount) > 0 && (
                                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                                {transferredCount}
+                                                {clearedTransferred
+                                                  ? 0
+                                                  : unreadTransferredCount}
                                               </span>
                                             )}
                                           {subItem.label === "Requested Item" &&
-                                            requestedCount > 0 && (
+                                            (clearedRequested
+                                              ? 0
+                                              : requestedCount) > 0 && (
                                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                                {requestedCount}
+                                                {clearedRequested
+                                                  ? 0
+                                                  : requestedCount}
                                               </span>
                                             )}
                                         </>
@@ -434,21 +600,33 @@ function Sidebar() {
                                         <>
                                           {subItem.label ===
                                             "Pending Request" &&
-                                            pendingCount > 0 && (
+                                            (clearedPending
+                                              ? 0
+                                              : pendingCount) > 0 && (
                                               <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                                {pendingCount}
+                                                {clearedPending
+                                                  ? 0
+                                                  : pendingCount}
                                               </span>
                                             )}
                                           {subItem.label === "Transferred" &&
-                                            transferredCount > 0 && (
+                                            (clearedTransferred
+                                              ? 0
+                                              : unreadTransferredCount) > 0 && (
                                               <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                                {transferredCount}
+                                                {clearedTransferred
+                                                  ? 0
+                                                  : unreadTransferredCount}
                                               </span>
                                             )}
                                           {subItem.label === "Requested Item" &&
-                                            requestedCount > 0 && (
+                                            (clearedRequested
+                                              ? 0
+                                              : requestedCount) > 0 && (
                                               <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                                {requestedCount}
+                                                {clearedRequested
+                                                  ? 0
+                                                  : requestedCount}
                                               </span>
                                             )}
                                         </>
