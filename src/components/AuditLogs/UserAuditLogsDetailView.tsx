@@ -15,6 +15,7 @@ import { useSidebar } from "../Sidebar/SidebarContext";
 import { API_BASE_URL } from "../../config/config";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 // Detailed audit log entry data structure
 interface AuditLogDetail {
@@ -125,6 +126,80 @@ export default function UserAuditLogsDetailView() {
   const [changeHistory, setChangeHistory] = useState<any[]>([]);
   const [relatedActivities, setRelatedActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleExport = () => {
+    try {
+      if (!auditLogDetail) return;
+
+      // Summary sheet
+      const summary = [
+        {
+          "Log ID": auditLogDetail.id,
+          Action: auditLogDetail.action,
+          Description: auditLogDetail.description,
+          "Entity Type": auditLogDetail.entity_type || "",
+          "Entity ID": auditLogDetail.entity_id || "",
+          Timestamp: new Date(auditLogDetail.timestamp).toLocaleString(),
+          "User Name":
+            auditLogDetail.user?.name || auditLogDetail.user_name || "",
+          "User Email":
+            auditLogDetail.user?.email || auditLogDetail.user_email || "",
+          Role:
+            auditLogDetail.user?.role?.role_name ||
+            auditLogDetail.role_name ||
+            "",
+          Branch:
+            auditLogDetail.user?.branch?.location ||
+            auditLogDetail.branch_location ||
+            "",
+          Notes: auditLogDetail.notes || "",
+        },
+      ];
+
+      // Change history sheet
+      const changes = changeHistory.map((c) => ({
+        Field: c.field,
+        "Old Value": c.oldValue,
+        "New Value": c.newValue,
+        "Changed At": c.changedAt,
+        "Changed By": c.changedBy,
+      }));
+
+      // Raw values sheet (flatten JSON to strings)
+      const rawValues = [
+        {
+          old_values: JSON.stringify(auditLogDetail.old_values ?? {}, null, 2),
+          new_values: JSON.stringify(auditLogDetail.new_values ?? {}, null, 2),
+        },
+      ];
+
+      // Related activities sheet
+      const related = relatedActivities.map((r) => ({
+        "Log ID": r.id,
+        Action: r.action,
+        Description: r.description,
+        Timestamp: r.timestamp,
+        User: r.user,
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const wsSummary = XLSX.utils.json_to_sheet(summary);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+      const wsChanges = XLSX.utils.json_to_sheet(changes);
+      XLSX.utils.book_append_sheet(wb, wsChanges, "Change History");
+      const wsRaw = XLSX.utils.json_to_sheet(rawValues);
+      XLSX.utils.book_append_sheet(wb, wsRaw, "Raw Values");
+      const wsRelated = XLSX.utils.json_to_sheet(related);
+      XLSX.utils.book_append_sheet(wb, wsRelated, "Related");
+
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filename = `audit_log_${auditLogDetail.id}_${dateStr}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (error) {
+      console.error("Error exporting audit log:", error);
+      toast.error("Failed to export audit log");
+    }
+  };
 
   useEffect(() => {
     const fetchAuditLogDetail = async () => {
@@ -267,6 +342,7 @@ export default function UserAuditLogsDetailView() {
 
           <button
             type="button"
+            onClick={handleExport}
             className="
       flex items-center gap-2 px-5 py-2 rounded-xl font-bold text-base
       text-blue-800 dark:text-blue-500
