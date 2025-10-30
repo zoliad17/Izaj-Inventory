@@ -56,6 +56,25 @@ export const description = "A sales dashboard with statistics and charts";
 
 const Sales: React.FC = () => {
   // Import and Export functionality
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const normalizeStatus = (value: unknown): string => {
+    const raw = String(value ?? "")
+      .toLowerCase()
+      .trim();
+    if (raw === "in stock" || raw === "in-stock" || raw === "instock")
+      return "in-stock";
+    if (raw === "low stock" || raw === "low-stock" || raw === "lowstock")
+      return "low-stock";
+    if (
+      raw === "out of stock" ||
+      raw === "out-of-stock" ||
+      raw === "outofstock"
+    )
+      return "out-of-stock";
+    return raw ? raw : "in-stock";
+  };
+
   const handleExport = () => {
     try {
       // Prepare data for export
@@ -73,10 +92,25 @@ const Sales: React.FC = () => {
             : "Out of Stock",
       }));
 
-      // Create worksheet and workbook
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      // Prepare sales datasets
+      const salesTrendData = line_chartData.map((row) => ({
+        Month: row.month,
+        "Sales (₱)": row.sales,
+        "Products Sold": row.products,
+      }));
+      const categorySalesData = bar_chartData.map((row) => ({
+        Category: row.category,
+        "Sales (₱)": row.sales,
+      }));
+
+      // Create worksheets and workbook
+      const wsProducts = XLSX.utils.json_to_sheet(exportData);
+      const wsSalesTrend = XLSX.utils.json_to_sheet(salesTrendData);
+      const wsCategorySales = XLSX.utils.json_to_sheet(categorySalesData);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Data");
+      XLSX.utils.book_append_sheet(workbook, wsProducts, "Products");
+      XLSX.utils.book_append_sheet(workbook, wsSalesTrend, "Sales Trend");
+      XLSX.utils.book_append_sheet(workbook, wsCategorySales, "Category Sales");
 
       // Generate filename with current date
       const currentDate = new Date().toISOString().split("T")[0];
@@ -92,10 +126,65 @@ const Sales: React.FC = () => {
   };
 
   const handleImport = () => {
-    alert(
-      "Import functionality would be implemented here in a real application.\n\nIn a complete implementation, this would:\n1. Open a file dialog to select an Excel file\n2. Parse the file contents\n3. Validate the data format\n4. Update the sales data with the imported information"
-    );
-    console.log("Import functionality triggered");
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+        worksheet,
+        {
+          defval: "",
+        }
+      );
+
+      const imported = rows
+        .map((row, index) => {
+          const id = String(
+            (row["Product ID"] ?? row["ID"] ?? row["id"] ?? index + 1) as
+              | string
+              | number
+          );
+          const name = String(
+            (row["Product Name"] ?? row["Name"] ?? row["name"] ?? "") as string
+          );
+          const category = String(
+            (row["Category"] ?? row["category"] ?? "") as string
+          );
+          const priceValue = row["Price"] ?? row["price"] ?? "";
+          const price =
+            typeof priceValue === "number"
+              ? `₱${priceValue}`
+              : String(priceValue);
+          const stock = Number(row["Stock"] ?? row["stock"] ?? 0);
+          const status = normalizeStatus(
+            row["Status"] ?? row["status"] ?? "in-stock"
+          );
+          return { id, name, category, price, stock, status } as Product;
+        })
+        .filter((p) => p.id && p.name);
+
+      if (!imported.length) {
+        alert("No valid rows found in the selected file.");
+      } else {
+        setProducts(imported);
+        console.log(`Imported ${imported.length} products from ${file.name}`);
+      }
+    } catch (error) {
+      console.error("Error importing sales data:", error);
+      alert("Failed to import sales data. Please check the file format.");
+    } finally {
+      // reset input so selecting the same file again will trigger onChange
+      event.target.value = "";
+    }
   };
   // Bar chart options for lighting products
   const bar_chartData = [
@@ -142,7 +231,7 @@ const Sales: React.FC = () => {
     status: string;
   }
 
-  const products: Product[] = [
+  const [products, setProducts] = React.useState<Product[]>([
     {
       id: "001",
       name: "LED Bulb",
@@ -183,7 +272,7 @@ const Sales: React.FC = () => {
       stock: 0,
       status: "out-of-stock",
     },
-  ];
+  ]);
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
   return (
@@ -213,6 +302,13 @@ const Sales: React.FC = () => {
           </button>
           <h5 className="text-xl md:text-2xl font-bold">Sales Dashboard</h5>
           <div className="ml-auto flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <button
               onClick={handleImport}
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-blue-700 dark:text-blue-200 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"

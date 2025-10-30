@@ -1,5 +1,74 @@
 # IZAJ-INVENTORY SYSTEM - REVISED FLOW DIAGRAM
 
+## High-Level System Flow (Mermaid)
+
+```mermaid
+flowchart TD
+  %% Clients
+  U[User] --> FE[React + Tauri App]
+
+  %% Auth
+  FE -->|Login creds| BE_POST_LOGIN[/POST /api/login/]
+  BE_POST_LOGIN -->|Validate email+password, fetch role| DB[(Supabase/Postgres)]
+  BE_POST_LOGIN -->|Audit USER_LOGIN| DB
+  BE_POST_LOGIN -->|user, role, branchId| FE
+  FE -->|Save session (AuthContext)| FE_DASH[Role-based Dashboard]
+
+  %% Protected API pattern
+  subgraph Backend
+    direction TB
+    BE[Express Server]
+    MW[authenticateUser(user_id)]
+    VAL[Validation & Rate Limits]
+  end
+
+  FE -->|user_id in body/query| MW
+  MW -->|Load active user| DB
+  MW --> BE
+
+  %% Inventory CRUD
+  subgraph Inventory CRUD
+    direction TB
+    BE_POST_PROD[/POST /api/products/]
+    BE_PUT_PROD[/PUT /api/products/:id]
+    BE_DEL_PROD[/DELETE /api/products/:id]
+  end
+
+  FE --> BE_POST_PROD -->|insert centralized_product| DB
+  FE --> BE_PUT_PROD -->|update centralized_product| DB
+  FE --> BE_DEL_PROD -->|delete centralized_product| DB
+  BE_POST_PROD -->|Audit PRODUCT_CREATED| DB
+  BE_PUT_PROD  -->|Audit PRODUCT_UPDATED| DB
+  BE_DEL_PROD  -->|Audit PRODUCT_DELETED| DB
+
+  %% Product Request Flow
+  subgraph Product Request
+    direction TB
+    FE_REQ[Create Request]
+    BE_POST_REQ[/POST /api/product-requests/]
+    BE_REVIEW[/PUT /api/product-requests/:id/review]
+    BE_ARRIVED[/PUT /api/product-requests/:id/mark-arrived]
+  end
+
+  FE_REQ --> BE_POST_REQ -->|validate stock & reserve reserved_quantity| DB
+  BE_POST_REQ -->|Insert product_requisition + items| DB
+  BE_POST_REQ -->|Email notify & Audit| DB
+
+  FE --> BE_REVIEW -->|approved?| DEC{Approved?}
+  DEC -- Yes -->|deduct quantity; reset reserved; transfer/add to dest| DB
+  DEC -- No  -->|release reserved; set status denied| DB
+  BE_REVIEW -->|Audit & Email| DB
+
+  FE --> BE_ARRIVED -->|Insert product_transfers; mark arrived| DB
+
+  %% Audit Logs
+  FE --> BE_GET_AUDIT[/GET /api/audit-logs/]
+  BE_GET_AUDIT --> DB
+
+  %% Logout
+  FE -.->|Clear session| FE
+```
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                        IZAJ-INVENTORY MANAGEMENT SYSTEM                     │
