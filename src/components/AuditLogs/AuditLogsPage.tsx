@@ -386,9 +386,9 @@ const AuditLogsPage = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="w-full px-2 sm:px-4 py-6 bg-white dark:bg-gray-800 rounded-2xl mb-4 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] transition-all duration-300">
+      <div className="w-full px-2 sm:px-4 py-6 bg-white dark:bg-gray-900 rounded-2xl mb-4 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] transition-all duration-300">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-3">
@@ -413,7 +413,7 @@ const AuditLogsPage = () => {
               </label>
               <select
                 id="itemsPerPage"
-                className="border border-gray-300 dark:border-gray-600 rounded-xl px-3 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-300 dark:border-gray-900 rounded-xl px-3 py-2 text-sm font-medium bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)] focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
@@ -453,7 +453,7 @@ const AuditLogsPage = () => {
 
         {/* Filters */}
         <div
-          className="bg-white dark:bg-gray-700 mt-3.5 p-4 rounded-2xl 
+          className="bg-white dark:bg-gray-900 mt-3.5 p-4 rounded-2xl 
     shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] 
     dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] 
     transition-all"
@@ -468,7 +468,7 @@ const AuditLogsPage = () => {
                 type="text"
                 placeholder="Search logs..."
                 className="block w-full pl-10 pr-3 py-2 rounded-xl 
-          bg-white dark:bg-gray-600 border border-transparent
+          bg-white dark:bg-gray-900 border border-transparent
           text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300
           shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
           dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
@@ -486,7 +486,7 @@ const AuditLogsPage = () => {
               </div>
               <select
                 className="block w-full pl-10 pr-3 py-2 rounded-xl 
-          bg-white dark:bg-gray-600 border border-transparent
+          bg-white dark:bg-gray-900 border border-transparent
           text-gray-900 dark:text-white
           shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
           dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
@@ -513,7 +513,7 @@ const AuditLogsPage = () => {
               </div>
               <select
                 className="block w-full pl-10 pr-3 py-2 rounded-xl 
-          bg-white dark:bg-gray-600 border border-transparent
+          bg-white dark:bg-gray-900 border border-transparent
           text-gray-900 dark:text-white
           shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
           dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
@@ -533,7 +533,7 @@ const AuditLogsPage = () => {
               </div>
               <select
                 className="block w-full pl-10 pr-3 py-2 rounded-xl 
-          bg-white dark:bg-gray-600 border border-transparent
+          bg-white dark:bg-gray-900 border border-transparent
           text-gray-900 dark:text-white
           shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
           dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
@@ -552,7 +552,7 @@ const AuditLogsPage = () => {
         </div>
 
         {/* Logs Table */}
-        <div className="bg-white dark:bg-gray-800 shadow sm:rounded-lg mt-3.5 w-full">
+        <div className="bg-white dark:bg-gray-900 shadow sm:rounded-lg mt-3.5 w-full">
           {isLoading ? (
             <div className="flex justify-center items-center p-12">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -567,7 +567,7 @@ const AuditLogsPage = () => {
             <>
               <div className="w-full">
                 <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-900">
                     <tr>
                       <th
                         scope="col"
@@ -643,11 +643,11 @@ const AuditLogsPage = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {currentItems.map((log) => (
                       <tr
                         key={log.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
                       >
                         <td className="px-2 sm:px-4 lg:px-6 py-4">
                           <div className="text-base font-medium text-gray-900 dark:text-white">

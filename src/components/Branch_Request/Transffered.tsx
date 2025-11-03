@@ -277,10 +277,10 @@ const Transferred = memo(() => {
           isCollapsed ? "ml-5" : "ml-1"
         } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
       >
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center h-64 dark:bg-gray-900/70">
           <div className="text-center max-w-md">
             <div className="mb-4">
-              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-gray-900/70 rounded-full flex items-center justify-center">
                 <svg
                   className="w-8 h-8 text-red-600 dark:text-red-400"
                   fill="none"
@@ -326,9 +326,9 @@ const Transferred = memo(() => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
+      <div className="bg-white dark:bg-gray-900/70 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
         <Toaster
           position="top-center"
           toastOptions={{
@@ -368,7 +368,7 @@ const Transferred = memo(() => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               {/* Total Items */}
               <div
-                className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700
+                className="bg-white dark:bg-gray-900/70 rounded-2xl border border-gray-200 dark:border-neutral-700
                   shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)]
                   dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)]
                   p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)]
@@ -387,7 +387,7 @@ const Transferred = memo(() => {
               </div>
 
               {/* Total Value */}
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
+              <div className="bg-white dark:bg-gray-900/70 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
                 <div className="flex items-center gap-2 mb-2">
                   <CoinsIcon className="w-5 h-5 text-green-500 dark:text-green-400" />
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -406,7 +406,7 @@ const Transferred = memo(() => {
               </div>
 
               {/* Unique Products */}
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
+              <div className="bg-white dark:bg-gray-900/70 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
                 <div className="flex items-center gap-2 mb-2">
                   <Package className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -419,7 +419,7 @@ const Transferred = memo(() => {
               </div>
 
               {/* Transfer Requests */}
-              <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
+              <div className="bg-white dark:bg-gray-900/70 rounded-2xl border border-gray-200 dark:border-neutral-700 shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] p-4 hover:shadow-[6px_6px_20px_rgba(0,0,0,0.12),-6px_-6px_20px_rgba(255,255,255,0.3)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.8),-6px_-6px_20px_rgba(60,60,60,0.5)] transition-all duration-300">
                 <div className="flex items-center gap-2 mb-2">
                   <Repeat className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
                   <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -435,12 +435,12 @@ const Transferred = memo(() => {
 
           {/* Filter, Search, and Export Controls in one line with Neumorphic Style */}
           <div
-            className="flex flex-wrap sm:flex-nowrap items-end gap-3 p-3 bg-white dark:bg-neutral-800 rounded-2xl
+            className="flex flex-wrap sm:flex-nowrap items-end gap-3 p-3 bg-white dark:bg-gray-900/70 rounded-2xl
              shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)]
              dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)] mb-4"
           >
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px] sm:w-1/3">
+            <div className="relative flex-1 min-w-[200px] sm:w-1/3 dark:bg-gray-900/70">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FileSearch className="text-gray-400 dark:text-gray-500" />
               </div>
@@ -448,7 +448,7 @@ const Transferred = memo(() => {
                 type="text"
                 placeholder="Search by name or SKU..."
                 className="block w-full pl-10 pr-4 py-2 rounded-2xl text-sm
-                 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100
+                 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-gray-100
                  border border-gray-300 dark:border-gray-600
                  shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
@@ -465,7 +465,7 @@ const Transferred = memo(() => {
             <div className="flex-shrink-0 w-full sm:w-1/4">
               <select
                 className="block w-full px-4 py-2 rounded-2xl text-sm
-                 bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100
+                 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-gray-100
                  border border-gray-300 dark:border-gray-600
                  shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
@@ -506,9 +506,9 @@ const Transferred = memo(() => {
           {/* Table */}
           <div className="w-full overflow-hidden">
             <div className="w-full">
-              <table className="w-full bg-white dark:bg-neutral-800 text-base table-auto break-words">
+              <table className="w-full bg-white dark:bg-gray-900/70 text-base table-auto break-words">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-neutral-700">
+                  <tr className="bg-gray-100 dark:bg-gray-900/70">
                     <th className="px-2 py-2 text-left text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300">
                       <input
                         type="checkbox"
@@ -732,7 +732,7 @@ const Transferred = memo(() => {
             </div>
           )}
         </div>
-        <div className="p-4 bg-gray-100 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-600">
+        <div className="p-4 bg-gray-100 dark:bg-gray-900/70 border-t border-gray-200 dark:border-neutral-600">
           <small className="text-gray-500 dark:text-gray-400">
             Last updated {new Date().toLocaleTimeString()}
           </small>

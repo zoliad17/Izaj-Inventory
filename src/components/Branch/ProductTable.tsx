@@ -239,7 +239,7 @@ function ProductTable() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 dark:bg-neutral-900`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
       <Toaster position="top-center" />
       {/* Request Modal */}

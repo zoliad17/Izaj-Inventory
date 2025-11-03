@@ -372,8 +372,8 @@ function AdminBranchManagement() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 `}
     >
-      <div className="container mx-auto px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
-        <div className="max-w-7xl mx-auto">
+      <div className="px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
+        <div className="">
           {/* Header with Back Button and Title in One Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">

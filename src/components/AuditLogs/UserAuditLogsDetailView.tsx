@@ -317,9 +317,9 @@ export default function UserAuditLogsDetailView() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="container mx-auto px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
+      <div className="px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3">

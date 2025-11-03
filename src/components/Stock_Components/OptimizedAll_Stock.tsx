@@ -170,71 +170,78 @@ const Pagination = memo(
     currentPage,
     totalPages,
     onPageChange,
+    totalItems,
+
+    indexOfFirstItem,
+    indexOfLastItem,
   }: {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    totalItems: number;
+    itemsPerPage: number;
+    indexOfFirstItem: number;
+    indexOfLastItem: number;
   }) => {
-    if (totalPages <= 1) return null;
-
+    // Always show pagination controls, even with fewer than 10 items
     return (
-      <div className="flex items-center justify-between mt-4 px-4 py-3 bg-gray-50 dark:bg-neutral-700 border-t border-gray-200 dark:border-neutral-600 sm:px-6">
-        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Page {currentPage} of {totalPages}
-            </p>
-          </div>
-          {totalPages > 1 && (
-            <div>
-              <div
-                className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                aria-label="Pagination"
+      <div className="flex items-center justify-between mt-4 px-4 py-3 bg-gray-50 dark:bg-gray-900/70 border-t border-gray-200 dark:border-neutral-600 sm:px-6">
+        <div className="flex items-center">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Showing <span className="font-medium">{indexOfFirstItem + 1}</span>{" "}
+            to{" "}
+            <span className="font-medium">
+              {Math.min(indexOfLastItem, totalItems)}
+            </span>
+            {""}
+            of <span className="font-medium">{totalItems}</span> results
+          </p>
+        </div>
+        <div>
+          <div
+            className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            aria-label="Pagination"
+          >
+            <button
+              onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+              disabled={currentPage === 1}
+              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm font-medium ${
+                currentPage === 1
+                  ? "text-gray-300 dark:text-neutral-500 cursor-not-allowed"
+                  : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
+              }`}
+            >
+              <span className="sr-only">Previous</span>
+              &larr;
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => onPageChange(page)}
+                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                  currentPage === page
+                    ? "z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-300"
+                    : "bg-white dark:bg-neutral-700 border-gray-300 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
+                }`}
               >
-                <button
-                  onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm font-medium ${
-                    currentPage === 1
-                      ? "text-gray-300 dark:text-neutral-500 cursor-not-allowed"
-                      : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
-                  }`}
-                >
-                  <span className="sr-only">Previous</span>
-                  &larr;
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      onClick={() => onPageChange(page)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        currentPage === page
-                          ? "z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-300"
-                          : "bg-white dark:bg-neutral-700 border-gray-300 dark:border-neutral-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  )
-                )}
-                <button
-                  onClick={() =>
-                    onPageChange(Math.min(currentPage + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm font-medium ${
-                    currentPage === totalPages
-                      ? "text-gray-300 dark:text-neutral-500 cursor-not-allowed"
-                      : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
-                  }`}
-                >
-                  <span className="sr-only">Next</span>
-                  &rarr;
-                </button>
-              </div>
-            </div>
-          )}
+                {page}
+              </button>
+            ))}
+            <button
+              onClick={() =>
+                onPageChange(Math.min(currentPage + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-sm font-medium ${
+                currentPage === totalPages
+                  ? "text-gray-300 dark:text-neutral-500 cursor-not-allowed"
+                  : "text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-600"
+              }`}
+            >
+              <span className="sr-only">Next</span>
+              &rarr;
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1028,9 +1035,9 @@ function OptimizedAllStock() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white dark:bg-gray-900/70 shadow-mdrounded-lg shadow-md overflow-hidden">
         <Toaster
           position="top-center"
           toastOptions={{
@@ -1146,7 +1153,7 @@ function OptimizedAllStock() {
             </div>
             {/* Filter Controls */}
             <div
-              className="flex flex-wrap sm:flex-nowrap items-end gap-3 p-3 bg-white dark:bg-neutral-800 rounded-2xl
+              className="flex flex-wrap sm:flex-nowrap items-end gap-3 p-3 bg-white dark:bg-gray-900/70 rounded-2xl
              shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)]
              dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(60,60,60,0.4)]"
             >
@@ -1159,7 +1166,7 @@ function OptimizedAllStock() {
                   type="text"
                   placeholder="Search products..."
                   className="block w-full pl-10 pr-3 py-2 rounded-2xl text-sm
-                 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white
                  placeholder-gray-400 dark:placeholder-gray-400 border border-gray-300 dark:border-gray-600
                  shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
@@ -1175,7 +1182,7 @@ function OptimizedAllStock() {
                   Category
                 </label>
                 <select
-                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white
                  border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -1197,7 +1204,7 @@ function OptimizedAllStock() {
                   Status
                 </label>
                 <select
-                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white
                  border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -1219,7 +1226,7 @@ function OptimizedAllStock() {
                   Source
                 </label>
                 <select
-                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white
+                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white
                  border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
@@ -1244,9 +1251,9 @@ function OptimizedAllStock() {
           {/* Products table */}
           {!isLoading && (
             <div className="w-full overflow-hidden">
-              <table className="w-full bg-white dark:bg-neutral-900 shadow-lg rounded-xl overflow-hidden table-auto break-words">
+              <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto break-words">
                 <thead>
-                  <tr className="bg-gray-100 dark:bg-neutral-800 text-lg">
+                  <tr className="bg-gray-100 dark:bg-gray-900/70 text-lg">
                     <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100 w-12">
                       <input
                         type="checkbox"
@@ -1316,10 +1323,14 @@ function OptimizedAllStock() {
             currentPage={currentPage}
             totalPages={paginatedData.totalPages}
             onPageChange={setCurrentPage}
+            totalItems={filteredProducts.length}
+            itemsPerPage={itemsPerPage}
+            indexOfFirstItem={paginatedData.indexOfFirstItem}
+            indexOfLastItem={paginatedData.indexOfLastItem}
           />
         </div>
 
-        <div className="p-4 bg-gray-100 dark:bg-neutral-700">
+        <div className="p-4 bg-gray-100 dark:bg-gray-900/70">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4 text-sm">
               <small className="text-gray-500 dark:text-gray-400">
@@ -1377,7 +1388,7 @@ function OptimizedAllStock() {
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-6 max-w-md w-full">
+          <div className="bg-white dark:bg-gray-900/90 rounded-lg shadow-lg p-6 max-w-md w-full">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 Confirm Deletion

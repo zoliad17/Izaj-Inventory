@@ -164,7 +164,7 @@ function BranchLocation() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } dark:bg-gray-900/70 min-h-screen p-2 sm:p-4`}
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div className="flex items-center gap-3 mb-3 mt-2">
@@ -182,9 +182,15 @@ function BranchLocation() {
               size={32}
               className="text-blue-600 dark:text-blue-400 drop-shadow-md"
             />
-            <h5 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
-              Active Branch
-            </h5>
+            <div>
+              <h5 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
+                Active Branch
+              </h5>
+              <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
+                Select a branch to browse and request products from their
+                inventory
+              </p>
+            </div>
           </div>
         </div>
       </div>
