@@ -218,7 +218,7 @@ function Dashboard() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen `}
     >
       <div className="mt-2 mb-8">
         {/* Welcome Message */}

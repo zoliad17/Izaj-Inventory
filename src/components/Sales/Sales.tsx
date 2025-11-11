@@ -279,9 +279,9 @@ const Sales: React.FC = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="p-2 md:p-3">
+      <div className="p-2 md:p-3  dark:bg-gray-900/70">
         {/* Toaster for success and error */}
         <Toaster
           position="top-center"
@@ -293,7 +293,7 @@ const Sales: React.FC = () => {
             },
           }}
         />
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 m-3.5">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center dark:text-gray-200 cursor-pointer text-gray-800 hover:text-gray-900 transition-colors"
@@ -329,7 +329,7 @@ const Sales: React.FC = () => {
         </div>
 
         {/* Sales Statistic Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 m-2 mb-6">
           {/* Total Sales Card */}
           <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
             <div className="flex items-center gap-3">
@@ -433,9 +433,9 @@ const Sales: React.FC = () => {
         </div>
 
         {/* Middle Row - Charts */}
-        <div className="space-y-6">
+        <div className="space-y-6 m-2">
           {/* Line Chart - Sales Trend */}
-          <Card>
+          <Card className=" dark:bg-gray-900/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -537,7 +537,7 @@ const Sales: React.FC = () => {
           </Card>
 
           {/* Bar Chart - Product Category Sales */}
-          <Card>
+          <Card className=" dark:bg-gray-900/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
@@ -628,7 +628,7 @@ const Sales: React.FC = () => {
         </div>
 
         {/* Bottom Row - Products Table */}
-        <Card className="mt-6">
+        <Card className=" m-2 dark:bg-gray-900/70 mt-6 ">
           <div className="py-1 md:px-6">
             <div className="flex items-center gap-3 mb-4 md:mb-6">
               <Lightbulb
@@ -640,9 +640,9 @@ const Sales: React.FC = () => {
               </h5>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-900">
-                <thead className="bg-gray-50 dark:bg-neutral-900">
+            <div className="overflow-x-auto  dark:bg-gray-900/70">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-900  dark:bg-gray-900/70">
+                <thead className="bg-gray-50 dark:bg-gray-900/70">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Product ID
@@ -664,7 +664,7 @@ const Sales: React.FC = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white  dark:bg-gray-900/70 divide-y divide-gray-200 dark:divide-gray-700">
                   {products.map((product) => (
                     <tr
                       key={product.id}
@@ -709,7 +709,7 @@ const Sales: React.FC = () => {
             </div>
           </div>
 
-          <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-neutral-900 border-t border-gray-200 dark:border-gray-600 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-4 py-3 md:px-6 bg-gray-50 dark:bg-gray-900/70 border-t border-gray-200 dark:border-gray-600 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Clock size={16} className="text-gray-400 dark:text-gray-500" />
             <span>Last updated 3 mins ago</span>
           </div>

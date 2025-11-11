@@ -74,7 +74,7 @@ const EditProductModal = ({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-6 w-full max-w-2xl mx-4">
+      <div className="bg-white dark:bg-gray-900/90 rounded-lg shadow-lg p-6 w-full max-w-2xl mx-4">
         <div className="flex justify-between items-start mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Edit Product
@@ -88,7 +88,7 @@ const EditProductModal = ({
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Product Name
@@ -98,7 +98,7 @@ const EditProductModal = ({
                 name="name"
                 value={editedProduct.name}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white"
                 required
               />
             </div>
@@ -111,7 +111,7 @@ const EditProductModal = ({
                 name="category"
                 value={editedProduct.category}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white"
                 required
               >
                 <option value={0}>Select a category</option>
@@ -134,7 +134,7 @@ const EditProductModal = ({
                 onChange={handleInputChange}
                 min="0"
                 step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white"
                 required
               />
             </div>
@@ -149,7 +149,7 @@ const EditProductModal = ({
                 value={editedProduct.stock}
                 onChange={handleInputChange}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white"
                 required
               />
             </div>
@@ -162,7 +162,7 @@ const EditProductModal = ({
                 name="status"
                 value={editedProduct.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white"
                 required
               >
                 {statusOptions.map((status) => (

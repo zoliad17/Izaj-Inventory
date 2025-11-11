@@ -452,7 +452,7 @@ export default function UnifiedProductRequest() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      }  sm:p-4`}
+      }  sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg">
         {/* Header */}

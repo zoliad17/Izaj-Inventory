@@ -12,6 +12,8 @@ import {
   Eye,
   ArrowLeft,
   TruckIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -55,6 +57,10 @@ export default function Requested_Item() {
     null
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const requestsPerPage = 5;
 
   // Check authentication
   useEffect(() => {
@@ -160,9 +166,9 @@ export default function Requested_Item() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 dark:bg-neutral-900 min-h-screen`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
+      <div className="bg-white dark:bg-gray-900/70 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-neutral-700">
         {/* Toaster for success and error */}
         <Toaster
           position="top-center"
@@ -187,7 +193,7 @@ export default function Requested_Item() {
               </button>
 
               {/* Title */}
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-200 flex items-center gap-2">
                 <TruckIcon className="h-7 w-7 text-blue-600" />
                 Requested Items
               </h1>
@@ -217,7 +223,7 @@ export default function Requested_Item() {
               className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-900/30
                     shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)]
                     dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]
-                    text-gray-500"
+                    text-white-100"
             >
               <strong>📊 Request Status:</strong> Monitor your outgoing requests
               and see when they're approved, denied, or still pending review.
@@ -262,161 +268,262 @@ export default function Requested_Item() {
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              {requests.map((request) => (
-                <div
-                  key={request.request_id}
-                  className="rounded-2xl p-6 bg-white dark:bg-neutral-800
-                     shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.7)]
-                     dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
-                     hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
-                     dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
-                     transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                          Request #{request.request_id}
-                        </h3>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
-                            request.status
-                          )}`}
+            <>
+              <div className="space-y-6">
+                {/* Calculate pagination values */}
+                {(() => {
+                  const indexOfLastRequest = currentPage * requestsPerPage;
+                  const indexOfFirstRequest =
+                    indexOfLastRequest - requestsPerPage;
+                  const currentRequests = requests.slice(
+                    indexOfFirstRequest,
+                    indexOfLastRequest
+                  );
+                  const totalPages = Math.ceil(
+                    requests.length / requestsPerPage
+                  );
+
+                  return (
+                    <>
+                      {currentRequests.map((request) => (
+                        <div
+                          key={request.request_id}
+                          className="rounded-2xl p-6 bg-white dark:bg-gray-900/70
+                             shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.7)]
+                             dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+                             hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                             dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+                             transition-all duration-300"
                         >
-                          {getStatusIcon(request.status)}
-                          {request.status.toUpperCase()}
-                        </span>
-                      </div>
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                  Request #{request.request_id}
+                                </h3>
+                                <span
+                                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
+                                    request.status
+                                  )}`}
+                                >
+                                  {getStatusIcon(request.status)}
+                                  {request.status.toUpperCase()}
+                                </span>
+                              </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <User className="h-5 w-5" />
-                          <span>
-                            <strong>To:</strong> {request.recipient.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-5 w-5" />
-                          <span>
-                            <strong>Branch:</strong> {request.recipient_branch}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-5 w-5" />
-                          <span>
-                            <strong>Sent:</strong>{" "}
-                            {formatDate(request.created_at)}
-                          </span>
-                        </div>
-                      </div>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-5 w-5" />
+                                  <span>
+                                    <strong>To:</strong>{" "}
+                                    {request.recipient.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-5 w-5" />
+                                  <span>
+                                    <strong>Branch:</strong>{" "}
+                                    {request.recipient_branch}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-5 w-5" />
+                                  <span>
+                                    <strong>Sent:</strong>{" "}
+                                    {formatDate(request.created_at)}
+                                  </span>
+                                </div>
+                              </div>
 
-                      {request.reviewed_at && (
-                        <div className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                          <span>
-                            <strong>Reviewed:</strong>{" "}
-                            {formatDate(request.reviewed_at)}
-                          </span>
-                          {request.reviewer_name && (
-                            <span className="ml-4">
-                              <strong>By:</strong> {request.reviewer_name}
-                            </span>
+                              {request.reviewed_at && (
+                                <div className="mt-2 text-base text-gray-600 dark:text-gray-400">
+                                  <span>
+                                    <strong>Reviewed:</strong>{" "}
+                                    {formatDate(request.reviewed_at)}
+                                  </span>
+                                  {request.reviewer_name && (
+                                    <span className="ml-4">
+                                      <strong>By:</strong>{" "}
+                                      {request.reviewer_name}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Request Summary */}
+                          <div
+                            className="mb-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/70
+                                  shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]"
+                          >
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  Items:
+                                </span>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                  {request.items.length}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  Total Quantity:
+                                </span>
+                                <p className="text-gray-600 text base dark:text-gray-400">
+                                  {request.items.reduce(
+                                    (sum, item) => sum + item.quantity,
+                                    0
+                                  )}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  Total Value:
+                                </span>
+                                <p className="text-gray-600 dark:text-gray-400">
+                                  ₱{getTotalValue(request.items).toFixed(2)}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  Status:
+                                </span>
+                                <p
+                                  className={`font-medium ${
+                                    getStatusColor(request.status).split(" ")[0]
+                                  }`}
+                                >
+                                  {request.status.charAt(0).toUpperCase() +
+                                    request.status.slice(1)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Review Notes */}
+                          {request.notes && (
+                            <div
+                              className="mb-4 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30
+                                    shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
+                                    dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
+                                    border border-blue-200 dark:border-blue-800"
+                            >
+                              <div className="flex items-start gap-2">
+                                <MessageSquare className="h-5 w-5 text-blue-500 mt-0.5" />
+                                <div>
+                                  <p className="text-base font-medium text-blue-700 dark:text-blue-300">
+                                    Review Notes:
+                                  </p>
+                                  <p className="text-base text-blue-600 dark:text-blue-400">
+                                    {request.notes}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           )}
+
+                          {/* Action Button */}
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => handleViewDetails(request)}
+                              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-transparent text-base font-bold
+                                 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                                 dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                                 hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                                 dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                                 text-blue-600 dark:text-blue-400 transition-all duration-300"
+                            >
+                              <Eye className="h-5 w-5" />
+                              View Details
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      ))}
 
-                  {/* Request Summary */}
-                  <div
-                    className="mb-4 p-4 rounded-2xl bg-gray-50 dark:bg-neutral-700
-                          shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-                          dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]"
-                  >
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-base">
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Items:
-                        </span>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          {request.items.length}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Total Quantity:
-                        </span>
-                        <p className="text-gray-600 text base dark:text-gray-400">
-                          {request.items.reduce(
-                            (sum, item) => sum + item.quantity,
-                            0
-                          )}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Total Value:
-                        </span>
-                        <p className="text-gray-600 dark:text-gray-400">
-                          ₱{getTotalValue(request.items).toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="font-medium text-gray-700 dark:text-gray-300">
-                          Status:
-                        </span>
-                        <p
-                          className={`font-medium ${
-                            getStatusColor(request.status).split(" ")[0]
-                          }`}
-                        >
-                          {request.status.charAt(0).toUpperCase() +
-                            request.status.slice(1)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                      {/* Pagination Controls - Always visible */}
+                      <div className="flex items-center justify-between border-t border-gray-200 dark:border-neutral-700 pt-4">
+                        <div className="text-base text-gray-700 dark:text-gray-300">
+                          Showing {indexOfFirstRequest + 1} to{" "}
+                          {Math.min(indexOfLastRequest, requests.length)} of{" "}
+                          {requests.length} requests
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              setCurrentPage((prev) => Math.max(prev - 1, 1))
+                            }
+                            disabled={currentPage === 1}
+                            className={`flex items-center justify-center px-4 py-2 rounded-xl text-base font-medium ${
+                              currentPage === 1
+                                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                            }`}
+                          >
+                            <ChevronLeft className="h-5 w-5 mr-1" />
+                            Previous
+                          </button>
 
-                  {/* Review Notes */}
-                  {request.notes && (
-                    <div
-                      className="mb-4 p-3 rounded-2xl bg-blue-50 dark:bg-blue-900/30
-                            shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-                            dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
-                            border border-blue-200 dark:border-blue-800"
-                    >
-                      <div className="flex items-start gap-2">
-                        <MessageSquare className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <div>
-                          <p className="text-base font-medium text-blue-700 dark:text-blue-300">
-                            Review Notes:
-                          </p>
-                          <p className="text-base text-blue-600 dark:text-blue-400">
-                            {request.notes}
-                          </p>
+                          <div className="flex space-x-1">
+                            {Array.from(
+                              { length: Math.min(5, totalPages || 1) },
+                              (_, i) => {
+                                let pageNum;
+                                const displayTotalPages = totalPages || 1;
+                                if (displayTotalPages <= 5) {
+                                  pageNum = i + 1;
+                                } else if (currentPage <= 3) {
+                                  pageNum = i + 1;
+                                } else if (
+                                  currentPage >=
+                                  displayTotalPages - 2
+                                ) {
+                                  pageNum = displayTotalPages - 4 + i;
+                                } else {
+                                  pageNum = currentPage - 2 + i;
+                                }
+
+                                return (
+                                  <button
+                                    key={pageNum}
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    className={`px-3 py-2 rounded-lg text-base font-medium ${
+                                      currentPage === pageNum
+                                        ? "bg-blue-500 text-white"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                                    }`}
+                                  >
+                                    {pageNum}
+                                  </button>
+                                );
+                              }
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              setCurrentPage((prev) =>
+                                Math.min(prev + 1, totalPages || 1)
+                              )
+                            }
+                            disabled={currentPage === (totalPages || 1)}
+                            className={`flex items-center justify-center px-4 py-2 rounded-xl text-base font-medium ${
+                              currentPage === (totalPages || 1)
+                                ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                            }`}
+                          >
+                            Next
+                            <ChevronRight className="h-5 w-5 ml-1" />
+                          </button>
                         </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Action Button */}
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => handleViewDetails(request)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-transparent text-base font-bold
-                         shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
-                         dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
-                         hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
-                         dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
-                         text-blue-600 dark:text-blue-400 transition-all duration-300"
-                    >
-                      <Eye className="h-5 w-5" />
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -424,7 +531,7 @@ export default function Requested_Item() {
       {/* Details Modal */}
       {showDetailsModal && selectedRequest && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
-          <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-neutral-700">
+          <div className="bg-white dark:bg-gray-900/90 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-neutral-700">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 Request Details #{selectedRequest.request_id}
@@ -502,13 +609,13 @@ export default function Requested_Item() {
             </div>
 
             {/* Items Table */}
-            <div className="mb-6">
+            <div className="mb-6 ">
               <h4 className="font-semibold text-lg text-gray-900 dark:text-gray-100 mb-3">
                 Requested Items
               </h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-neutral-700 text-base">
-                  <thead className="bg-gray-50 dark:bg-neutral-800">
+                  <thead className="bg-gray-50 dark:bg-gray-900/70">
                     <tr>
                       <th className="px-4 py-2 text-left font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wide text-sm">
                         Product
@@ -527,7 +634,7 @@ export default function Requested_Item() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-neutral-700">
+                  <tbody className="bg-white dark:bg-gray-900/70 divide-y divide-gray-200 dark:divide-neutral-700">
                     {selectedRequest.items.map((item, index) => (
                       <tr key={index}>
                         <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
@@ -548,7 +655,7 @@ export default function Requested_Item() {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot className="bg-gray-50 dark:bg-neutral-800">
+                  <tfoot className="bg-gray-50 dark:bg-gray-900/70">
                     <tr>
                       <td
                         colSpan={4}

@@ -187,8 +187,11 @@ const UserAuditLogsPage = () => {
     return 0;
   });
 
-  // Pagination logic - now handled server-side
-  const currentItems = sortedLogs;
+  // Pagination logic - slice the sorted logs to show only items for current page
+  const currentItems = sortedLogs.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -349,9 +352,9 @@ const UserAuditLogsPage = () => {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4`}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen`}
     >
-      <div className="container mx-auto px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
+      <div className="px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
         {/* Header */}
         <div className="flex justify-between items-center ">
           <div className="flex flex-col">
