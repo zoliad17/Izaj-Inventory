@@ -225,52 +225,21 @@ const Sales: React.FC = () => {
   interface Product {
     id: string;
     name: string;
-    category: string;
+    // category: string;
+    quantity: string;
+    unit: string;
     price: string;
-    stock: number;
-    status: string;
+    // stock: number;
+    // status: string;
   }
 
   const [products, setProducts] = React.useState<Product[]>([
     {
       id: "001",
       name: "LED Bulb",
-      category: "Bulbs",
+      quantity: "100",
+      unit: "pcs",
       price: "₱5.99",
-      stock: 100,
-      status: "in-stock",
-    },
-    {
-      id: "002",
-      name: "Smart Light Strip",
-      category: "Smart Lighting",
-      price: "₱29.99",
-      stock: 50,
-      status: "in-stock",
-    },
-    {
-      id: "003",
-      name: "Chandelier",
-      category: "Decorative",
-      price: "₱199.99",
-      stock: 10,
-      status: "low-stock",
-    },
-    {
-      id: "004",
-      name: "Floodlight",
-      category: "Outdoor",
-      price: "₱49.99",
-      stock: 25,
-      status: "in-stock",
-    },
-    {
-      id: "005",
-      name: "Desk Lamp",
-      category: "Lamps",
-      price: "₱39.99",
-      stock: 0,
-      status: "out-of-stock",
     },
   ]);
   const { isCollapsed } = useSidebar();
@@ -645,23 +614,26 @@ const Sales: React.FC = () => {
                 <thead className="bg-gray-50 dark:bg-gray-900/70">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Product ID
+                      Item Code
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Name
+                      Item Description
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
-                      Category
+                      Quantity
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+                      Unit
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
+                    {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                       Stock
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody className="bg-white  dark:bg-gray-900/70 divide-y divide-gray-200 dark:divide-gray-700">
@@ -677,15 +649,18 @@ const Sales: React.FC = () => {
                         {product.name}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                        {product.category}
+                        {product.quantity}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                        {product.unit}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {product.price}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                      {/* <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                         {product.stock}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      </td> */}
+                      {/* <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span
                           className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             product.status === "in-stock"
@@ -701,7 +676,7 @@ const Sales: React.FC = () => {
                             ? "Low Stock"
                             : "Out of Stock"}
                         </span>
-                      </td>
+                      </td> */}
                     </tr>
                   ))}
                 </tbody>

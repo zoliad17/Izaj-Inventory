@@ -728,6 +728,33 @@ function Sidebar() {
             )}
           </button>
 
+          {/* Static notification button with indicator */}
+          <button
+            className={`group flex items-center justify-center font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out relative ${
+              isCollapsed ? "p-3" : "px-3 py-2.5"
+            }`}
+            title="Notifications"
+          >
+            {isCollapsed ? (
+              <>
+                <Activity className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                  5
+                </span>
+              </>
+            ) : (
+              <>
+                <Activity className="h-5 w-5 mr-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                  Updates
+                </span>
+                <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                  5
+                </span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleLogout}
             className={`group flex items-center justify-center font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
