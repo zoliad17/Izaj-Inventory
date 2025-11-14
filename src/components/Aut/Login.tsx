@@ -244,6 +244,19 @@ function Login() {
           </div>
         </div>
       </div>
+
+      {/* Static Footer */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 text-right m-3 text-white/70 text-sm z-20">
+        <p>
+          Version 0.1.0 |{" "}
+          <a
+            href="#"
+            className="text-amber-300 hover:text-amber-100 transition-colors"
+          >
+            Check for Updates
+          </a>
+        </p>
+      </div>
     </div>
   );
 }

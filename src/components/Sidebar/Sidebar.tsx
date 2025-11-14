@@ -729,7 +729,7 @@ function Sidebar() {
           </button>
 
           {/* Static notification button with indicator */}
-          <button
+          {/* <button
             className={`group flex items-center justify-center font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out relative ${
               isCollapsed ? "p-3" : "px-3 py-2.5"
             }`}
@@ -753,7 +753,7 @@ function Sidebar() {
                 </span>
               </>
             )}
-          </button>
+          </button> */}
 
           <button
             onClick={handleLogout}
