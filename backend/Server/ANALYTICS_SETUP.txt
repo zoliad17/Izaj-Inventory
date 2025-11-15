@@ -1,0 +1,8 @@
+// Initialize analytics routes in server.js
+// Add this near the top of server.js after other imports
+
+const analyticsRoutes = require('./routes/analytics');
+
+// Mount analytics routes
+// Add this after other route mounts in server.js
+// app.use('/api/analytics', analyticsRoutes);

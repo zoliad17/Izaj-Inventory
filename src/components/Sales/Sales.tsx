@@ -33,7 +33,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "eoqguide/src/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -41,7 +41,7 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-} from "@/components/ui/chart";
+} from "eoqguide/src/components/ui/chart";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -49,7 +49,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "eoqguide/src/components/ui/select";
 import * as XLSX from "xlsx";
 
 export const description = "A sales dashboard with statistics and charts";

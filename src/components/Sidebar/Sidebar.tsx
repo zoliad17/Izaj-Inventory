@@ -21,6 +21,7 @@ import {
   Coins,
   Rotate3D,
   Building2Icon,
+  BarChart3,
 } from "lucide-react";
 import { useAuth, useRole } from "../../contexts/AuthContext";
 
@@ -251,6 +252,12 @@ function Sidebar() {
       icon: Coins,
       label: "Sales",
       path: "/sales",
+      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+    },
+    {
+      icon: BarChart3,
+      label: "Analytics",
+      path: "/analytics",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
     {

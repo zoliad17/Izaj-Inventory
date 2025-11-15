@@ -597,3 +597,4 @@ ANALYZE public.pending_user;
 ANALYZE public.branch;
 ANALYZE public.category;
 ANALYZE public.role;
+
