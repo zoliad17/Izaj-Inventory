@@ -33,7 +33,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "eoqguide/src/components/ui/card";
+} from "../ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -41,7 +41,7 @@ import {
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
-} from "eoqguide/src/components/ui/chart";
+} from "../ui/chart";
 import { useNavigate } from "react-router-dom";
 import {
   Select,
@@ -49,7 +49,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "eoqguide/src/components/ui/select";
+} from "../ui/select";
 import * as XLSX from "xlsx";
 
 export const description = "A sales dashboard with statistics and charts";
@@ -168,7 +168,7 @@ const Sales: React.FC = () => {
           const status = normalizeStatus(
             row["Status"] ?? row["status"] ?? "in-stock"
           );
-          return { id, name, category, price, stock, status } as Product;
+          return { id, name, category, price, stock, status } as unknown as Product;
         })
         .filter((p) => p.id && p.name);
 

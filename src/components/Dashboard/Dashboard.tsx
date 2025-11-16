@@ -49,7 +49,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "eoqguide/src/components/ui/card";
+} from "../ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -57,14 +57,14 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "eoqguide/src/components/ui/chart";
+} from "../ui/chart";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "eoqguide/src/components/ui/select";
+} from "../ui/select";
 
 // Sample chart data - updated to focus on lighting products
 const chartData = [
