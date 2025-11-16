@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "../../contexts/AuthContext";
+import { getAppVersion } from "../../utils/versionUtils";
 import light1 from "@/assets/image/light1.jpg";
 import logo from "@/assets/image/logo.jpg";
 
@@ -12,6 +13,7 @@ function Login() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [sendingReset, setSendingReset] = useState(false);
+  const [appVersion, setAppVersion] = useState("0.0.0");
   const navigate = useNavigate();
   const { login, isAuthenticated, isLoading } = useAuth();
 
@@ -21,6 +23,15 @@ function Login() {
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Load app version
+  useEffect(() => {
+    const loadVersion = async () => {
+      const version = await getAppVersion();
+      setAppVersion(version);
+    };
+    loadVersion();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,7 +259,7 @@ function Login() {
       {/* Static Footer */}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-right m-3 text-white/70 text-sm z-20">
         <p>
-          Version 0.1.0 |{" "}
+          Version {appVersion} |{" "}
           <a
             href="#"
             className="text-amber-300 hover:text-amber-100 transition-colors"

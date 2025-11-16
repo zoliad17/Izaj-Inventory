@@ -22,9 +22,9 @@
     // shadcn
     "baseUrl": ".",
     "paths": {
-      "@/*": ["eoqguide/src/*"]
+      "@/*": ["src/*"]
     }
   },
-  "include": ["eoqguide/src", "backend", "backend", "backend"],
+  "include": ["src", "backend", "backend", "backend"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
