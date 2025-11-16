@@ -1,31 +1,35 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Izaj Inventory System",
-  "version": "0.3.0",
-  "identifier": "com.izaj.app",
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "maximized": true,
+        "title": "IZAJ Lighting Centre"
+      }
+    ]
+  },
   "build": {
     "beforeBuildCommand": "bun run build",
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:5173",
     "frontendDist": "../dist"
   },
-  "app": {
-    "windows": [
-      {
-        "title": "IZAJ Lighting Centre",
-        "maximized": true
-      }
-    ],
-    "security": {
-      "csp": null
-    }
-  },
   "bundle": {
     "active": true,
-    "targets": ["nsis"],
-    "icon": ["icons/icon.ico"],
-    "publisher": "Izaj Lighting Centre",
+    "category": "Business",
     "copyright": "© 2025 Izaj",
-    "category": "Business"
-  }
+    "icon": [
+      "icons/icon.ico"
+    ],
+    "publisher": "Izaj Lighting Centre",
+    "targets": [
+      "nsis"
+    ]
+  },
+  "identifier": "com.izaj.app",
+  "productName": "Izaj Inventory System",
+  "version": "0.4.0"
 }
