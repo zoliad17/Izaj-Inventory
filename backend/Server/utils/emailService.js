@@ -63,6 +63,22 @@ const createEmailTemplate = (
   `;
 };
 
+// --- Frontend link builder (supports custom schemes) ---
+const FRONTEND_BASE = process.env.FRONTEND_URL || process.env.FRONTEND_SCHEME || "http://localhost:3000";
+const buildFrontendLink = (path) => {
+  const base = String(FRONTEND_BASE || "");
+  if (/^https?:\/\//i.test(base)) {
+    return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  }
+  if (base.endsWith("//")) {
+    return `${base}${path.replace(/^\//, "")}`;
+  }
+  if (base.endsWith(":")) {
+    return `${base}//${path.replace(/^\//, "")}`;
+  }
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
 // --- Core Email Sending Function ---
 const sendEmail = async (userEmail, subject, html) => {
   const transporter = await createTransporter();
@@ -121,7 +137,7 @@ const sendRequestNotificationEmail = async (userEmail, userName, requesterName, 
       userName,
       `${requesterName} has sent you a new product request (Request ID: ${requestId}). Please review and respond to this request in your inventory system.`,
       "View Request",
-      `${process.env.FRONTEND_URL || "http://localhost:3000"}/pending_request`,
+      buildFrontendLink("/pending_request"),
       "#28a745",
       "Please respond to this request as soon as possible to maintain efficient inventory management."
     );
@@ -144,7 +160,7 @@ const sendRequestStatusEmail = async (userEmail, userName, status, requestId, re
       userName,
       `Your product request (Request ID: ${requestId}) has been ${statusText} by ${reviewerName}.${notes ? ` Notes: ${notes}` : ""}`,
       "View Request",
-      `${process.env.FRONTEND_URL || "http://localhost:3000"}/requested_item`,
+      buildFrontendLink("/requested_item"),
       buttonColor,
       isApproved
         ? "The requested products will be processed for transfer."

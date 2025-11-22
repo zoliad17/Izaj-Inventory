@@ -5,6 +5,7 @@ import pandas as pd
 from io import BytesIO
 
 from .eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
+from . import db as db_module
 
 logger = logging.getLogger(__name__)
 
@@ -257,19 +258,19 @@ def import_sales_data():
                 'error': 'Unsupported file format. Use CSV or Excel'
             }), 400
         
-        # Expected columns
-        required_columns = ['quantity', 'date']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        
-        if missing_columns:
-            return jsonify({
-                'success': False,
-                'error': f'Missing columns: {", ".join(missing_columns)}'
-            }), 400
-        
-        # Convert to numeric
+        # Expected columns - allow common date column names from different POS exports
+        if 'quantity' not in df.columns:
+            return jsonify({'success': False, 'error': 'Missing column: quantity'}), 400
+
+        # find a date column among common alternatives
+        date_candidates = ['date', 'transaction_date', 'sale_date', 'timestamp', 'transactiondatetime', 'created_at']
+        date_col = next((c for c in date_candidates if c in df.columns), None)
+        if not date_col:
+            return jsonify({'success': False, 'error': f'Missing date column. Provide one of: {", ".join(date_candidates)}'}), 400
+
+        # Convert to numeric and normalize date into `date` column used below
         df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        df['date'] = pd.to_datetime(df[date_col], errors='coerce')
         
         # Remove invalid rows
         df = df.dropna(subset=['quantity', 'date'])
@@ -286,39 +287,309 @@ def import_sales_data():
         days_of_data = (df['date'].max() - df['date'].min()).days + 1
         annual_demand = (total_quantity / days_of_data) * 365 if days_of_data > 0 else 0
         
-        # Extract product-level analytics if product column exists
+        # Extract product-level analytics if product identifier column exists
         top_products = []
         restock_recommendations = []
-        
-        if 'product' in df.columns or 'product_name' in df.columns:
-            product_col = 'product' if 'product' in df.columns else 'product_name'
+
+        if 'product' in df.columns or 'product_name' in df.columns or 'product_id' in df.columns:
+            product_col = (
+                'product' if 'product' in df.columns else (
+                    'product_name' if 'product_name' in df.columns else 'product_id'
+                )
+            )
             product_analytics = df.groupby(product_col)['quantity'].agg(['sum', 'mean', 'count']).reset_index()
-            product_analytics.columns = ['product_name', 'total_sold', 'avg_daily', 'transaction_count']
+            # normalize columns; if grouped by product_id we will resolve names below
+            product_analytics.columns = [product_col, 'total_sold', 'avg_daily', 'transaction_count']
             product_analytics = product_analytics.sort_values('total_sold', ascending=False)
             
+            # If grouped by numeric product_id, attempt to resolve product names
+            if product_col == 'product_id':
+                try:
+                    ids = [int(x) for x in product_analytics['product_id'].unique() if pd.notna(x)]
+                    id_to_name = db_module.get_product_names(ids)
+                except Exception:
+                    id_to_name = {}
+
+                # map product_id to product_name column for display
+                product_analytics['product_name'] = product_analytics['product_id'].apply(lambda x: id_to_name.get(int(x)) if pd.notna(x) and int(str(x)) in id_to_name else (str(int(x)) if pd.notna(x) else None))
+            else:
+                product_analytics['product_name'] = product_analytics[product_col]
+
             # Top 5 products
             top_products = product_analytics.head(5).to_dict('records')
             for item in top_products:
-                item['total_sold'] = int(item['total_sold'])
-                item['avg_daily'] = round(float(item['avg_daily']), 2)
-                item['transaction_count'] = int(item['transaction_count'])
+                # ensure numeric conversions
+                item['total_sold'] = int(item.get('total_sold') or 0)
+                item['avg_daily'] = round(float(item.get('avg_daily') or 0), 2)
+                item['transaction_count'] = int(item.get('transaction_count') or 0)
+                # ensure product_name exists
+                if not item.get('product_name'):
+                    # fallback to product_id string if present
+                    item['product_name'] = str(item.get(product_col))
             
             # Low stock products (bottom 5 by sales = slow movers needing attention)
             slow_movers = product_analytics.tail(5).to_dict('records')
             restock_recommendations = [
                 {
-                    'product_name': item['product_name'],
-                    'last_sold_qty': int(item['total_sold']),
-                    'daily_rate': round(float(item['avg_daily']), 2),
-                    'recommendation': f"Monitor closely - selling {round(float(item['avg_daily']), 1)} units/day",
-                    'priority': 'medium' if item['avg_daily'] > 0 else 'low'
+                    'product_name': (item.get('product_name') or str(item.get(product_col))),
+                    'last_sold_qty': int(item.get('total_sold') or 0),
+                    'daily_rate': round(float(item.get('avg_daily') or 0), 2),
+                    'recommendation': f"Monitor closely - selling {round(float(item.get('avg_daily') or 0), 1)} units/day",
+                    'priority': 'medium' if (item.get('avg_daily') or 0) > 0 else 'low'
                 }
                 for item in slow_movers
             ]
         
         logger.info(f'Sales data imported: {len(df)} records, annual demand: {annual_demand}')
-        
-        return jsonify({
+
+        # Persist raw sales rows into Postgres if DB configured
+        inserted_count = 0
+        db_warning = None
+        try:
+            # Read JSON payload safely (may be multipart/form-data for file uploads)
+            json_payload = request.get_json(silent=True)
+            # Determine branch_id provided in form/json or default to 1
+            branch_id = None
+            if request.form.get('branch_id'):
+                try:
+                    branch_id = int(request.form.get('branch_id'))
+                except Exception:
+                    branch_id = None
+            if not branch_id and json_payload and json_payload.get('branch_id'):
+                try:
+                    branch_id = int(json_payload.get('branch_id'))
+                except Exception:
+                    branch_id = None
+            if not branch_id:
+                branch_id = 1
+
+            rows = []
+            now_iso = datetime.utcnow().isoformat()
+            for _, r in df.iterrows():
+                # Try to map possible product identifier columns
+                product_id = None
+                if 'product_id' in df.columns:
+                    try:
+                        product_id = int(r.get('product_id')) if not pd.isna(r.get('product_id')) else None
+                    except Exception:
+                        product_id = None
+
+                quantity = float(r['quantity'])
+                transaction_date = r['date'].to_pydatetime() if hasattr(r['date'], 'to_pydatetime') else r['date']
+                unit_price = None
+                total_amount = None
+                payment_method = None
+
+                if 'unit_price' in df.columns:
+                    unit_price = r.get('unit_price')
+                if 'price' in df.columns and unit_price is None:
+                    unit_price = r.get('price')
+                if 'total_amount' in df.columns:
+                    total_amount = r.get('total_amount')
+                if 'amount' in df.columns and total_amount is None:
+                    total_amount = r.get('amount')
+                if 'payment_method' in df.columns:
+                    payment_method = r.get('payment_method')
+
+                created_at = now_iso
+
+                rows.append((product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at))
+
+            try:
+                inserted_count = db_module.insert_sales_rows(rows)
+            except Exception as e:
+                db_warning = str(e)
+
+            # After inserting raw sales, aggregate and persist to demand history, forecast, and inventory analytics
+            try:
+                # Only proceed if product_id column exists and there are numeric product ids
+                if 'product_id' in df.columns:
+                    pid_df = df.dropna(subset=['product_id']).copy()
+                    # coerce product_id to int where possible
+                    pid_df['product_id'] = pid_df['product_id'].apply(lambda x: int(x) if (pd.notna(x) and str(x).strip() != '') else None)
+                    pid_df = pid_df.dropna(subset=['product_id'])
+
+                    if not pid_df.empty:
+                        # period_date as date (YYYY-MM-DD)
+                        pid_df['period_date'] = pid_df['date'].dt.date
+                        # ensure numeric columns
+                        if 'total_amount' not in pid_df.columns:
+                            pid_df['total_amount'] = None
+                        if 'unit_price' not in pid_df.columns:
+                            pid_df['unit_price'] = None
+
+                        grouped = pid_df.groupby(['product_id', 'period_date']).agg({
+                            'quantity': 'sum',
+                            'total_amount': 'sum',
+                            'unit_price': 'mean'
+                        }).reset_index()
+
+                        demand_entries = []
+                        forecast_entries = []
+                        inventory_entries = []
+                        from datetime import date
+                        # forecast month: first day of next month
+                        today = datetime.utcnow().date()
+                        if today.month == 12:
+                            fm = date(today.year + 1, 1, 1)
+                        else:
+                            fm = date(today.year, today.month + 1, 1)
+
+                        for _, g in grouped.iterrows():
+                            try:
+                                pid = int(g['product_id'])
+                                period = g['period_date']
+                                qty = int(float(g['quantity'] or 0))
+                                revenue = float(g['total_amount'] or 0.0) if g['total_amount'] is not None else 0.0
+                                avg_price = float(g['unit_price'] or 0.0) if g['unit_price'] is not None else 0.0
+
+                                demand_entries.append({
+                                    'product_id': pid,
+                                    'branch_id': int(branch_id),
+                                    'period_date': period.isoformat() if hasattr(period, 'isoformat') else period,
+                                    'quantity_sold': qty,
+                                    'revenue': revenue,
+                                    'avg_price': avg_price,
+                                    'source': 'bitpos_import'
+                                })
+
+                                # simple projection: monthly forecast based on average daily * 30
+                                avg_daily = (qty / days_of_data) if days_of_data > 0 else 0
+                                forecast_qty = float(avg_daily * 30)
+                                forecast_entries.append({
+                                    'product_id': pid,
+                                    'branch_id': int(branch_id),
+                                    'forecast_month': fm.isoformat(),
+                                    'forecasted_quantity': forecast_qty,
+                                    'confidence_interval_lower': max(0.0, forecast_qty * 0.8),
+                                    'confidence_interval_upper': forecast_qty * 1.2,
+                                    'forecast_method': 'simple_projection'
+                                })
+
+                                # inventory analytics minimal info
+                                # Calculate inventory analytics fields from aggregated sales (g)
+                                total_sold_qty = float(qty)  # qty already extracted from g['quantity']
+                                avg_daily = (qty / days_of_data) if days_of_data > 0 else 0
+                                avg_unit_price = avg_price  # avg_price already extracted from g['unit_price']
+                                
+                                # Estimate current_stock as average inventory during the period
+                                current_stock_est = int(total_sold_qty / 3) if total_sold_qty > 0 else 0
+                                
+                                # stock_adequacy_days: how many days of stock we have (assume we sold in this period)
+                                stock_adequacy = int(current_stock_est / max(avg_daily, 0.001)) if current_stock_est > 0 else 0
+                                
+                                # turnover_ratio: times inventory turned over; assume we have ~30 days stock
+                                turnover = (total_sold_qty / max(current_stock_est, 1)) if current_stock_est > 0 else 0
+                                
+                                # carrying_cost: estimated holding cost (assume 0.25 per unit per year)
+                                carrying = current_stock_est * avg_unit_price * 0.25 / 365 if current_stock_est > 0 else 0
+                                
+                                # stockout_risk_percentage: inverse of stock adequacy; if we have 30 days stock, risk ~3%
+                                stockout_risk = (1.0 / max(stock_adequacy, 1)) * 100 if stock_adequacy > 0 else 5.0
+                                
+                                inventory_entries.append({
+                                    'product_id': pid,
+                                    'branch_id': int(branch_id),
+                                    'analysis_date': datetime.utcnow().date().isoformat(),
+                                    'current_stock': current_stock_est,
+                                    'avg_daily_usage': round(avg_daily, 2),
+                                    'stock_adequacy_days': stock_adequacy,
+                                    'turnover_ratio': round(turnover, 2),
+                                    'carrying_cost': round(carrying, 2),
+                                    'stockout_risk_percentage': round(stockout_risk, 2),
+                                    'recommendation': f'Daily usage: {avg_daily:.2f} units, Stock covers ~{stock_adequacy} days'
+                                })
+                            except Exception:
+                                logger.exception('Failed to prepare demand/forecast/inventory entry for group %s', g)
+
+                        try:
+                            if demand_entries:
+                                inserted_demand = db_module.insert_product_demand_history(demand_entries)
+                                logger.info('Inserted %s product_demand_history rows', inserted_demand)
+                        except Exception:
+                            logger.exception('Failed to persist product demand history')
+
+                        try:
+                            if forecast_entries:
+                                inserted_forecasts = db_module.insert_sales_forecasts(forecast_entries)
+                                logger.info('Inserted %s sales_forecast rows', inserted_forecasts)
+                        except Exception:
+                            logger.exception('Failed to persist sales forecasts')
+
+                        try:
+                            if inventory_entries:
+                                inserted_inv = db_module.insert_inventory_analytics(inventory_entries)
+                                logger.info('Inserted %s inventory_analytics rows', inserted_inv)
+                        except Exception:
+                            logger.exception('Failed to persist inventory analytics')
+            except Exception:
+                logger.exception('Failed to persist aggregated analytics after import')
+
+            # For each product in file, run EOQ calculation and persist
+            try:
+                if 'product' in df.columns or 'product_name' in df.columns or 'product_id' in df.columns:
+                    # group by product and compute annual demand
+                    prod_col = 'product' if 'product' in df.columns else ('product_name' if 'product_name' in df.columns else 'product_id')
+                    grouped = df.groupby(prod_col)['quantity'].agg(['sum']).reset_index()
+                    for _, prod in grouped.iterrows():
+                        try:
+                            product_identifier = prod[prod_col]
+                            product_annual_demand = float((prod['sum'] / days_of_data) * 365) if days_of_data > 0 else 0
+                            # prepare EOQ input using defaults or provided overrides
+                            holding_cost = float(request.form.get('holding_cost') or (json_payload.get('holding_cost') if json_payload else None) or 50)
+                            ordering_cost = float(request.form.get('ordering_cost') or (json_payload.get('ordering_cost') if json_payload else None) or 100)
+                            unit_cost = float(request.form.get('unit_cost') or (json_payload.get('unit_cost') if json_payload else None) or 25)
+                            lead_time_days = int(request.form.get('lead_time_days') or (json_payload.get('lead_time_days') if json_payload else None) or 7)
+                            confidence_level = float(request.form.get('confidence_level') or (json_payload.get('confidence_level') if json_payload else None) or 0.95)
+
+                            eoq_input = EOQInput(
+                                annual_demand=product_annual_demand,
+                                holding_cost=holding_cost,
+                                ordering_cost=ordering_cost,
+                                unit_cost=unit_cost,
+                                lead_time_days=lead_time_days,
+                                confidence_level=confidence_level
+                            )
+                            result_obj = EOQCalculator.calculate_eoq(eoq_input)
+
+                            # convert EOQResult dataclass to dict
+                            result_dict = {
+                                'eoq_quantity': result_obj.eoq_quantity,
+                                'reorder_point': result_obj.reorder_point,
+                                'safety_stock': result_obj.safety_stock,
+                                'annual_holding_cost': result_obj.annual_holding_cost,
+                                'annual_ordering_cost': result_obj.annual_ordering_cost,
+                                'total_annual_cost': result_obj.total_annual_cost,
+                                'max_stock_level': result_obj.max_stock_level,
+                                'min_stock_level': result_obj.min_stock_level,
+                                'average_inventory': result_obj.average_inventory
+                            }
+
+                            # Persist EOQ calculation if product_id is numeric
+                            try:
+                                pid = None
+                                if prod_col == 'product_id':
+                                    try:
+                                        pid = int(product_identifier)
+                                    except Exception:
+                                        pid = None
+                                # if product column is string name, we won't have an id to persist but still store in-memory db
+                                if pid:
+                                    db_module.insert_eoq_calculation(pid, branch_id, result_dict)
+                                else:
+                                    # fall back to storing in mock DB for non-numeric product identifiers
+                                    db.store_eoq(product_identifier, branch_id, result_obj)
+                            except Exception:
+                                logger.exception('Failed to persist EOQ for product %s', product_identifier)
+                        except Exception:
+                            logger.exception('EOQ calc failed for a product group')
+            except Exception:
+                logger.exception('EOQ persistence step failed')
+
+        except Exception:
+            logger.exception('Failed while attempting to persist sales to DB')
+
+        response = {
             'success': True,
             'message': f'Imported {len(df)} sales records',
             'metrics': {
@@ -333,7 +604,14 @@ def import_sales_data():
             },
             'top_products': top_products,
             'restock_recommendations': restock_recommendations
-        }), 200
+        }
+
+        if inserted_count:
+            response['db_inserted'] = int(inserted_count)
+        if db_warning:
+            response['db_warning'] = db_warning
+
+        return jsonify(response), 200
     
     except Exception as e:
         logger.error(f'Error importing sales data: {str(e)}')
@@ -354,6 +632,59 @@ def get_eoq_recommendations():
     except Exception as e:
         logger.error(f'Error retrieving recommendations: {str(e)}')
         return jsonify({'success': False, 'error': 'Failed to retrieve recommendations'}), 500
+
+
+
+@analytics_bp.route('/eoq-calculations', methods=['GET'])
+def list_eoq_calculations():
+    """Return recent EOQ calculations from persistent store."""
+    try:
+        limit = int(request.args.get('limit', 100))
+        results = db_module.fetch_eoq_calculations(limit=limit)
+        return jsonify({'success': True, 'data': results}), 200
+    except Exception as e:
+        logger.exception('Error fetching eoq calculations: %s', str(e))
+        return jsonify({'success': False, 'error': 'Failed to fetch EOQ calculations'}), 500
+
+
+@analytics_bp.route('/inventory-analytics', methods=['GET'])
+def list_inventory_analytics():
+    """Return recent inventory analytics rows for dashboard display."""
+    try:
+        days = int(request.args.get('days', 30))
+        limit = int(request.args.get('limit', 100))
+        results = db_module.fetch_inventory_analytics(days=days, limit=limit)
+        # attach a timeframe label
+        timeframe = 'Annual' if days >= 365 else 'Monthly'
+        return jsonify({'success': True, 'timeframe': timeframe, 'data': results}), 200
+    except Exception as e:
+        logger.exception('Error fetching inventory analytics: %s', str(e))
+        return jsonify({'success': False, 'error': 'Failed to fetch inventory analytics'}), 500
+
+
+@analytics_bp.route('/top-products', methods=['GET'])
+def get_top_products():
+    """Return top products aggregated over the last `days` days."""
+    try:
+        days = int(request.args.get('days', 30))
+        limit = int(request.args.get('limit', 10))
+        results = db_module.fetch_top_products(days=days, limit=limit)
+        return jsonify({'success': True, 'data': results}), 200
+    except Exception as e:
+        logger.exception('Error fetching top products: %s', str(e))
+        return jsonify({'success': False, 'error': 'Failed to fetch top products'}), 500
+
+
+@analytics_bp.route('/sales-summary', methods=['GET'])
+def get_sales_summary():
+    """Return aggregated sales summary for the last `days` days."""
+    try:
+        days = int(request.args.get('days', 30))
+        summary = db_module.fetch_sales_summary(days=days)
+        return jsonify({'success': True, 'data': summary}), 200
+    except Exception as e:
+        logger.exception('Error fetching sales summary: %s', str(e))
+        return jsonify({'success': False, 'error': 'Failed to fetch sales summary'}), 500
 
 
 @analytics_bp.route('/calculate-holding-cost', methods=['POST'])

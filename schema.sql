@@ -598,3 +598,252 @@ ANALYZE public.branch;
 ANALYZE public.category;
 ANALYZE public.role;
 
+-- =============================================
+-- SALES TABLE FOR BITPOS IMPORTS
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS public.sales (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  sale_id character varying UNIQUE,
+  branch_id integer NOT NULL,
+  product_id integer NOT NULL,
+  quantity_sold bigint NOT NULL,
+  unit_price real NOT NULL,
+  total_amount real NOT NULL,
+  payment_method character varying,
+  transaction_date date NOT NULL,
+  transaction_time time,
+  cashier_id character varying,
+  customer_name character varying,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT sales_pkey PRIMARY KEY (id),
+  CONSTRAINT sales_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE,
+  CONSTRAINT sales_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE CASCADE,
+  CONSTRAINT sales_quantity_check CHECK (quantity_sold > 0),
+  CONSTRAINT sales_price_check CHECK (unit_price >= 0),
+  CONSTRAINT sales_amount_check CHECK (total_amount >= 0)
+);
+
+-- =============================================
+-- EOQ AND PREDICTIVE ANALYTICS TABLES
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS public.eoq_calculations (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  product_id integer NOT NULL,
+  branch_id integer NOT NULL,
+  annual_demand real NOT NULL,
+  holding_cost real NOT NULL,
+  ordering_cost real NOT NULL,
+  unit_cost real NOT NULL,
+  eoq_quantity real NOT NULL,
+  reorder_point real NOT NULL,
+  safety_stock real NOT NULL,
+  lead_time_days integer DEFAULT 7,
+  confidence_level real DEFAULT 0.95,
+  calculated_at timestamp with time zone DEFAULT now(),
+  valid_until timestamp with time zone,
+  CONSTRAINT eoq_calculations_pkey PRIMARY KEY (id),
+  CONSTRAINT eoq_calculations_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE CASCADE,
+  CONSTRAINT eoq_calculations_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.sales_forecast (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  product_id integer NOT NULL,
+  branch_id integer NOT NULL,
+  forecast_month date NOT NULL,
+  forecasted_quantity real NOT NULL,
+  confidence_interval_lower real,
+  confidence_interval_upper real,
+  forecast_method character varying,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT sales_forecast_pkey PRIMARY KEY (id),
+  CONSTRAINT sales_forecast_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE CASCADE,
+  CONSTRAINT sales_forecast_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.inventory_analytics (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  product_id integer NOT NULL,
+  branch_id integer NOT NULL,
+  analysis_date date NOT NULL,
+  current_stock bigint,
+  avg_daily_usage real,
+  stock_adequacy_days real,
+  turnover_ratio real,
+  carrying_cost real,
+  stockout_risk_percentage real,
+  recommendation text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT inventory_analytics_pkey PRIMARY KEY (id),
+  CONSTRAINT inventory_analytics_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE CASCADE,
+  CONSTRAINT inventory_analytics_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS public.product_demand_history (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  product_id integer NOT NULL,
+  branch_id integer NOT NULL,
+  period_date date NOT NULL,
+  quantity_sold bigint NOT NULL,
+  revenue real,
+  avg_price real,
+  source character varying DEFAULT 'bitpos_import',
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT product_demand_history_pkey PRIMARY KEY (id),
+  CONSTRAINT product_demand_history_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE CASCADE,
+  CONSTRAINT product_demand_history_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE,
+  CONSTRAINT product_demand_history_composite_unique UNIQUE (product_id, branch_id, period_date)
+);
+
+-- =============================================
+-- SALES TABLE INDEXES
+-- =============================================
+
+CREATE INDEX IF NOT EXISTS idx_sales_branch_id ON public.sales(branch_id);
+CREATE INDEX IF NOT EXISTS idx_sales_product_id ON public.sales(product_id);
+CREATE INDEX IF NOT EXISTS idx_sales_transaction_date ON public.sales(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_sales_created_at ON public.sales(created_at);
+CREATE INDEX IF NOT EXISTS idx_sales_payment_method ON public.sales(payment_method);
+CREATE INDEX IF NOT EXISTS idx_sales_composite_date_branch ON public.sales(transaction_date, branch_id);
+CREATE INDEX IF NOT EXISTS idx_sales_composite_product_date ON public.sales(product_id, transaction_date);
+
+-- =============================================
+-- EOQ INDEXES
+-- =============================================
+
+CREATE INDEX IF NOT EXISTS idx_eoq_calculations_product_id ON public.eoq_calculations(product_id);
+CREATE INDEX IF NOT EXISTS idx_eoq_calculations_branch_id ON public.eoq_calculations(branch_id);
+CREATE INDEX IF NOT EXISTS idx_eoq_calculations_valid_until ON public.eoq_calculations(valid_until);
+
+CREATE INDEX IF NOT EXISTS idx_sales_forecast_product_id ON public.sales_forecast(product_id);
+CREATE INDEX IF NOT EXISTS idx_sales_forecast_branch_id ON public.sales_forecast(branch_id);
+CREATE INDEX IF NOT EXISTS idx_sales_forecast_month ON public.sales_forecast(forecast_month);
+
+CREATE INDEX IF NOT EXISTS idx_inventory_analytics_product_id ON public.inventory_analytics(product_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_analytics_branch_id ON public.inventory_analytics(branch_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_analytics_date ON public.inventory_analytics(analysis_date);
+
+CREATE INDEX IF NOT EXISTS idx_product_demand_history_product_id ON public.product_demand_history(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_demand_history_branch_id ON public.product_demand_history(branch_id);
+CREATE INDEX IF NOT EXISTS idx_product_demand_history_period_date ON public.product_demand_history(period_date);
+CREATE INDEX IF NOT EXISTS idx_product_demand_history_composite ON public.product_demand_history(product_id, branch_id, period_date);
+
+-- =============================================
+-- ANALYTICS VIEWS
+-- =============================================
+
+CREATE OR REPLACE VIEW public.v_sales_summary AS
+SELECT 
+    s.product_id,
+    cp.product_name,
+    s.branch_id,
+    b.location as branch_location,
+    DATE_TRUNC('month', s.transaction_date)::date as sales_month,
+    SUM(s.quantity_sold) as monthly_quantity,
+    SUM(s.total_amount) as monthly_revenue,
+    AVG(s.unit_price) as avg_unit_price,
+    COUNT(DISTINCT s.sale_id) as transaction_count,
+    COUNT(DISTINCT s.transaction_date) as days_with_sales,
+    ROUND(SUM(s.quantity_sold)::numeric / 
+        NULLIF(COUNT(DISTINCT s.transaction_date), 0), 2) as daily_average_quantity
+FROM public.sales s
+LEFT JOIN public.centralized_product cp ON s.product_id = cp.id
+LEFT JOIN public.branch b ON s.branch_id = b.id
+WHERE s.transaction_date >= NOW() - INTERVAL '12 months'
+GROUP BY s.product_id, cp.product_name, s.branch_id, b.location, DATE_TRUNC('month', s.transaction_date)
+ORDER BY s.branch_id, sales_month DESC;
+
+CREATE OR REPLACE VIEW public.v_eoq_recommendations AS
+SELECT 
+    e.id,
+    e.product_id,
+    cp.product_name,
+    e.branch_id,
+    b.location as branch_location,
+    e.eoq_quantity as recommended_order_qty,
+    e.reorder_point,
+    e.safety_stock,
+    e.annual_demand,
+    e.holding_cost,
+    e.ordering_cost,
+    e.unit_cost,
+    (e.eoq_quantity * e.unit_cost) as estimated_order_value,
+    e.lead_time_days,
+    e.confidence_level,
+    CASE 
+        WHEN e.valid_until < NOW() THEN 'Expired'
+        WHEN e.valid_until < NOW() + INTERVAL '7 days' THEN 'Expiring Soon'
+        ELSE 'Valid'
+    END as validity_status,
+    e.calculated_at,
+    e.valid_until
+FROM public.eoq_calculations e
+LEFT JOIN public.centralized_product cp ON e.product_id = cp.id
+LEFT JOIN public.branch b ON e.branch_id = b.id
+ORDER BY e.branch_id, e.product_id;
+
+CREATE OR REPLACE VIEW public.v_demand_analysis AS
+SELECT 
+    pdh.product_id,
+    cp.product_name,
+    pdh.branch_id,
+    b.location,
+    DATE_TRUNC('month', pdh.period_date)::date as month,
+    SUM(pdh.quantity_sold) as monthly_demand,
+    AVG(pdh.avg_price) as avg_price,
+    COUNT(DISTINCT pdh.period_date) as days_in_month,
+    ROUND(SUM(pdh.quantity_sold)::numeric / 
+        NULLIF(COUNT(DISTINCT pdh.period_date), 0), 2) as daily_average
+FROM public.product_demand_history pdh
+LEFT JOIN public.centralized_product cp ON pdh.product_id = cp.id
+LEFT JOIN public.branch b ON pdh.branch_id = b.id
+WHERE pdh.period_date >= NOW() - INTERVAL '12 months'
+GROUP BY pdh.product_id, cp.product_name, pdh.branch_id, b.location, DATE_TRUNC('month', pdh.period_date)
+ORDER BY pdh.branch_id, month DESC;
+
+CREATE OR REPLACE VIEW public.v_inventory_health_summary AS
+SELECT 
+    ia.product_id,
+    cp.product_name,
+    ia.branch_id,
+    b.location,
+    ia.current_stock,
+    ia.avg_daily_usage,
+    ia.stock_adequacy_days,
+    ia.turnover_ratio,
+    ia.stockout_risk_percentage,
+    ia.recommendation,
+    CASE 
+        WHEN ia.stockout_risk_percentage >= 75 THEN 'CRITICAL'
+        WHEN ia.stockout_risk_percentage >= 50 THEN 'HIGH'
+        WHEN ia.stockout_risk_percentage >= 25 THEN 'MEDIUM'
+        ELSE 'LOW'
+    END as risk_level,
+    ia.analysis_date,
+    ia.created_at
+FROM public.inventory_analytics ia
+LEFT JOIN public.centralized_product cp ON ia.product_id = cp.id
+LEFT JOIN public.branch b ON ia.branch_id = b.id
+ORDER BY ia.analysis_date DESC, ia.stockout_risk_percentage DESC;
+
+CREATE OR REPLACE VIEW public.v_forecast_summary AS
+SELECT 
+    sf.product_id,
+    cp.product_name,
+    sf.branch_id,
+    b.location,
+    sf.forecast_month,
+    sf.forecasted_quantity,
+    sf.confidence_interval_lower,
+    sf.confidence_interval_upper,
+    sf.forecast_method,
+    ROUND(((sf.confidence_interval_upper - sf.confidence_interval_lower) / 2)::numeric, 2) as margin_of_error,
+    sf.created_at
+FROM public.sales_forecast sf
+LEFT JOIN public.centralized_product cp ON sf.product_id = cp.id
+LEFT JOIN public.branch b ON sf.branch_id = b.id
+ORDER BY sf.forecast_month DESC, sf.product_id;
