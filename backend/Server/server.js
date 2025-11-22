@@ -114,10 +114,33 @@ const PORT = process.env.PORT || 5000;
 
 const isDev = process.env.NODE_ENV === "development";
 
-// Frontend base URL used in links sent via email
-const FRONTEND_URL = (
-  process.env.FRONTEND_URL || "http://localhost:5173"
-).replace(/\/$/, "");
+// Frontend base used in links sent via email. If your app is a desktop app
+// that registers a custom URI scheme (recommended), set `FRONTEND_SCHEME`
+// to something like `izaj-inventory://`. Otherwise set `FRONTEND_URL` to
+// your hosted frontend (e.g. https://app.example.com) or leave default for dev.
+const FRONTEND_BASE = process.env.FRONTEND_URL || process.env.FRONTEND_SCHEME || "http://localhost:5173";
+
+// Small helper to build frontend links that work for both http(s) hosts and
+// custom desktop URI schemes (e.g. izaj-inventory://reset-password?token=...)
+const buildFrontendLink = (path) => {
+  const base = String(FRONTEND_BASE || "");
+  // If base starts with http(s), ensure single slash separation
+  if (/^https?:\/\//i.test(base)) {
+    return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  }
+
+  // Otherwise treat as custom scheme (may be like "myapp://" or "myapp:")
+  // Ensure no duplicate slashes when concatenating
+  if (base.endsWith("//")) {
+    return `${base}${path.replace(/^\//, "")}`;
+  }
+  if (base.endsWith(":")) {
+    // e.g. "myapp:" -> make "myapp://reset..."
+    return `${base}//${path.replace(/^\//, "")}`;
+  }
+  // Default: append path directly
+  return `${base}${base.endsWith("/") ? "" : ""}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -2825,8 +2848,8 @@ app.post("/api/forgot-password", rateLimits.passwordReset, async (req, res) => {
       });
     }
 
-    // Generate reset link
-    const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+    // Generate reset link using helper so desktop custom schemes work
+    const resetLink = buildFrontendLink(`/reset-password?token=${resetToken}`);
 
     // Send reset email
     const emailResult = await sendResetPasswordEmail(
