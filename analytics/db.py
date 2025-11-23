@@ -557,11 +557,25 @@ def insert_inventory_analytics(entries: Iterable[dict]):
 
     if _supabase_client:
         try:
-            resp = _supabase_client.table('inventory_analytics').insert(rows).execute()
+            # Ensure current_stock is always a number, never None
+            normalized_rows = []
+            for e in rows:
+                normalized = dict(e)
+                current_stock_val = normalized.get('current_stock')
+                if current_stock_val is None:
+                    normalized['current_stock'] = 0
+                else:
+                    try:
+                        normalized['current_stock'] = int(current_stock_val)
+                    except (ValueError, TypeError):
+                        normalized['current_stock'] = 0
+                normalized_rows.append(normalized)
+            
+            resp = _supabase_client.table('inventory_analytics').insert(normalized_rows).execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase insert inventory_analytics error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
-            return len(getattr(resp, 'data', []) or rows)
+            return len(getattr(resp, 'data', []) or normalized_rows)
         except Exception:
             logger.exception('Failed to insert inventory_analytics to Supabase')
             raise
@@ -577,11 +591,21 @@ def insert_inventory_analytics(entries: Iterable[dict]):
         '''
         tuples = []
         for e in rows:
+            # Ensure current_stock is always a number (0 if None or missing)
+            current_stock_val = e.get('current_stock')
+            if current_stock_val is None:
+                current_stock_val = 0
+            else:
+                try:
+                    current_stock_val = int(current_stock_val)
+                except (ValueError, TypeError):
+                    current_stock_val = 0
+            
             tuples.append((
                 int(e.get('product_id')),
                 int(e.get('branch_id')),
                 e.get('analysis_date'),
-                int(e.get('current_stock')) if e.get('current_stock') is not None else None,
+                current_stock_val,  # Always a number, never None
                 float(e.get('avg_daily_usage') or 0.0),
                 int(e.get('stock_adequacy_days')) if e.get('stock_adequacy_days') is not None else None,
                 float(e.get('turnover_ratio') or 0.0),
@@ -655,6 +679,169 @@ def get_product_names(product_ids: Iterable[int]):
         return mapping
     except Exception:
         logger.exception('Failed to fetch product names from Postgres')
+        return {}
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def get_product_id_by_name(product_name: str, branch_id: int = None):
+    """Return product_id for a given product name.
+    
+    Searches in common name fields: product_name, title, name, product, label, display_name.
+    If branch_id is provided, also filters by branch_id.
+    Returns the first matching product_id, or None if not found.
+    """
+    if not product_name:
+        return None
+    
+    # Supabase path
+    if _supabase_client:
+        try:
+            query = _supabase_client.table('centralized_product').select('id, branch_id')
+            # Search in multiple name fields
+            name_candidates = ('product_name', 'title', 'name', 'product', 'label', 'display_name')
+            # Use OR conditions for name matching
+            name_filters = []
+            for field in name_candidates:
+                name_filters.append(f"{field}.ilike.{product_name}")
+            
+            # For Supabase, we need to use a different approach - select all and filter in Python
+            # or use multiple queries. Let's use a simpler approach: select all and filter.
+            resp = _supabase_client.table('centralized_product').select('id, branch_id, product_name, title, name, product, label, display_name').execute()
+            if getattr(resp, 'error', None):
+                logger.error('Supabase fetch centralized_product error: %s', getattr(resp, 'error', None))
+                return None
+            rows = getattr(resp, 'data', []) or []
+            for r in rows:
+                # Check if branch_id matches (if provided)
+                if branch_id is not None:
+                    if int(r.get('branch_id', 0)) != int(branch_id):
+                        continue
+                # Check name fields
+                for field in name_candidates:
+                    if r.get(field) and str(r.get(field)).strip().lower() == str(product_name).strip().lower():
+                        return int(r.get('id'))
+            return None
+        except Exception:
+            logger.exception('Failed to fetch product_id by name from Supabase')
+            return None
+    
+    # psycopg2 path
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        # Search in multiple name fields using ILIKE for case-insensitive matching
+        if branch_id is not None:
+            cur.execute("""
+                SELECT id FROM public.centralized_product 
+                WHERE branch_id = %s 
+                AND (
+                    LOWER(COALESCE(product_name, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(title, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(name, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(product, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(label, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(display_name, '')) = LOWER(%s)
+                )
+                LIMIT 1
+            """, (branch_id, product_name, product_name, product_name, product_name, product_name, product_name))
+        else:
+            cur.execute("""
+                SELECT id FROM public.centralized_product 
+                WHERE (
+                    LOWER(COALESCE(product_name, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(title, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(name, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(product, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(label, '')) = LOWER(%s)
+                    OR LOWER(COALESCE(display_name, '')) = LOWER(%s)
+                )
+                LIMIT 1
+            """, (product_name, product_name, product_name, product_name, product_name, product_name))
+        row = cur.fetchone()
+        if row:
+            return int(row[0])
+        return None
+    except Exception:
+        logger.exception('Failed to fetch product_id by name from Postgres')
+        return None
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def get_product_stock(product_ids: Iterable[int], branch_ids: Iterable[int] = None):
+    """Return a mapping of (product_id, branch_id) -> quantity from centralized_product.
+    
+    If branch_ids is None, returns stock for all branches for the given product_ids.
+    Returns dict with keys as (product_id, branch_id) tuples and values as quantity (bigint).
+    """
+    ids = list(set(int(x) for x in product_ids if x is not None))
+    if not ids:
+        return {}
+    
+    branch_filter = None
+    if branch_ids:
+        branch_filter = list(set(int(x) for x in branch_ids if x is not None))
+        if not branch_filter:
+            return {}
+
+    # Supabase path
+    if _supabase_client:
+        try:
+            query = _supabase_client.table('centralized_product').select('id, branch_id, quantity')
+            query = query.in_('id', ids)
+            if branch_filter:
+                query = query.in_('branch_id', branch_filter)
+            resp = query.execute()
+            if getattr(resp, 'error', None):
+                logger.error('Supabase fetch centralized_product stock error: %s', getattr(resp, 'error', None))
+                raise RuntimeError(str(getattr(resp, 'error', None)))
+            rows = getattr(resp, 'data', []) or []
+            mapping = {}
+            for r in rows:
+                pid = int(r.get('id'))
+                bid = int(r.get('branch_id'))
+                qty = r.get('quantity')
+                mapping[(pid, bid)] = int(qty) if qty is not None else 0
+            return mapping
+        except Exception:
+            logger.exception('Failed to fetch product stock from Supabase')
+            # fall through to SQL path
+
+    # psycopg2 path
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        if branch_filter:
+            cur.execute(
+                "SELECT id, branch_id, quantity FROM public.centralized_product WHERE id = ANY(%s) AND branch_id = ANY(%s)",
+                (ids, branch_filter)
+            )
+        else:
+            cur.execute(
+                "SELECT id, branch_id, quantity FROM public.centralized_product WHERE id = ANY(%s)",
+                (ids,)
+            )
+        rows = cur.fetchall()
+        mapping = {}
+        for r in rows:
+            pid = int(r[0])
+            bid = int(r[1])
+            qty = r[2]
+            mapping[(pid, bid)] = int(qty) if qty is not None else 0
+        return mapping
+    except Exception:
+        logger.exception('Failed to fetch product stock from Postgres')
         return {}
     finally:
         if cur:

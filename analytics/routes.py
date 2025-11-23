@@ -76,11 +76,37 @@ def calculate_eoq():
         # Calculate EOQ
         result = EOQCalculator.calculate_eoq(eoq_input)
         
-        # Store in mock database
+        # Store in both mock database and persistent database
         product_id = data.get('product_id')
         branch_id = data.get('branch_id')
         if product_id and branch_id:
+            # Store in mock database (for backward compatibility)
             db.store_eoq(product_id, branch_id, result)
+            
+            # Also persist to real database so it's available on page refresh
+            try:
+                result_dict = {
+                    'annual_demand': float(data.get('annual_demand', 0)),
+                    'holding_cost': float(data.get('holding_cost', 50)),
+                    'ordering_cost': float(data.get('ordering_cost', 100)),
+                    'unit_cost': float(data.get('unit_cost', 0)),
+                    'eoq_quantity': result.eoq_quantity,
+                    'reorder_point': result.reorder_point,
+                    'safety_stock': result.safety_stock,
+                    'annual_holding_cost': result.annual_holding_cost,
+                    'annual_ordering_cost': result.annual_ordering_cost,
+                    'total_annual_cost': result.total_annual_cost,
+                    'max_stock_level': result.max_stock_level,
+                    'min_stock_level': result.min_stock_level,
+                    'average_inventory': result.average_inventory,
+                    'lead_time_days': int(data.get('lead_time_days', 7)),
+                    'confidence_level': float(data.get('confidence_level', 0.95))
+                }
+                db_module.insert_eoq_calculation(product_id, branch_id, result_dict)
+                logger.info(f'EOQ persisted to database for product {product_id}, branch {branch_id}')
+            except Exception as e:
+                logger.error(f'Failed to persist EOQ to database for product {product_id}, branch {branch_id}: {str(e)}', exc_info=True)
+                # Continue even if persistence fails - at least return the calculation
         
         logger.info(f'EOQ calculated for product {product_id}, branch {branch_id}')
         
@@ -374,6 +400,14 @@ def import_sales_data():
                     except Exception:
                         product_id = None
 
+                # Get branch_id from CSV row if present, otherwise use form/json/default
+                row_branch_id = branch_id  # default to form/json/default branch_id
+                if 'branch_id' in df.columns:
+                    try:
+                        row_branch_id = int(r.get('branch_id')) if not pd.isna(r.get('branch_id')) else branch_id
+                    except Exception:
+                        row_branch_id = branch_id
+
                 quantity = float(r['quantity'])
                 transaction_date = r['date'].to_pydatetime() if hasattr(r['date'], 'to_pydatetime') else r['date']
                 unit_price = None
@@ -393,7 +427,7 @@ def import_sales_data():
 
                 created_at = now_iso
 
-                rows.append((product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at))
+                rows.append((product_id, row_branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at))
 
             try:
                 inserted_count = db_module.insert_sales_rows(rows)
@@ -408,6 +442,13 @@ def import_sales_data():
                     # coerce product_id to int where possible
                     pid_df['product_id'] = pid_df['product_id'].apply(lambda x: int(x) if (pd.notna(x) and str(x).strip() != '') else None)
                     pid_df = pid_df.dropna(subset=['product_id'])
+                    
+                    # Add branch_id column if not present (use form/json/default)
+                    if 'branch_id' not in pid_df.columns:
+                        pid_df['branch_id'] = branch_id
+                    else:
+                        # Ensure branch_id is numeric
+                        pid_df['branch_id'] = pid_df['branch_id'].apply(lambda x: int(x) if pd.notna(x) else branch_id)
 
                     if not pid_df.empty:
                         # period_date as date (YYYY-MM-DD)
@@ -418,7 +459,7 @@ def import_sales_data():
                         if 'unit_price' not in pid_df.columns:
                             pid_df['unit_price'] = None
 
-                        grouped = pid_df.groupby(['product_id', 'period_date']).agg({
+                        grouped = pid_df.groupby(['product_id', 'branch_id', 'period_date']).agg({
                             'quantity': 'sum',
                             'total_amount': 'sum',
                             'unit_price': 'mean'
@@ -438,6 +479,7 @@ def import_sales_data():
                         for _, g in grouped.iterrows():
                             try:
                                 pid = int(g['product_id'])
+                                bid = int(g['branch_id'])
                                 period = g['period_date']
                                 qty = int(float(g['quantity'] or 0))
                                 revenue = float(g['total_amount'] or 0.0) if g['total_amount'] is not None else 0.0
@@ -445,7 +487,7 @@ def import_sales_data():
 
                                 demand_entries.append({
                                     'product_id': pid,
-                                    'branch_id': int(branch_id),
+                                    'branch_id': bid,
                                     'period_date': period.isoformat() if hasattr(period, 'isoformat') else period,
                                     'quantity_sold': qty,
                                     'revenue': revenue,
@@ -458,7 +500,7 @@ def import_sales_data():
                                 forecast_qty = float(avg_daily * 30)
                                 forecast_entries.append({
                                     'product_id': pid,
-                                    'branch_id': int(branch_id),
+                                    'branch_id': bid,
                                     'forecast_month': fm.isoformat(),
                                     'forecasted_quantity': forecast_qty,
                                     'confidence_interval_lower': max(0.0, forecast_qty * 0.8),
@@ -472,26 +514,47 @@ def import_sales_data():
                                 avg_daily = (qty / days_of_data) if days_of_data > 0 else 0
                                 avg_unit_price = avg_price  # avg_price already extracted from g['unit_price']
                                 
-                                # Estimate current_stock as average inventory during the period
-                                current_stock_est = int(total_sold_qty / 3) if total_sold_qty > 0 else 0
+                                # ALWAYS get current_stock from centralized_product table - never use estimation
+                                current_stock_actual = 0
+                                stock_found = False
+                                try:
+                                    stock_map = db_module.get_product_stock([pid], [bid])
+                                    fetched_stock = stock_map.get((pid, bid), None)
+                                    if fetched_stock is not None:
+                                        # Product exists in centralized_product - use actual stock
+                                        current_stock_actual = int(fetched_stock) if fetched_stock is not None else 0
+                                        stock_found = True
+                                        logger.info('✓ Fetched actual stock from centralized_product for product %s branch %s: %s', pid, bid, current_stock_actual)
+                                    else:
+                                        # Product NOT found in centralized_product - use 0 (not estimation)
+                                        current_stock_actual = 0
+                                        logger.warning('✗ Product %s branch %s NOT FOUND in centralized_product table. current_stock set to 0. Please ensure product exists in centralized_product.', pid, bid)
+                                except Exception as e:
+                                    # Database lookup failed - use 0 (not estimation)
+                                    current_stock_actual = 0
+                                    logger.error('✗ Failed to fetch stock from centralized_product for product %s branch %s: %s. current_stock set to 0.', pid, bid, str(e))
                                 
-                                # stock_adequacy_days: how many days of stock we have (assume we sold in this period)
-                                stock_adequacy = int(current_stock_est / max(avg_daily, 0.001)) if current_stock_est > 0 else 0
+                                # Ensure current_stock_actual is never None (should always be 0 or positive number)
+                                if current_stock_actual is None:
+                                    current_stock_actual = 0
                                 
-                                # turnover_ratio: times inventory turned over; assume we have ~30 days stock
-                                turnover = (total_sold_qty / max(current_stock_est, 1)) if current_stock_est > 0 else 0
+                                # stock_adequacy_days: how many days of stock we have based on actual stock
+                                stock_adequacy = int(current_stock_actual / max(avg_daily, 0.001)) if current_stock_actual > 0 and avg_daily > 0 else 0
+                                
+                                # turnover_ratio: times inventory turned over
+                                turnover = (total_sold_qty / max(current_stock_actual, 1)) if current_stock_actual > 0 else 0
                                 
                                 # carrying_cost: estimated holding cost (assume 0.25 per unit per year)
-                                carrying = current_stock_est * avg_unit_price * 0.25 / 365 if current_stock_est > 0 else 0
+                                carrying = current_stock_actual * avg_unit_price * 0.25 / 365 if current_stock_actual > 0 else 0
                                 
                                 # stockout_risk_percentage: inverse of stock adequacy; if we have 30 days stock, risk ~3%
                                 stockout_risk = (1.0 / max(stock_adequacy, 1)) * 100 if stock_adequacy > 0 else 5.0
                                 
                                 inventory_entries.append({
                                     'product_id': pid,
-                                    'branch_id': int(branch_id),
+                                    'branch_id': bid,
                                     'analysis_date': datetime.utcnow().date().isoformat(),
-                                    'current_stock': current_stock_est,
+                                    'current_stock': current_stock_actual,
                                     'avg_daily_usage': round(avg_daily, 2),
                                     'stock_adequacy_days': stock_adequacy,
                                     'turnover_ratio': round(turnover, 2),
@@ -530,10 +593,16 @@ def import_sales_data():
                 if 'product' in df.columns or 'product_name' in df.columns or 'product_id' in df.columns:
                     # group by product and compute annual demand
                     prod_col = 'product' if 'product' in df.columns else ('product_name' if 'product_name' in df.columns else 'product_id')
-                    grouped = df.groupby(prod_col)['quantity'].agg(['sum']).reset_index()
+                    # Include branch_id in grouping if present
+                    group_cols = [prod_col]
+                    if 'branch_id' in df.columns:
+                        group_cols.append('branch_id')
+                    grouped = df.groupby(group_cols)['quantity'].agg(['sum']).reset_index()
                     for _, prod in grouped.iterrows():
                         try:
                             product_identifier = prod[prod_col]
+                            # Get branch_id from grouped row if present, otherwise use default
+                            prod_branch_id = int(prod.get('branch_id', branch_id)) if 'branch_id' in prod else branch_id
                             product_annual_demand = float((prod['sum'] / days_of_data) * 365) if days_of_data > 0 else 0
                             # prepare EOQ input using defaults or provided overrides
                             holding_cost = float(request.form.get('holding_cost') or (json_payload.get('holding_cost') if json_payload else None) or 50)
@@ -553,7 +622,14 @@ def import_sales_data():
                             result_obj = EOQCalculator.calculate_eoq(eoq_input)
 
                             # convert EOQResult dataclass to dict
+                            # Include all required fields for database persistence
                             result_dict = {
+                                'annual_demand': product_annual_demand,
+                                'holding_cost': holding_cost,
+                                'ordering_cost': ordering_cost,
+                                'unit_cost': unit_cost,
+                                'lead_time_days': lead_time_days,
+                                'confidence_level': confidence_level,
                                 'eoq_quantity': result_obj.eoq_quantity,
                                 'reorder_point': result_obj.reorder_point,
                                 'safety_stock': result_obj.safety_stock,
@@ -565,7 +641,7 @@ def import_sales_data():
                                 'average_inventory': result_obj.average_inventory
                             }
 
-                            # Persist EOQ calculation if product_id is numeric
+                            # Persist EOQ calculation - try to get product_id
                             try:
                                 pid = None
                                 if prod_col == 'product_id':
@@ -573,12 +649,25 @@ def import_sales_data():
                                         pid = int(product_identifier)
                                     except Exception:
                                         pid = None
-                                # if product column is string name, we won't have an id to persist but still store in-memory db
+                                else:
+                                    # If product column is a name, try to look up product_id by name
+                                    try:
+                                        pid = db_module.get_product_id_by_name(str(product_identifier), prod_branch_id)
+                                        if pid:
+                                            logger.info(f'Found product_id {pid} for product name "{product_identifier}"')
+                                        else:
+                                            logger.warning(f'Could not find product_id for product name "{product_identifier}" - EOQ will not be persisted')
+                                    except Exception as e:
+                                        logger.warning(f'Failed to look up product_id for "{product_identifier}": {str(e)}')
+                                
+                                # Persist to database if we have a product_id
                                 if pid:
-                                    db_module.insert_eoq_calculation(pid, branch_id, result_dict)
+                                    db_module.insert_eoq_calculation(pid, prod_branch_id, result_dict)
+                                    logger.info(f'EOQ persisted to database for product {pid} (name: "{product_identifier}"), branch {prod_branch_id} from file upload')
                                 else:
                                     # fall back to storing in mock DB for non-numeric product identifiers
-                                    db.store_eoq(product_identifier, branch_id, result_obj)
+                                    logger.warning(f'EOQ stored in mock DB only (no product_id found) for product "{product_identifier}"')
+                                    db.store_eoq(product_identifier, prod_branch_id, result_obj)
                             except Exception:
                                 logger.exception('Failed to persist EOQ for product %s', product_identifier)
                         except Exception:

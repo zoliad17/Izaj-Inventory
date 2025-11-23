@@ -81,6 +81,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
     RestockRecommendation[]
   >([]);
   const [uploading, setUploading] = useState(false);
+  const [loadingEOQ, setLoadingEOQ] = useState(true);
   const [modal, setModal] = useState<ModalState>({
     isOpen: false,
     status: "loading",
@@ -197,6 +198,103 @@ const EOQAnalyticsDashboard: React.FC = () => {
     []
   );
 
+  // Fetch persisted EOQ calculations from backend
+  const fetchEOQCalculationsFromServer = useCallback(async () => {
+    setLoadingEOQ(true);
+    try {
+      const pythonBackendUrl = "http://localhost:5001";
+      const res = await fetch(
+        `${pythonBackendUrl}/api/analytics/eoq-calculations?limit=50`
+      );
+      if (!res.ok) {
+        console.error(`Failed to fetch EOQ calculations: ${res.status} ${res.statusText}`);
+        throw new Error(`Failed to fetch EOQ calculations: ${res.status}`);
+      }
+      const payload = await res.json();
+      console.log("EOQ calculations API response:", payload);
+      
+      if (payload.success && Array.isArray(payload.data)) {
+        // Map to EOQData shape when possible
+        const mapped = payload.data.map(
+          (r: any) => {
+            const eoqQty = Number(r.eoq_quantity || r.eoq || 0);
+            const reorderPt = Number(r.reorder_point || 0);
+            const safetyStock = Number(r.safety_stock || 0);
+            const annualDemand = Number(r.annual_demand || 0);
+            
+            // Calculate annual costs from stored values
+            // Database stores 'holding_cost' (per-unit per-year) and 'ordering_cost' (per order)
+            // annual_holding_cost = (eoq / 2) * holding_cost
+            // annual_ordering_cost = (annual_demand / eoq) * ordering_cost
+            let annualHoldingCost = Number(r.annual_holding_cost || 0);
+            let annualOrderingCost = Number(r.annual_ordering_cost || 0);
+            
+            // If annual costs not present, calculate from stored per-unit/per-order costs
+            if (!annualHoldingCost && eoqQty > 0) {
+              const holdingCost = Number(r.holding_cost || 50);
+              annualHoldingCost = (eoqQty / 2) * holdingCost;
+            }
+            
+            if (!annualOrderingCost && eoqQty > 0 && annualDemand > 0) {
+              const orderingCost = Number(r.ordering_cost || 100);
+              annualOrderingCost = (annualDemand / eoqQty) * orderingCost;
+            }
+            
+            // Calculate derived fields if not present in database
+            // These formulas match the EOQCalculator logic:
+            // max_stock_level = reorder_point + eoq_quantity
+            // min_stock_level = safety_stock
+            // average_inventory = (eoq_quantity / 2) + safety_stock
+            const maxStockLevel = r.max_stock_level !== undefined 
+              ? Number(r.max_stock_level) 
+              : reorderPt + eoqQty;
+            const minStockLevel = r.min_stock_level !== undefined 
+              ? Number(r.min_stock_level) 
+              : safetyStock;
+            const avgInventory = r.average_inventory !== undefined 
+              ? Number(r.average_inventory) 
+              : (eoqQty / 2) + safetyStock;
+            
+            // Total annual cost = annual holding cost + annual ordering cost
+            const totalAnnualCost = r.total_annual_cost !== undefined
+              ? Number(r.total_annual_cost)
+              : annualHoldingCost + annualOrderingCost;
+            
+            return {
+              eoq_quantity: eoqQty,
+              reorder_point: reorderPt,
+              safety_stock: safetyStock,
+              annual_holding_cost: annualHoldingCost,
+              total_annual_cost: totalAnnualCost,
+              max_stock_level: maxStockLevel,
+              min_stock_level: minStockLevel,
+              average_inventory: avgInventory,
+            } as EOQData;
+          }
+        );
+        setEoqList(mapped);
+        // Always use the most recent EOQ calculation (first item, ordered by calculated_at DESC)
+        // This ensures consistency on page refresh
+        if (mapped.length > 0) {
+          console.log("Setting EOQ data from database:", mapped[0]);
+          setEOQData(mapped[0]);
+        } else {
+          console.warn("No EOQ calculations found in database. Dashboard will not display until data is available.");
+        }
+      } else {
+        console.warn("Invalid payload structure from EOQ calculations API:", payload);
+      }
+    } catch (err) {
+      console.error("Error fetching EOQ calculations:", err);
+      // Log the full error for debugging
+      if (err instanceof Error) {
+        console.error("Error details:", err.message, err.stack);
+      }
+    } finally {
+      setLoadingEOQ(false);
+    }
+  }, []);
+
   const calculateEOQWithData = useCallback(async (demandValue: number) => {
     try {
       // Send directly to Python backend to avoid Node.js proxy issues
@@ -224,6 +322,13 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
       if (result.success) {
         setEOQData(result.data);
+        // Refresh the persisted calculations from database to ensure consistency
+        // This ensures the data is available on page refresh
+        try {
+          await fetchEOQCalculationsFromServer();
+        } catch (err) {
+          console.warn("Failed to refresh EOQ calculations after calculation", err);
+        }
         setModal({
           isOpen: true,
           status: "success",
@@ -255,44 +360,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
           error instanceof Error ? error.message : "Unknown error occurred",
       });
     }
-  }, []);
-
-  // Fetch persisted EOQ calculations from backend
-  const fetchEOQCalculationsFromServer = useCallback(async () => {
-    try {
-      const pythonBackendUrl = "http://localhost:5001";
-      const res = await fetch(
-        `${pythonBackendUrl}/api/analytics/eoq-calculations?limit=50`
-      );
-      if (!res.ok)
-        throw new Error(`Failed to fetch EOQ calculations: ${res.status}`);
-      const payload = await res.json();
-      if (payload.success && Array.isArray(payload.data)) {
-        // Map to EOQData shape when possible
-        const mapped = payload.data.map(
-          (r: any) =>
-            ({
-              eoq_quantity: Number(r.eoq_quantity || r.eoq || 0),
-              reorder_point: Number(r.reorder_point || 0),
-              safety_stock: Number(r.safety_stock || 0),
-              annual_holding_cost: Number(
-                r.annual_holding_cost || r.holding_cost || 0
-              ),
-              total_annual_cost: Number(r.total_annual_cost || 0),
-              max_stock_level: Number(r.max_stock_level || 0),
-              min_stock_level: Number(r.min_stock_level || 0),
-              average_inventory: Number(r.average_inventory || 0),
-            } as EOQData)
-        );
-        setEoqList(mapped);
-        if (!eoqData && mapped.length > 0) {
-          setEOQData(mapped[0]);
-        }
-      }
-    } catch (err) {
-      console.warn("Error fetching EOQ calculations", err);
-    }
-  }, [eoqData]);
+  }, [fetchEOQCalculationsFromServer]);
 
   const fetchTopProductsFromServer = useCallback(async (days = 30) => {
     try {
@@ -545,7 +613,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                 and <code className="bg-slate-100 px-2 py-1 rounded">date</code>
               </p>
             </div>
-            {salesMetrics && (
+            {salesMetrics && salesMetrics.total_quantity > 0 && (
               <div className="bg-white rounded-lg border border-slate-200 p-4">
                 <div className="flex items-start gap-3">
                   <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
@@ -566,8 +634,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
                         <p className="text-xl font-bold text-slate-900">
                           {salesMetrics.days_of_data}
                         </p>
-                        <p className="text-xs text-slate-400">
-                          Number of days in file
+                        <div className="text-xs text-slate-400">
+                          <p>Number of days in file</p>
                           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                             <div>
                               <p className="text-slate-600 font-medium">
@@ -596,7 +664,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                        </p>
+                        </div>
                       </div>
 
                       <div>
@@ -647,7 +715,31 @@ const EOQAnalyticsDashboard: React.FC = () => {
         </div>
       </div>
 
-      {eoqData && (
+      {loadingEOQ && (
+        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-8 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+            </div>
+            <p className="text-slate-600">Loading EOQ data...</p>
+          </div>
+        </div>
+      )}
+
+      {!loadingEOQ && !eoqData && (
+        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-8 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <AlertCircle className="w-12 h-12 text-slate-400" />
+            <h3 className="text-lg font-semibold text-slate-900">No EOQ Data Available</h3>
+            <p className="text-slate-600 max-w-md">
+              Upload sales data to calculate EOQ metrics. The dashboard will display once calculations are available.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!loadingEOQ && eoqData && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 hover:shadow-lg transition-shadow">
