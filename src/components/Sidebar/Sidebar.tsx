@@ -18,7 +18,7 @@ import {
   // ShoppingCart,
   Warehouse,
   Book,
-  Coins,
+  // Coins,
   Rotate3D,
   Building2Icon,
   BarChart3,
@@ -248,12 +248,12 @@ function Sidebar() {
         },
       ],
     },
-    {
-      icon: Coins,
-      label: "Sales",
-      path: "/sales",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
-    },
+    // {
+    //   icon: Coins,
+    //   label: "Sales",
+    //   path: "/sales",
+    //   allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+    // },
     {
       icon: BarChart3,
       label: "Analytics",

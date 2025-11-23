@@ -20,7 +20,18 @@ import {
   TrendingUp,
   Zap,
   AlertCircle,
+  Calculator,
+  RefreshCw,
+  DollarSign,
+  Shield,
+  Coins,
+  ChevronUp,
+  Calendar,
+  BarChart3,
+  Activity,
+  CalendarDays,
 } from "lucide-react";
+import { useTheme } from "../ThemeContext/ThemeContext";
 
 interface EOQData {
   eoq_quantity: number;
@@ -69,6 +80,7 @@ interface ModalState {
 }
 
 const EOQAnalyticsDashboard: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [eoqData, setEOQData] = useState<EOQData | null>(null);
   const [eoqList, setEoqList] = useState<EOQData[]>([]);
   const [inventoryAnalytics, setInventoryAnalytics] = useState<any[]>([]);
@@ -87,6 +99,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
     status: "loading",
     message: "",
   });
+  const [isSalesMetricsExpanded, setIsSalesMetricsExpanded] = useState(true); // Default to expanded
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Normalize a top-product entry from backend/import to ensure product_name exists
@@ -207,71 +220,75 @@ const EOQAnalyticsDashboard: React.FC = () => {
         `${pythonBackendUrl}/api/analytics/eoq-calculations?limit=50`
       );
       if (!res.ok) {
-        console.error(`Failed to fetch EOQ calculations: ${res.status} ${res.statusText}`);
+        console.error(
+          `Failed to fetch EOQ calculations: ${res.status} ${res.statusText}`
+        );
         throw new Error(`Failed to fetch EOQ calculations: ${res.status}`);
       }
       const payload = await res.json();
       console.log("EOQ calculations API response:", payload);
-      
+
       if (payload.success && Array.isArray(payload.data)) {
         // Map to EOQData shape when possible
-        const mapped = payload.data.map(
-          (r: any) => {
-            const eoqQty = Number(r.eoq_quantity || r.eoq || 0);
-            const reorderPt = Number(r.reorder_point || 0);
-            const safetyStock = Number(r.safety_stock || 0);
-            const annualDemand = Number(r.annual_demand || 0);
-            
-            // Calculate annual costs from stored values
-            // Database stores 'holding_cost' (per-unit per-year) and 'ordering_cost' (per order)
-            // annual_holding_cost = (eoq / 2) * holding_cost
-            // annual_ordering_cost = (annual_demand / eoq) * ordering_cost
-            let annualHoldingCost = Number(r.annual_holding_cost || 0);
-            let annualOrderingCost = Number(r.annual_ordering_cost || 0);
-            
-            // If annual costs not present, calculate from stored per-unit/per-order costs
-            if (!annualHoldingCost && eoqQty > 0) {
-              const holdingCost = Number(r.holding_cost || 50);
-              annualHoldingCost = (eoqQty / 2) * holdingCost;
-            }
-            
-            if (!annualOrderingCost && eoqQty > 0 && annualDemand > 0) {
-              const orderingCost = Number(r.ordering_cost || 100);
-              annualOrderingCost = (annualDemand / eoqQty) * orderingCost;
-            }
-            
-            // Calculate derived fields if not present in database
-            // These formulas match the EOQCalculator logic:
-            // max_stock_level = reorder_point + eoq_quantity
-            // min_stock_level = safety_stock
-            // average_inventory = (eoq_quantity / 2) + safety_stock
-            const maxStockLevel = r.max_stock_level !== undefined 
-              ? Number(r.max_stock_level) 
+        const mapped = payload.data.map((r: any) => {
+          const eoqQty = Number(r.eoq_quantity || r.eoq || 0);
+          const reorderPt = Number(r.reorder_point || 0);
+          const safetyStock = Number(r.safety_stock || 0);
+          const annualDemand = Number(r.annual_demand || 0);
+
+          // Calculate annual costs from stored values
+          // Database stores 'holding_cost' (per-unit per-year) and 'ordering_cost' (per order)
+          // annual_holding_cost = (eoq / 2) * holding_cost
+          // annual_ordering_cost = (annual_demand / eoq) * ordering_cost
+          let annualHoldingCost = Number(r.annual_holding_cost || 0);
+          let annualOrderingCost = Number(r.annual_ordering_cost || 0);
+
+          // If annual costs not present, calculate from stored per-unit/per-order costs
+          if (!annualHoldingCost && eoqQty > 0) {
+            const holdingCost = Number(r.holding_cost || 50);
+            annualHoldingCost = (eoqQty / 2) * holdingCost;
+          }
+
+          if (!annualOrderingCost && eoqQty > 0 && annualDemand > 0) {
+            const orderingCost = Number(r.ordering_cost || 100);
+            annualOrderingCost = (annualDemand / eoqQty) * orderingCost;
+          }
+
+          // Calculate derived fields if not present in database
+          // These formulas match the EOQCalculator logic:
+          // max_stock_level = reorder_point + eoq_quantity
+          // min_stock_level = safety_stock
+          // average_inventory = (eoq_quantity / 2) + safety_stock
+          const maxStockLevel =
+            r.max_stock_level !== undefined
+              ? Number(r.max_stock_level)
               : reorderPt + eoqQty;
-            const minStockLevel = r.min_stock_level !== undefined 
-              ? Number(r.min_stock_level) 
+          const minStockLevel =
+            r.min_stock_level !== undefined
+              ? Number(r.min_stock_level)
               : safetyStock;
-            const avgInventory = r.average_inventory !== undefined 
-              ? Number(r.average_inventory) 
-              : (eoqQty / 2) + safetyStock;
-            
-            // Total annual cost = annual holding cost + annual ordering cost
-            const totalAnnualCost = r.total_annual_cost !== undefined
+          const avgInventory =
+            r.average_inventory !== undefined
+              ? Number(r.average_inventory)
+              : eoqQty / 2 + safetyStock;
+
+          // Total annual cost = annual holding cost + annual ordering cost
+          const totalAnnualCost =
+            r.total_annual_cost !== undefined
               ? Number(r.total_annual_cost)
               : annualHoldingCost + annualOrderingCost;
-            
-            return {
-              eoq_quantity: eoqQty,
-              reorder_point: reorderPt,
-              safety_stock: safetyStock,
-              annual_holding_cost: annualHoldingCost,
-              total_annual_cost: totalAnnualCost,
-              max_stock_level: maxStockLevel,
-              min_stock_level: minStockLevel,
-              average_inventory: avgInventory,
-            } as EOQData;
-          }
-        );
+
+          return {
+            eoq_quantity: eoqQty,
+            reorder_point: reorderPt,
+            safety_stock: safetyStock,
+            annual_holding_cost: annualHoldingCost,
+            total_annual_cost: totalAnnualCost,
+            max_stock_level: maxStockLevel,
+            min_stock_level: minStockLevel,
+            average_inventory: avgInventory,
+          } as EOQData;
+        });
         setEoqList(mapped);
         // Always use the most recent EOQ calculation (first item, ordered by calculated_at DESC)
         // This ensures consistency on page refresh
@@ -279,10 +296,15 @@ const EOQAnalyticsDashboard: React.FC = () => {
           console.log("Setting EOQ data from database:", mapped[0]);
           setEOQData(mapped[0]);
         } else {
-          console.warn("No EOQ calculations found in database. Dashboard will not display until data is available.");
+          console.warn(
+            "No EOQ calculations found in database. Dashboard will not display until data is available."
+          );
         }
       } else {
-        console.warn("Invalid payload structure from EOQ calculations API:", payload);
+        console.warn(
+          "Invalid payload structure from EOQ calculations API:",
+          payload
+        );
       }
     } catch (err) {
       console.error("Error fetching EOQ calculations:", err);
@@ -295,72 +317,78 @@ const EOQAnalyticsDashboard: React.FC = () => {
     }
   }, []);
 
-  const calculateEOQWithData = useCallback(async (demandValue: number) => {
-    try {
-      // Send directly to Python backend to avoid Node.js proxy issues
-      const pythonBackendUrl = "http://localhost:5001";
-      const response = await fetch(
-        `${pythonBackendUrl}/api/analytics/eoq/calculate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: 1,
-            branch_id: 1,
-            annual_demand: demandValue,
-            holding_cost: 50,
-            ordering_cost: 100,
-            unit_cost: 25,
-            lead_time_days: 7,
-            confidence_level: 0.95,
-          }),
-        }
-      );
+  const calculateEOQWithData = useCallback(
+    async (demandValue: number) => {
+      try {
+        // Send directly to Python backend to avoid Node.js proxy issues
+        const pythonBackendUrl = "http://localhost:5001";
+        const response = await fetch(
+          `${pythonBackendUrl}/api/analytics/eoq/calculate`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              product_id: 1,
+              branch_id: 1,
+              annual_demand: demandValue,
+              holding_cost: 50,
+              ordering_cost: 100,
+              unit_cost: 25,
+              lead_time_days: 7,
+              confidence_level: 0.95,
+            }),
+          }
+        );
 
-      const result = await response.json();
-      console.log("EOQ calculation response:", result);
+        const result = await response.json();
+        console.log("EOQ calculation response:", result);
 
-      if (result.success) {
-        setEOQData(result.data);
-        // Refresh the persisted calculations from database to ensure consistency
-        // This ensures the data is available on page refresh
-        try {
-          await fetchEOQCalculationsFromServer();
-        } catch (err) {
-          console.warn("Failed to refresh EOQ calculations after calculation", err);
+        if (result.success) {
+          setEOQData(result.data);
+          // Refresh the persisted calculations from database to ensure consistency
+          // This ensures the data is available on page refresh
+          try {
+            await fetchEOQCalculationsFromServer();
+          } catch (err) {
+            console.warn(
+              "Failed to refresh EOQ calculations after calculation",
+              err
+            );
+          }
+          setModal({
+            isOpen: true,
+            status: "success",
+            message: "EOQ Calculation Complete!",
+            details: `EOQ: ${Math.round(
+              result.data.eoq_quantity
+            )} units | Reorder Point: ${Math.round(
+              result.data.reorder_point
+            )} units`,
+          });
+          setTimeout(() => {
+            setModal((prev) => ({ ...prev, isOpen: false }));
+          }, 3000);
+        } else {
+          setModal({
+            isOpen: true,
+            status: "error",
+            message: "Failed to calculate EOQ",
+            details: result.error || "Unknown error occurred",
+          });
         }
-        setModal({
-          isOpen: true,
-          status: "success",
-          message: "EOQ Calculation Complete!",
-          details: `EOQ: ${Math.round(
-            result.data.eoq_quantity
-          )} units | Reorder Point: ${Math.round(
-            result.data.reorder_point
-          )} units`,
-        });
-        setTimeout(() => {
-          setModal((prev) => ({ ...prev, isOpen: false }));
-        }, 3000);
-      } else {
+      } catch (error) {
+        console.error("EOQ calculation error:", error);
         setModal({
           isOpen: true,
           status: "error",
           message: "Failed to calculate EOQ",
-          details: result.error || "Unknown error occurred",
+          details:
+            error instanceof Error ? error.message : "Unknown error occurred",
         });
       }
-    } catch (error) {
-      console.error("EOQ calculation error:", error);
-      setModal({
-        isOpen: true,
-        status: "error",
-        message: "Failed to calculate EOQ",
-        details:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      });
-    }
-  }, [fetchEOQCalculationsFromServer]);
+    },
+    [fetchEOQCalculationsFromServer]
+  );
 
   const fetchTopProductsFromServer = useCallback(async (days = 30) => {
     try {
@@ -512,20 +540,20 @@ const EOQAnalyticsDashboard: React.FC = () => {
   });
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 min-h-screen">
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
       {modal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 p-8">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full mx-4 p-8">
             {modal.status === "loading" && (
               <div className="flex flex-col items-center gap-4">
                 <div className="relative w-16 h-16">
-                  <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-blue-200 dark:border-blue-900"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 dark:border-t-blue-400 dark:border-r-blue-400 animate-spin"></div>
                 </div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {modal.message}
                 </h2>
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
                   {modal.details}
                 </p>
               </div>
@@ -533,13 +561,13 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
             {modal.status === "success" && (
               <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {modal.message}
                 </h2>
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
                   {modal.details}
                 </p>
               </div>
@@ -547,20 +575,20 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
             {modal.status === "error" && (
               <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8 text-red-600" />
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
                 </div>
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                   {modal.message}
                 </h2>
-                <p className="text-sm text-slate-600 text-center">
+                <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
                   {modal.details}
                 </p>
                 <button
                   onClick={() =>
                     setModal((prev) => ({ ...prev, isOpen: false }))
                   }
-                  className="mt-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                  className="mt-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                 >
                   Close
                 </button>
@@ -572,25 +600,43 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900">
+          <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
             EOQ Analytics Dashboard
           </h1>
-          <p className="text-slate-600 mt-1">
+          <p className="text-base text-slate-600 dark:text-gray-400 mt-1">
             Predictive Analytics for Inventory Optimization
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-slate-200 dark:border-gray-700 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <FileUp className="w-5 h-5" />
-            Import Sales Data from POS
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <FileUp className="w-6 h-6" />
+            <span>Import Sales Data from POS</span>
           </h2>
         </div>
+
         <div className="p-6">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="mb-4">
+                <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-2">
+                  <span className="text-blue-800 dark:text-blue-200 font-medium">
+                    Note:
+                  </span>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    Upload sales data with columns:{" "}
+                    <code className="bg-blue-100 dark:bg-blue-800/50 px-2 py-1 rounded text-blue-900 dark:text-blue-100 font-mono">
+                      quantity
+                    </code>{" "}
+                    and{" "}
+                    <code className="bg-blue-100 dark:bg-blue-800/50 px-2 py-1 rounded text-blue-900 dark:text-blue-100 font-mono">
+                      date
+                    </code>
+                  </p>
+                </div>
+              </div>
               <input
                 type="file"
                 ref={fileInputRef}
@@ -602,111 +648,145 @@ const EOQAnalyticsDashboard: React.FC = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+                className="px-6 py-3 rounded-2xl 
+                shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)]
+                dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(60,60,60,0.6)]
+                hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.9)]
+                dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.85),inset_-6px_-6px_12px_rgba(70,70,70,0.7)]
+                hover:scale-[1.05] active:scale-95
+                transition-all duration-300 text-lg font-semibold
+                bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900
+                text-green-600 dark:text-green-400
+                flex items-center gap-2 disabled:opacity-50"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-4 h-4 text-green-600 dark:text-green-400" />
                 {uploading ? "Uploading..." : "Select CSV or Excel File"}
               </button>
-              <p className="text-sm text-slate-600">
-                Upload sales data with columns:{" "}
-                <code className="bg-slate-100 px-2 py-1 rounded">quantity</code>{" "}
-                and <code className="bg-slate-100 px-2 py-1 rounded">date</code>
-              </p>
             </div>
+
             {salesMetrics && salesMetrics.total_quantity > 0 && (
-              <div className="bg-white rounded-lg border border-slate-200 p-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30 mt-0.5 flex-shrink-0">
+                    <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-slate-900 mb-2">
-                      Sales Data Analyzed
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-3 text-xl">
+                        Sales Data Analyzed
+                      </h3>
+                      <button
+                        onClick={() =>
+                          setIsSalesMetricsExpanded(!isSalesMetricsExpanded)
+                        }
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        aria-label={
+                          isSalesMetricsExpanded
+                            ? "Collapse sales metrics"
+                            : "Expand sales metrics"
+                        }
+                      >
+                        <ChevronUp
+                          className={`w-5 h-5 text-slate-600 dark:text-gray-400 transition-transform duration-300 ${
+                            !isSalesMetricsExpanded ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    <p className="text-base text-slate-600 dark:text-gray-400 mb-4">
                       Data range: {salesMetrics.date_range?.start || "-"} to{" "}
                       {salesMetrics.date_range?.end || "-"}
                     </p>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <p className="text-slate-600 font-medium">
-                          Days of Data
-                        </p>
-                        <p className="text-xl font-bold text-slate-900">
-                          {salesMetrics.days_of_data}
-                        </p>
-                        <div className="text-xs text-slate-400">
-                          <p>Number of days in file</p>
-                          <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <p className="text-slate-600 font-medium">
-                                Monthly Projection
-                              </p>
-                              <p className="text-lg font-bold text-slate-900">
-                                {monthlyProjection !== null
-                                  ? monthlyProjection.toLocaleString()
-                                  : "-"}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                Estimated units / month (avg_daily × 30)
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-slate-600 font-medium">
-                                Monthly (from total)
-                              </p>
-                              <p className="text-lg font-bold text-slate-900">
-                                {monthlyFromTotal !== null
-                                  ? monthlyFromTotal.toLocaleString()
-                                  : "-"}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                Total quantity ÷ months in file
-                              </p>
-                            </div>
-                          </div>
+                    {isSalesMetricsExpanded && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <Calendar className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Days of Data
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {salesMetrics.days_of_data}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Number of days in file
+                          </p>
+                        </div>
+
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <TrendingUp className="absolute top-3 right-3 w-5 h-5 text-green-600 dark:text-green-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Monthly Projection
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {monthlyProjection !== null
+                              ? monthlyProjection.toLocaleString()
+                              : "-"}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Estimated units / month (avg_daily × 30)
+                          </p>
+                        </div>
+
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <BarChart3 className="absolute top-3 right-3 w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Monthly (from total)
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {monthlyFromTotal !== null
+                              ? monthlyFromTotal.toLocaleString()
+                              : "-"}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Total quantity ÷ months in file
+                          </p>
+                        </div>
+
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <Package className="absolute top-3 right-3 w-5 h-5 text-amber-600 dark:text-amber-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Total Quantity
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {Math.round(
+                              salesMetrics.total_quantity
+                            ).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Units sold in file
+                          </p>
+                        </div>
+
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <Activity className="absolute top-3 right-3 w-5 h-5 text-teal-600 dark:text-teal-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Average Daily
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {salesMetrics.average_daily.toFixed(2)}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Avg units sold per day
+                          </p>
+                        </div>
+
+                        <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
+                          <CalendarDays className="absolute top-3 right-3 w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                          <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            Annual Demand
+                          </p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {Math.round(
+                              salesMetrics.annual_demand
+                            ).toLocaleString()}
+                          </p>
+                          <p className="text-sm text-slate-500 dark:text-gray-400">
+                            Projected annual demand
+                          </p>
                         </div>
                       </div>
-
-                      <div>
-                        <p className="text-slate-600 font-medium">
-                          Total Quantity
-                        </p>
-                        <p className="text-xl font-bold text-slate-900">
-                          {Math.round(
-                            salesMetrics.total_quantity
-                          ).toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Units sold in file
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-slate-600 font-medium">
-                          Average Daily
-                        </p>
-                        <p className="text-xl font-bold text-slate-900">
-                          {salesMetrics.average_daily.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Avg units sold per day
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-slate-600 font-medium">
-                          Annual Demand
-                        </p>
-                        <p className="text-xl font-bold text-slate-900">
-                          {Math.round(
-                            salesMetrics.annual_demand
-                          ).toLocaleString()}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          Projected annual demand
-                        </p>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -716,24 +796,29 @@ const EOQAnalyticsDashboard: React.FC = () => {
       </div>
 
       {loadingEOQ && (
-        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-slate-200 dark:border-gray-700 p-8 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-4 border-blue-200"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-blue-200 dark:border-blue-900"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 dark:border-t-blue-400 dark:border-r-blue-400 animate-spin"></div>
             </div>
-            <p className="text-slate-600">Loading EOQ data...</p>
+            <p className="text-base text-slate-600 dark:text-gray-400">
+              Loading EOQ data...
+            </p>
           </div>
         </div>
       )}
 
       {!loadingEOQ && !eoqData && (
-        <div className="bg-white rounded-lg shadow-md border border-slate-200 p-8 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-slate-200 dark:border-gray-700 p-8 text-center">
           <div className="flex flex-col items-center gap-4">
-            <AlertCircle className="w-12 h-12 text-slate-400" />
-            <h3 className="text-lg font-semibold text-slate-900">No EOQ Data Available</h3>
-            <p className="text-slate-600 max-w-md">
-              Upload sales data to calculate EOQ metrics. The dashboard will display once calculations are available.
+            <AlertCircle className="w-12 h-12 text-slate-400 dark:text-gray-500" />
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+              No EOQ Data Available
+            </h3>
+            <p className="text-base text-slate-600 dark:text-gray-400 max-w-md">
+              Upload sales data to calculate EOQ metrics. The dashboard will
+              display once calculations are available.
             </p>
           </div>
         </div>
@@ -742,106 +827,132 @@ const EOQAnalyticsDashboard: React.FC = () => {
       {!loadingEOQ && eoqData && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg shadow-md border-l-4 border-blue-500 p-6 hover:shadow-lg transition-shadow">
-              <p className="text-slate-600 text-sm font-medium mb-1">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <Calculator className="absolute top-4 right-4 w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
                 EOQ Quantity
               </p>
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {Math.round(eoqData.eoq_quantity).toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
                 Suggested optimal units per order
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md border-l-4 border-yellow-500 p-6 hover:shadow-lg transition-shadow">
-              <p className="text-slate-600 text-sm font-medium mb-1">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <RefreshCw className="absolute top-4 right-4 w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
                 Reorder Point
               </p>
-              <p className="text-3xl font-bold text-yellow-600">
+              <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                 {Math.round(eoqData.reorder_point).toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
                 Stock level to trigger reorder
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md border-l-4 border-green-500 p-6 hover:shadow-lg transition-shadow">
-              <p className="text-slate-600 text-sm font-medium mb-1">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <DollarSign className="absolute top-4 right-4 w-6 h-6 text-green-600 dark:text-green-400" />
+              <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
                 Annual Total Cost
               </p>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                 ₱{Math.round(eoqData.total_annual_cost).toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
                 Estimated yearly holding + ordering
               </p>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md border-l-4 border-red-500 p-6 hover:shadow-lg transition-shadow">
-              <p className="text-slate-600 text-sm font-medium mb-1">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <Shield className="absolute top-4 right-4 w-6 h-6 text-red-600 dark:text-red-400" />
+              <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
                 Safety Stock
               </p>
-              <p className="text-3xl font-bold text-red-600">
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400">
                 {Math.round(eoqData.safety_stock).toLocaleString()}
               </p>
-              <p className="text-slate-500 text-xs mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
                 Buffer to reduce stockouts
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <Coins className="absolute top-4 right-4 w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
                 Annual Holding Cost
               </h3>
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                 ₱{Math.round(eoqData.annual_holding_cost)}
               </p>
-              <p className="text-slate-500 text-sm mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                 Cost to store inventory
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <TrendingUp className="absolute top-4 right-4 w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
                 Max Stock Level
               </h3>
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                 {Math.round(eoqData.max_stock_level)} units
               </p>
-              <p className="text-slate-500 text-sm mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                 Maximum inventory level
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <h3 className="font-semibold text-slate-900 mb-4">
+            <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              <Package className="absolute top-4 right-4 w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
                 Average Inventory
               </h3>
-              <p className="text-3xl font-bold text-indigo-600">
+              <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
                 {Math.round(eoqData.average_inventory)} units
               </p>
-              <p className="text-slate-500 text-sm mt-2">
+              <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                 Expected average stock
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+            {/* Inventory Level Prediction */}
+            <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
+                  <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   Inventory Level Prediction ({inventoryTimeframe || "Monthly"})
                 </h3>
               </div>
               {eoqData ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <ComposedChart data={inventoryData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={isDarkMode ? "#4b5563" : "#e5e7eb"}
+                    />
+                    <XAxis
+                      dataKey="day"
+                      stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
+                    />
+                    <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
+                    <Tooltip
+                      contentStyle={
+                        isDarkMode
+                          ? {
+                              backgroundColor: "#1f2937",
+                              borderColor: "#374151",
+                              color: "#f9fafb",
+                            }
+                          : {}
+                      }
+                    />
                     <Legend />
                     <Area
                       type="monotone"
@@ -889,10 +1000,26 @@ const EOQAnalyticsDashboard: React.FC = () => {
                       avgDaily: inventoryAnalytics[0].avg_daily_usage || 0,
                     }))}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={isDarkMode ? "#4b5563" : "#e5e7eb"}
+                    />
+                    <XAxis
+                      dataKey="day"
+                      stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
+                    />
+                    <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
+                    <Tooltip
+                      contentStyle={
+                        isDarkMode
+                          ? {
+                              backgroundColor: "#1f2937",
+                              borderColor: "#374151",
+                              color: "#f9fafb",
+                            }
+                          : {}
+                      }
+                    />
                     <Legend />
                     <Line
                       type="monotone"
@@ -911,29 +1038,38 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="p-8 text-center text-slate-500">
+                <div className="p-8 text-center text-slate-500 dark:text-gray-400">
                   No inventory analytics available yet. Import sales data to
                   generate predictions.
                 </div>
               )}
             </div>
-
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+            {/* Top Products — Sales vs. Avg Daily */}
+            <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-xl bg-gradient-to-tr from-purple-500/20 to-purple-700/20 dark:from-purple-800/30 dark:to-purple-600/30">
+                  <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   Top Products — Sales vs. Avg Daily
                 </h3>
               </div>
-              <div className="mb-4 text-sm text-slate-600">
+              <div className="mb-4 text-base text-slate-600 dark:text-gray-400">
                 This chart shows total units sold (last period) and average
                 daily rate for the top products so you can spot fast movers.
               </div>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={derivedTopProducts} margin={{ left: -8 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="product_name" tick={{ fontSize: 12 }} />
-                  <YAxis />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={isDarkMode ? "#4b5563" : "#e5e7eb"}
+                  />
+                  <XAxis
+                    dataKey="product_name"
+                    tick={{ fontSize: 12 }}
+                    stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
+                  />
+                  <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
                   <Tooltip
                     formatter={(value: any, name: any) => {
                       if (name === "total_sold") return [value, "Total Sold"];
@@ -941,6 +1077,15 @@ const EOQAnalyticsDashboard: React.FC = () => {
                         return [Number(value).toLocaleString(), "Est / month"];
                       return [value, name];
                     }}
+                    contentStyle={
+                      isDarkMode
+                        ? {
+                            backgroundColor: "#1f2937",
+                            borderColor: "#374151",
+                            color: "#f9fafb",
+                          }
+                        : {}
+                    }
                   />
                   <Legend />
                   <Bar dataKey="total_sold" fill="#3b82f6" name="Total Sold" />
@@ -954,21 +1099,38 @@ const EOQAnalyticsDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-yellow-600" />
-              <h3 className="text-lg font-bold text-slate-900">
+          <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-gradient-to-tr from-yellow-500/20 to-yellow-700/20 dark:from-yellow-800/30 dark:to-yellow-600/30">
+                <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 Annual Cost Breakdown
               </h3>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={costData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={isDarkMode ? "#4b5563" : "#e5e7eb"}
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke={isDarkMode ? "#9ca3af" : "#6b7280"}
+                />
+                <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
                 <Tooltip
                   formatter={(value: any) => `₱${Math.round(value)}`}
                   labelFormatter={(label: any) => `${label}`}
+                  contentStyle={
+                    isDarkMode
+                      ? {
+                          backgroundColor: "#1f2937",
+                          borderColor: "#374151",
+                          color: "#f9fafb",
+                        }
+                      : {}
+                  }
                 />
                 <Legend />
                 <Bar dataKey="value" fill="#3b82f6" name="Cost (₱)" />
@@ -977,72 +1139,83 @@ const EOQAnalyticsDashboard: React.FC = () => {
           </div>
 
           {topProducts.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+            <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   Top Performing Products
                 </h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {topProducts.map((product, idx) => {
-                  const monthly = (product.avg_daily || 0) * 30;
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200 p-4"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="text-sm font-medium text-slate-600 truncate"
-                            title={product.product_name}
-                          >
-                            {product.product_name}
-                          </p>
-                        </div>
-                        <div className="text-xs font-bold text-white bg-green-600 rounded-full w-6 h-6 flex items-center justify-center">
-                          {idx + 1}
-                        </div>
-                      </div>
-                      <p className="text-2xl font-bold text-green-700 mb-1">
-                        {product.total_sold.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-slate-600 mb-2">
-                        Total Units Sold
-                      </p>
-                      <div className="pt-2 border-t border-green-200 space-y-1">
-                        <p className="text-xs text-slate-600">
-                          <span className="font-semibold">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-3 px-2 text-slate-600 dark:text-gray-400 font-semibold text-base">
+                        Product
+                      </th>
+                      <th className="text-center py-3 px-2 text-slate-600 dark:text-gray-400 font-semibold text-base">
+                        Units Sold
+                      </th>
+                      <th className="text-center py-3 px-2 text-slate-600 dark:text-gray-400 font-semibold text-base">
+                        Units/Day
+                      </th>
+                      <th className="text-center py-3 px-2 text-slate-600 dark:text-gray-400 font-semibold text-base">
+                        Units/Month
+                      </th>
+                      <th className="text-center py-3 px-2 text-slate-600 dark:text-gray-400 font-semibold text-base">
+                        Transactions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topProducts.map((product, idx) => {
+                      const monthly = (product.avg_daily || 0) * 30;
+                      return (
+                        <tr
+                          key={idx}
+                          className="border-b border-gray-100 dark:border-gray-800 hover:bg-blue-50/70 dark:hover:bg-blue-900/30 transition-colors duration-200"
+                        >
+                          <td className="py-3 px-2">
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-bold text-white bg-gradient-to-tr from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                {idx + 1}
+                              </div>
+                              <span
+                                className="text-slate-800 dark:text-gray-200 font-medium truncate max-w-xs"
+                                title={product.product_name}
+                              >
+                                {product.product_name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-2 text-center">
+                            <span className="text-[#222222] dark:text-[#F1F1F1] font-semibold">
+                              {product.total_sold.toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-2 text-center text-[#222222] dark:text-[#F1F1F1]">
                             {product.avg_daily.toFixed(1)}
-                          </span>{" "}
-                          units/day
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          <span className="font-semibold">
+                          </td>
+                          <td className="py-3 px-2 text-center text-[#222222] dark:text-[#F1F1F1]">
                             {monthly.toFixed(0)}
-                          </span>{" "}
-                          units/month
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          <span className="font-semibold">
+                          </td>
+                          <td className="py-3 px-2 text-center text-[#222222] dark:text-[#F1F1F1]">
                             {product.transaction_count}
-                          </span>{" "}
-                          transactions
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {processedRestocks.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md border border-slate-200 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-slate-200 dark:border-gray-700 p-6">
               <div className="flex items-center gap-2 mb-4">
-                <AlertCircle className="w-5 h-5 text-orange-600" />
-                <h3 className="text-lg font-bold text-slate-900">
+                <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                   Restock Monitoring & Recommendations
                 </h3>
               </div>
@@ -1058,16 +1231,16 @@ const EOQAnalyticsDashboard: React.FC = () => {
                     (urgent.priority === "high" ||
                       urgent.daysUntilStockout <= 7);
                   return isUrgent ? (
-                    <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm text-red-700 font-semibold">
+                          <p className="text-base text-red-700 dark:text-red-400 font-semibold">
                             Immediate Restock Recommended
                           </p>
-                          <p className="text-lg font-bold text-slate-900">
+                          <p className="text-xl font-bold text-slate-900 dark:text-white">
                             {urgent.product_name}
                           </p>
-                          <p className="text-sm text-slate-500">
+                          <p className="text-base text-slate-500 dark:text-gray-400">
                             Days until stockout:{" "}
                             {urgent.daysUntilStockout === Infinity
                               ? "N/A"
@@ -1075,10 +1248,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-slate-500">
+                          <p className="text-base text-slate-500 dark:text-gray-400">
                             Recommended Qty
                           </p>
-                          <p className="text-2xl font-bold text-red-600">
+                          <p className="text-3xl font-bold text-red-600 dark:text-red-400">
                             {urgent.recommendedQty.toLocaleString()} units
                           </p>
                         </div>
@@ -1096,15 +1269,15 @@ const EOQAnalyticsDashboard: React.FC = () => {
                       key={idx}
                       className={`rounded-lg border p-4 ${
                         urgent
-                          ? "bg-orange-50 border-orange-200"
-                          : "bg-amber-50 border-amber-100"
+                          ? "bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800/50"
+                          : "bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-800/30"
                       }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
                             <h4
-                              className="font-semibold text-slate-900 truncate"
+                              className="font-semibold text-slate-900 dark:text-white truncate text-lg"
                               title={rec.product_name}
                             >
                               {rec.product_name}
@@ -1112,40 +1285,40 @@ const EOQAnalyticsDashboard: React.FC = () => {
                             <span
                               className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                 rec.priority === "high"
-                                  ? "bg-red-100 text-red-700"
+                                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
                                   : rec.priority === "medium"
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-yellow-100 text-yellow-700"
+                                  ? "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400"
+                                  : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
                               }`}
                             >
                               {rec.priority.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-600 mb-2">
+                          <p className="text-base text-slate-600 dark:text-gray-400 mb-2">
                             {rec.recommendation}
                           </p>
-                          <div className="flex gap-6 text-sm">
+                          <div className="flex gap-6 text-base">
                             <div>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-sm text-slate-500 dark:text-gray-500">
                                 Last Total Sold
                               </p>
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-slate-900 dark:text-white text-lg">
                                 {rec.last_sold_qty.toLocaleString()} units
                               </p>
                             </div>
                             <div>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-sm text-slate-500 dark:text-gray-500">
                                 Daily Rate
                               </p>
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-slate-900 dark:text-white text-lg">
                                 {rec.daily_rate.toFixed(2)} units/day
                               </p>
                             </div>
                             <div>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-sm text-slate-500 dark:text-gray-500">
                                 Days Until Stockout
                               </p>
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-slate-900 dark:text-white text-lg">
                                 {rec.daysUntilStockout === Infinity
                                   ? "N/A"
                                   : rec.daysUntilStockout}
@@ -1155,18 +1328,20 @@ const EOQAnalyticsDashboard: React.FC = () => {
                         </div>
 
                         <div className="text-right pl-4">
-                          <p className="text-xs text-slate-500">
+                          <p className="text-sm text-slate-500 dark:text-gray-500">
                             Recommended Qty
                           </p>
                           <p
-                            className={`text-2xl font-bold ${
-                              urgent ? "text-red-600" : "text-amber-700"
+                            className={`text-3xl font-bold ${
+                              urgent
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-amber-700 dark:text-amber-500"
                             }`}
                           >
                             {rec.recommendedQty.toLocaleString()} units
                           </p>
                           {urgent && (
-                            <p className="text-xs text-red-600 mt-1">
+                            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
                               Restock now
                             </p>
                           )}

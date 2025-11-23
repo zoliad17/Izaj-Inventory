@@ -24,7 +24,7 @@ import {
 import Unauthorized from "./components/Unauthorized/Unauthorized";
 import Transferred from "./components/Branch_Request/Transffered";
 import AllStock from "./components/Stock_Components/OptimizedAll_Stock";
-import Sales from "./components/Sales/Sales";
+// import Sales from "./components/Sales/Sales";
 import Requested_Item from "./components/Branch_Request/Requested_Item";
 import UnifiedProductRequest from "./components/Branch/UnifiedProductRequest";
 import ProductTable from "./components/Branch/ProductTable";
@@ -32,7 +32,10 @@ import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryP
 import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
 import UserAuditLogsPage from "./components/AuditLogs/UserAuditLogsPage";
 import SessionWarning from "./components/SessionWarning";
-import { ThemeProvider } from "./components/ThemeContext/ThemeContext";
+import {
+  ThemeProvider,
+  useTheme,
+} from "./components/ThemeContext/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { RouteRoles } from "./types";
 import UserAuditLogsDetailView from "./components/AuditLogs/UserAuditLogsDetailView";
@@ -71,18 +74,42 @@ const routeRoles: RouteRoles = {
 // Layout component that includes the Sidebar
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isCollapsed } = useSidebar();
+  const { isDarkMode } = useTheme();
 
   return (
-    <div style={{ display: "flex" }}>
-      <Sidebar />
-      <div
-        style={{
-          flex: 1,
-          marginLeft: isCollapsed ? "80px" : "256px",
-          transition: "margin-left 0.3s ease",
-        }}
-      >
-        {children}
+    <div
+      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+    >
+      <div style={{ display: "flex", flex: 1 }}>
+        <Sidebar />
+        <div
+          style={{
+            flex: 1,
+            marginLeft: isCollapsed ? "80px" : "256px",
+            transition: "margin-left 0.3s ease",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div style={{ flex: 1 }}>{children}</div>
+          <footer
+            style={{
+              backgroundColor: isDarkMode ? "#111827" : "#ffffff",
+              color: isDarkMode ? "#9ca3af" : "#6b7280",
+              textAlign: "center",
+              padding: "16px 0",
+              fontSize: "16px",
+              fontWeight: "500",
+              borderTop: isDarkMode ? "1px solid #374151" : "1px solid #e5e7eb",
+              marginTop: "auto",
+              boxShadow: isDarkMode
+                ? "0 -1px 3px rgba(0, 0, 0, 0.3)"
+                : "0 -1px 3px rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            © 2025 CTR-ALT-DELIGHT
+          </footer>
+        </div>
       </div>
       <SessionWarning />
     </div>
@@ -193,7 +220,7 @@ const App: React.FC = () => {
                 }
               />
               {/* Sales */}
-              <Route
+              {/* <Route
                 path="/sales"
                 element={
                   <ProtectedRoute allowedRoles={routeRoles.sales}>
@@ -202,7 +229,7 @@ const App: React.FC = () => {
                     </Layout>
                   </ProtectedRoute>
                 }
-              />
+              /> */}
               {/* Stock_Components */}
               <Route
                 path="/all_stock"
