@@ -850,14 +850,21 @@ def get_product_stock(product_ids: Iterable[int], branch_ids: Iterable[int] = No
             conn.close()
 
 
-def fetch_inventory_analytics(days: int = 30, limit: int = 100):
-    """Fetch recent inventory_analytics rows within the last `days` days."""
+def fetch_inventory_analytics(days: int = 30, limit: int = 100, branch_id: int | None = None):
+    """Fetch recent inventory_analytics rows within the last `days` days.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     from datetime import datetime, timedelta
     from_date = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
 
     if _supabase_client:
         try:
-            resp = _supabase_client.table('inventory_analytics').select('*').gte('created_at', from_date).order('created_at', desc=True).limit(limit).execute()
+            query = _supabase_client.table('inventory_analytics').select('*').gte('created_at', from_date).order('created_at', desc=True)
+            if branch_id is not None:
+                query = query.eq('branch_id', branch_id)
+            resp = query.limit(limit).execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase fetch inventory_analytics error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
@@ -871,7 +878,10 @@ def fetch_inventory_analytics(days: int = 30, limit: int = 100):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT id, product_id, branch_id, analysis_date, current_stock, avg_daily_usage, stock_adequacy_days, turnover_ratio, carrying_cost, stockout_risk_percentage, recommendation, created_at FROM public.inventory_analytics WHERE created_at >= %s::date ORDER BY created_at DESC LIMIT %s", (from_date, limit))
+        if branch_id is not None:
+            cur.execute("SELECT id, product_id, branch_id, analysis_date, current_stock, avg_daily_usage, stock_adequacy_days, turnover_ratio, carrying_cost, stockout_risk_percentage, recommendation, created_at FROM public.inventory_analytics WHERE created_at >= %s::date AND branch_id = %s ORDER BY created_at DESC LIMIT %s", (from_date, branch_id, limit))
+        else:
+            cur.execute("SELECT id, product_id, branch_id, analysis_date, current_stock, avg_daily_usage, stock_adequacy_days, turnover_ratio, carrying_cost, stockout_risk_percentage, recommendation, created_at FROM public.inventory_analytics WHERE created_at >= %s::date ORDER BY created_at DESC LIMIT %s", (from_date, limit))
         cols = [c[0] for c in cur.description]
         rows = cur.fetchall()
         results = [dict(zip(cols, r)) for r in rows]
@@ -886,8 +896,12 @@ def fetch_inventory_analytics(days: int = 30, limit: int = 100):
             conn.close()
 
 
-def fetch_top_products(days: int = 30, limit: int = 10):
-    """Return top products aggregated from product_demand_history for the last `days` days."""
+def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = None):
+    """Return top products aggregated from product_demand_history for the last `days` days.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     from datetime import datetime, timedelta
     from_date = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
 
@@ -895,7 +909,10 @@ def fetch_top_products(days: int = 30, limit: int = 10):
         try:
             # PostgREST aggregate expressions are fragile across client versions.
             # Fetch recent product_demand_history rows and aggregate in Python for compatibility.
-            resp = _supabase_client.table('product_demand_history').select('product_id,quantity_sold,period_date').gte('period_date', from_date).limit(10000).execute()
+            query = _supabase_client.table('product_demand_history').select('product_id,quantity_sold,period_date,branch_id').gte('period_date', from_date).limit(10000)
+            if branch_id is not None:
+                query = query.eq('branch_id', branch_id)
+            resp = query.execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase fetch product_demand_history rows error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
@@ -947,7 +964,10 @@ def fetch_top_products(days: int = 30, limit: int = 10):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT product_id, SUM(quantity_sold) as total_sold, COUNT(id) as records FROM public.product_demand_history WHERE period_date >= %s::date GROUP BY product_id ORDER BY total_sold DESC LIMIT %s", (from_date, limit))
+        if branch_id is not None:
+            cur.execute("SELECT product_id, SUM(quantity_sold) as total_sold, COUNT(id) as records FROM public.product_demand_history WHERE period_date >= %s::date AND branch_id = %s GROUP BY product_id ORDER BY total_sold DESC LIMIT %s", (from_date, branch_id, limit))
+        else:
+            cur.execute("SELECT product_id, SUM(quantity_sold) as total_sold, COUNT(id) as records FROM public.product_demand_history WHERE period_date >= %s::date GROUP BY product_id ORDER BY total_sold DESC LIMIT %s", (from_date, limit))
         rows = cur.fetchall()
         results = []
         ids = [int(r[0]) for r in rows]

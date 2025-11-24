@@ -742,7 +742,13 @@ def list_inventory_analytics():
     try:
         days = int(request.args.get('days', 30))
         limit = int(request.args.get('limit', 100))
-        results = db_module.fetch_inventory_analytics(days=days, limit=limit)
+        branch_id = request.args.get('branch_id', None)
+        if branch_id is not None:
+            try:
+                branch_id = int(branch_id)
+            except ValueError:
+                branch_id = None
+        results = db_module.fetch_inventory_analytics(days=days, limit=limit, branch_id=branch_id)
         # attach a timeframe label
         timeframe = 'Annual' if days >= 365 else 'Monthly'
         return jsonify({'success': True, 'timeframe': timeframe, 'data': results}), 200
@@ -757,7 +763,13 @@ def get_top_products():
     try:
         days = int(request.args.get('days', 30))
         limit = int(request.args.get('limit', 10))
-        results = db_module.fetch_top_products(days=days, limit=limit)
+        branch_id = request.args.get('branch_id', None)
+        if branch_id is not None:
+            try:
+                branch_id = int(branch_id)
+            except ValueError:
+                branch_id = None
+        results = db_module.fetch_top_products(days=days, limit=limit, branch_id=branch_id)
         return jsonify({'success': True, 'data': results}), 200
     except Exception as e:
         logger.exception('Error fetching top products: %s', str(e))
