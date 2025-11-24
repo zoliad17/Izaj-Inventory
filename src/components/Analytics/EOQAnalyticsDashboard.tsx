@@ -82,7 +82,6 @@ interface ModalState {
 const EOQAnalyticsDashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [eoqData, setEOQData] = useState<EOQData | null>(null);
-  const [eoqList, setEoqList] = useState<EOQData[]>([]);
   const [inventoryAnalytics, setInventoryAnalytics] = useState<any[]>([]);
   const [inventoryTimeframe, setInventoryTimeframe] = useState<string>("");
   const [salesMetrics, setSalesMetrics] = useState<SalesImportMetrics | null>(
@@ -289,7 +288,6 @@ const EOQAnalyticsDashboard: React.FC = () => {
             average_inventory: avgInventory,
           } as EOQData;
         });
-        setEoqList(mapped);
         // Always use the most recent EOQ calculation (first item, ordered by calculated_at DESC)
         // This ensures consistency on page refresh
         if (mapped.length > 0) {
