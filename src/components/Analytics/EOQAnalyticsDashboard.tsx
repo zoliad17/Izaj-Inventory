@@ -33,6 +33,10 @@ import {
 } from "lucide-react";
 import { useTheme } from "../ThemeContext/ThemeContext";
 
+// Get backend URL from environment variables
+const PYTHON_BACKEND_URL =
+  import.meta.env.VITE_PYTHON_BACKEND_URL || "http://localhost:5001";
+
 interface EOQData {
   eoq_quantity: number;
   reorder_point: number;
@@ -143,9 +147,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
         // Send directly to Python backend for file uploads
         // This bypasses the Node.js proxy to avoid multipart handling issues
-        const pythonBackendUrl = "http://localhost:5001";
         const response = await fetch(
-          `${pythonBackendUrl}/api/analytics/sales-data/import`,
+          `${PYTHON_BACKEND_URL}/api/analytics/sales-data/import`,
           {
             method: "POST",
             body: formData,
@@ -214,9 +217,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
   const fetchEOQCalculationsFromServer = useCallback(async () => {
     setLoadingEOQ(true);
     try {
-      const pythonBackendUrl = "http://localhost:5001";
       const res = await fetch(
-        `${pythonBackendUrl}/api/analytics/eoq-calculations?limit=50`
+        `${PYTHON_BACKEND_URL}/api/analytics/eoq-calculations?limit=50`
       );
       if (!res.ok) {
         console.error(
@@ -319,9 +321,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
     async (demandValue: number) => {
       try {
         // Send directly to Python backend to avoid Node.js proxy issues
-        const pythonBackendUrl = "http://localhost:5001";
         const response = await fetch(
-          `${pythonBackendUrl}/api/analytics/eoq/calculate`,
+          `${PYTHON_BACKEND_URL}/api/analytics/eoq/calculate`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -390,9 +391,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
   const fetchTopProductsFromServer = useCallback(async (days = 30) => {
     try {
-      const pythonBackendUrl = "http://localhost:5001";
       const res = await fetch(
-        `${pythonBackendUrl}/api/analytics/top-products?days=${days}&limit=10`
+        `${PYTHON_BACKEND_URL}/api/analytics/top-products?days=${days}&limit=10`
       );
       if (!res.ok)
         throw new Error(`Failed to fetch top products: ${res.status}`);
@@ -407,9 +407,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
   const fetchInventoryAnalyticsFromServer = useCallback(async (days = 30) => {
     try {
-      const pythonBackendUrl = "http://localhost:5001";
       const res = await fetch(
-        `${pythonBackendUrl}/api/analytics/inventory-analytics?days=${days}&limit=50`
+        `${PYTHON_BACKEND_URL}/api/analytics/inventory-analytics?days=${days}&limit=50`
       );
       if (!res.ok)
         throw new Error(`Failed to fetch inventory analytics: ${res.status}`);
@@ -428,9 +427,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
   // Fetch sales summary from backend
   const fetchSalesSummaryFromServer = useCallback(async (days = 30) => {
     try {
-      const pythonBackendUrl = "http://localhost:5001";
       const res = await fetch(
-        `${pythonBackendUrl}/api/analytics/sales-summary?days=${days}`
+        `${PYTHON_BACKEND_URL}/api/analytics/sales-summary?days=${days}`
       );
       if (!res.ok)
         throw new Error(`Failed to fetch sales summary: ${res.status}`);
