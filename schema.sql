@@ -258,6 +258,27 @@ BEGIN
 END $$;
 
 -- =============================================
+-- ADD UPDATED_AT COLUMN TO CENTRALIZED_PRODUCT (Safe for existing tables)
+-- =============================================
+
+DO $$
+BEGIN
+    -- Add updated_at column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'centralized_product' 
+        AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE public.centralized_product 
+        ADD COLUMN updated_at timestamp with time zone DEFAULT now();
+        
+        -- Create index on updated_at for query performance
+        CREATE INDEX IF NOT EXISTS idx_centralized_product_updated_at 
+        ON public.centralized_product(updated_at);
+    END IF;
+END $$;
+
+-- =============================================
 -- UTILITY FUNCTIONS
 -- =============================================
 
@@ -368,6 +389,13 @@ $$ language 'plpgsql';
 DROP TRIGGER IF EXISTS update_product_requisition_updated_at ON public.product_requisition;
 CREATE TRIGGER update_product_requisition_updated_at
     BEFORE UPDATE ON public.product_requisition
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Apply trigger to centralized_product table for updated_at timestamp
+DROP TRIGGER IF EXISTS update_centralized_product_updated_at ON public.centralized_product;
+CREATE TRIGGER update_centralized_product_updated_at
+    BEFORE UPDATE ON public.centralized_product
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -683,6 +711,21 @@ CREATE TABLE IF NOT EXISTS public.inventory_analytics (
   CONSTRAINT inventory_analytics_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS public.restock_recommendations (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  product_id integer,
+  product_name character varying NOT NULL,
+  branch_id integer NOT NULL,
+  last_sold_qty real NOT NULL,
+  daily_rate real NOT NULL,
+  recommendation text NOT NULL,
+  priority character varying NOT NULL DEFAULT 'low',
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT restock_recommendations_pkey PRIMARY KEY (id),
+  CONSTRAINT restock_recommendations_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.centralized_product(id) ON DELETE SET NULL,
+  CONSTRAINT restock_recommendations_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS public.product_demand_history (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   product_id integer NOT NULL,
@@ -726,6 +769,11 @@ CREATE INDEX IF NOT EXISTS idx_sales_forecast_month ON public.sales_forecast(for
 CREATE INDEX IF NOT EXISTS idx_inventory_analytics_product_id ON public.inventory_analytics(product_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_analytics_branch_id ON public.inventory_analytics(branch_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_analytics_date ON public.inventory_analytics(analysis_date);
+
+CREATE INDEX IF NOT EXISTS idx_restock_recommendations_product_id ON public.restock_recommendations(product_id);
+CREATE INDEX IF NOT EXISTS idx_restock_recommendations_branch_id ON public.restock_recommendations(branch_id);
+CREATE INDEX IF NOT EXISTS idx_restock_recommendations_priority ON public.restock_recommendations(priority);
+CREATE INDEX IF NOT EXISTS idx_restock_recommendations_created_at ON public.restock_recommendations(created_at);
 
 CREATE INDEX IF NOT EXISTS idx_product_demand_history_product_id ON public.product_demand_history(product_id);
 CREATE INDEX IF NOT EXISTS idx_product_demand_history_branch_id ON public.product_demand_history(branch_id);

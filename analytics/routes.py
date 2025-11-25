@@ -678,6 +678,43 @@ def import_sales_data():
         except Exception:
             logger.exception('Failed while attempting to persist sales to DB')
 
+        # Persist restock recommendations to database
+        try:
+            inserted_count = 0
+            for rec in restock_recommendations:
+                # Try to find product_id from the dataframe
+                product_identifier = rec.get('product_name')
+                if not product_identifier:
+                    continue
+                    
+                try:
+                    pid = None
+                    # First check if product_identifier is a numeric product_id
+                    try:
+                        pid = int(product_identifier)
+                    except ValueError:
+                        # If not, try to look up product_id by name
+                        try:
+                            pid = db_module.get_product_id_by_name(str(product_identifier), branch_id)
+                            if pid:
+                                logger.info(f'Found product_id {pid} for restock recommendation product "{product_identifier}"')
+                        except Exception as e:
+                            logger.warning(f'Failed to look up product_id for restock recommendation "{product_identifier}": {str(e)}')
+                    
+                    # Persist to database (with or without product_id)
+                    # If no product_id found, pass None and let the insert handle it
+                    success = db_module.insert_restock_recommendations(pid or None, branch_id, rec)
+                    if success:
+                        inserted_count += 1
+                        logger.info(f'✓ Restock recommendation persisted for product {pid or "unknown"} (name: "{product_identifier}"), branch {branch_id}')
+                    else:
+                        logger.error(f'✗ Failed to persist restock recommendation for product {pid or "unknown"} (name: "{product_identifier}"), branch {branch_id}')
+                except Exception:
+                    logger.exception('Failed to persist restock recommendation for product %s', product_identifier)
+            logger.info(f'Restock recommendations insertion complete: {inserted_count}/{len(restock_recommendations)} inserted')
+        except Exception:
+            logger.exception('Restock recommendation persistence step failed')
+
         response = {
             'success': True,
             'message': f'Imported {len(df)} sales records',
@@ -723,13 +760,46 @@ def get_eoq_recommendations():
         return jsonify({'success': False, 'error': 'Failed to retrieve recommendations'}), 500
 
 
+@analytics_bp.route('/restock-recommendations', methods=['GET'])
+def list_restock_recommendations():
+    """Return restock recommendations from persistent store.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
+    try:
+        limit = int(request.args.get('limit', 100))
+        days = int(request.args.get('days', 30))
+        branch_id = request.args.get('branch_id', None)
+        if branch_id is not None:
+            try:
+                branch_id = int(branch_id)
+            except ValueError:
+                branch_id = None
+        
+        results = db_module.fetch_restock_recommendations(days=days, branch_id=branch_id, limit=limit)
+        return jsonify({'success': True, 'data': results}), 200
+    except Exception as e:
+        logger.exception('Error fetching restock recommendations: %s', str(e))
+        return jsonify({'success': False, 'error': 'Failed to fetch restock recommendations'}), 500
+
 
 @analytics_bp.route('/eoq-calculations', methods=['GET'])
 def list_eoq_calculations():
-    """Return recent EOQ calculations from persistent store."""
+    """Return recent EOQ calculations from persistent store.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     try:
         limit = int(request.args.get('limit', 100))
-        results = db_module.fetch_eoq_calculations(limit=limit)
+        branch_id = request.args.get('branch_id', None)
+        if branch_id is not None:
+            try:
+                branch_id = int(branch_id)
+            except ValueError:
+                branch_id = None
+        results = db_module.fetch_eoq_calculations(limit=limit, branch_id=branch_id)
         return jsonify({'success': True, 'data': results}), 200
     except Exception as e:
         logger.exception('Error fetching eoq calculations: %s', str(e))
@@ -778,10 +848,20 @@ def get_top_products():
 
 @analytics_bp.route('/sales-summary', methods=['GET'])
 def get_sales_summary():
-    """Return aggregated sales summary for the last `days` days."""
+    """Return aggregated sales summary for the last `days` days.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     try:
         days = int(request.args.get('days', 30))
-        summary = db_module.fetch_sales_summary(days=days)
+        branch_id = request.args.get('branch_id', None)
+        if branch_id is not None:
+            try:
+                branch_id = int(branch_id)
+            except ValueError:
+                branch_id = None
+        summary = db_module.fetch_sales_summary(days=days, branch_id=branch_id)
         return jsonify({'success': True, 'data': summary}), 200
     except Exception as e:
         logger.exception('Error fetching sales summary: %s', str(e))

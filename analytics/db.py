@@ -317,11 +317,18 @@ def insert_eoq_calculation(product_id: int, branch_id: int, result: dict):
             conn.close()
 
 
-def fetch_eoq_calculations(limit: int = 100):
-    """Fetch recent EOQ calculations from DB. Returns list of dicts."""
+def fetch_eoq_calculations(limit: int = 100, branch_id: int | None = None):
+    """Fetch recent EOQ calculations from DB. Returns list of dicts.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     if _supabase_client:
         try:
-            resp = _supabase_client.table('eoq_calculations').select('*').order('calculated_at', desc=True).limit(limit).execute()
+            query = _supabase_client.table('eoq_calculations').select('*').order('calculated_at', desc=True)
+            if branch_id is not None:
+                query = query.eq('branch_id', branch_id)
+            resp = query.limit(limit).execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase fetch eoq error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
@@ -335,7 +342,10 @@ def fetch_eoq_calculations(limit: int = 100):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT id, product_id, branch_id, annual_demand, holding_cost, ordering_cost, unit_cost, eoq_quantity, reorder_point, safety_stock, lead_time_days, confidence_level, calculated_at, valid_until FROM public.eoq_calculations ORDER BY calculated_at DESC LIMIT %s", (limit,))
+        if branch_id is not None:
+            cur.execute("SELECT id, product_id, branch_id, annual_demand, holding_cost, ordering_cost, unit_cost, eoq_quantity, reorder_point, safety_stock, lead_time_days, confidence_level, calculated_at, valid_until FROM public.eoq_calculations WHERE branch_id = %s ORDER BY calculated_at DESC LIMIT %s", (branch_id, limit))
+        else:
+            cur.execute("SELECT id, product_id, branch_id, annual_demand, holding_cost, ordering_cost, unit_cost, eoq_quantity, reorder_point, safety_stock, lead_time_days, confidence_level, calculated_at, valid_until FROM public.eoq_calculations ORDER BY calculated_at DESC LIMIT %s", (limit,))
         cols = [c[0] for c in cur.description]
         rows = cur.fetchall()
         results = [dict(zip(cols, r)) for r in rows]
@@ -350,8 +360,12 @@ def fetch_eoq_calculations(limit: int = 100):
             conn.close()
 
 
-def fetch_sales_summary(days: int = 30):
-    """Return aggregated sales metrics over the last `days` days."""
+def fetch_sales_summary(days: int = 30, branch_id: int | None = None):
+    """Return aggregated sales metrics over the last `days` days.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
     if _supabase_client:
         try:
             # PostgREST aggregate queries can be fragile across client versions.
@@ -359,7 +373,10 @@ def fetch_sales_summary(days: int = 30):
             from datetime import datetime, timedelta
             from_date = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
             # fetch up to a reasonable number of rows for aggregation
-            resp = _supabase_client.table('sales').select('quantity_sold,transaction_date').gte('transaction_date', from_date).limit(10000).execute()
+            query = _supabase_client.table('sales').select('quantity_sold,transaction_date').gte('transaction_date', from_date)
+            if branch_id is not None:
+                query = query.eq('branch_id', branch_id)
+            resp = query.limit(10000).execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase fetch sales rows error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
@@ -405,7 +422,10 @@ def fetch_sales_summary(days: int = 30):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute("SELECT SUM(quantity_sold) as total_quantity, COUNT(id) as records, MIN(transaction_date) as start_date, MAX(transaction_date) as end_date FROM public.sales WHERE transaction_date >= (CURRENT_DATE - %s::int)", (days,))
+        if branch_id is not None:
+            cur.execute("SELECT SUM(quantity_sold) as total_quantity, COUNT(id) as records, MIN(transaction_date) as start_date, MAX(transaction_date) as end_date FROM public.sales WHERE transaction_date >= (CURRENT_DATE - %s::int) AND branch_id = %s", (days, branch_id))
+        else:
+            cur.execute("SELECT SUM(quantity_sold) as total_quantity, COUNT(id) as records, MIN(transaction_date) as start_date, MAX(transaction_date) as end_date FROM public.sales WHERE transaction_date >= (CURRENT_DATE - %s::int)", (days,))
         row = cur.fetchone()
         total_quantity = float(row[0] or 0)
         records = int(row[1] or 0)
@@ -690,7 +710,7 @@ def get_product_names(product_ids: Iterable[int]):
 def get_product_id_by_name(product_name: str, branch_id: int = None):
     """Return product_id for a given product name.
     
-    Searches in common name fields: product_name, title, name, product, label, display_name.
+    Searches for product_name field with exact match (case-insensitive).
     If branch_id is provided, also filters by branch_id.
     Returns the first matching product_id, or None if not found.
     """
@@ -700,17 +720,10 @@ def get_product_id_by_name(product_name: str, branch_id: int = None):
     # Supabase path
     if _supabase_client:
         try:
-            query = _supabase_client.table('centralized_product').select('id, branch_id')
-            # Search in multiple name fields
-            name_candidates = ('product_name', 'title', 'name', 'product', 'label', 'display_name')
-            # Use OR conditions for name matching
-            name_filters = []
-            for field in name_candidates:
-                name_filters.append(f"{field}.ilike.{product_name}")
+            query = _supabase_client.table('centralized_product').select('id, branch_id, product_name')
             
-            # For Supabase, we need to use a different approach - select all and filter in Python
-            # or use multiple queries. Let's use a simpler approach: select all and filter.
-            resp = _supabase_client.table('centralized_product').select('id, branch_id, product_name, title, name, product, label, display_name').execute()
+            # For Supabase, fetch all and filter in Python
+            resp = query.execute()
             if getattr(resp, 'error', None):
                 logger.error('Supabase fetch centralized_product error: %s', getattr(resp, 'error', None))
                 return None
@@ -720,13 +733,14 @@ def get_product_id_by_name(product_name: str, branch_id: int = None):
                 if branch_id is not None:
                     if int(r.get('branch_id', 0)) != int(branch_id):
                         continue
-                # Check name fields
-                for field in name_candidates:
-                    if r.get(field) and str(r.get(field)).strip().lower() == str(product_name).strip().lower():
-                        return int(r.get('id'))
+                # Check product_name field (case-insensitive)
+                if r.get('product_name') and str(r.get('product_name')).strip().lower() == str(product_name).strip().lower():
+                    logger.info(f'Found product_id {r.get("id")} for product_name "{product_name}"')
+                    return int(r.get('id'))
+            logger.warning(f'No product found for name "{product_name}" in branch {branch_id}')
             return None
-        except Exception:
-            logger.exception('Failed to fetch product_id by name from Supabase')
+        except Exception as e:
+            logger.exception('Failed to fetch product_id by name from Supabase: %s', str(e))
             return None
     
     # psycopg2 path
@@ -735,40 +749,28 @@ def get_product_id_by_name(product_name: str, branch_id: int = None):
     try:
         conn = get_conn()
         cur = conn.cursor()
-        # Search in multiple name fields using ILIKE for case-insensitive matching
+        # Search in product_name field using ILIKE for case-insensitive matching
         if branch_id is not None:
             cur.execute("""
                 SELECT id FROM public.centralized_product 
                 WHERE branch_id = %s 
-                AND (
-                    LOWER(COALESCE(product_name, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(title, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(name, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(product, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(label, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(display_name, '')) = LOWER(%s)
-                )
+                AND LOWER(COALESCE(product_name, '')) = LOWER(%s)
                 LIMIT 1
-            """, (branch_id, product_name, product_name, product_name, product_name, product_name, product_name))
+            """, (branch_id, product_name))
         else:
             cur.execute("""
                 SELECT id FROM public.centralized_product 
-                WHERE (
-                    LOWER(COALESCE(product_name, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(title, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(name, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(product, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(label, '')) = LOWER(%s)
-                    OR LOWER(COALESCE(display_name, '')) = LOWER(%s)
-                )
+                WHERE LOWER(COALESCE(product_name, '')) = LOWER(%s)
                 LIMIT 1
-            """, (product_name, product_name, product_name, product_name, product_name, product_name))
+            """, (product_name,))
         row = cur.fetchone()
         if row:
+            logger.info(f'Found product_id {row[0]} for product_name "{product_name}"')
             return int(row[0])
+        logger.warning(f'No product found for name "{product_name}" in branch {branch_id}')
         return None
-    except Exception:
-        logger.exception('Failed to fetch product_id by name from Postgres')
+    except Exception as e:
+        logger.exception('Failed to fetch product_id by name from Postgres: %s', str(e))
         return None
     finally:
         if cur:
@@ -981,6 +983,129 @@ def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = 
         return results
     except Exception:
         logger.exception('Failed to fetch top products')
+        raise
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def insert_restock_recommendations(product_id: int | None, branch_id: int, recommendations: dict):
+    """Insert restock recommendation into restock_recommendations table.
+    
+    product_id can be None if product not found in system.
+    
+    recommendations dict should contain:
+      - last_sold_qty: quantity last sold
+      - daily_rate: average daily usage
+      - recommendation: recommendation text
+      - priority: 'high', 'medium', or 'low'
+      - product_name: product name (optional, for logging)
+    """
+    if _supabase_client:
+        try:
+            payload = {
+                'product_id': product_id,
+                'branch_id': branch_id,
+                'last_sold_qty': recommendations.get('last_sold_qty', 0),
+                'daily_rate': recommendations.get('daily_rate', 0),
+                'recommendation': recommendations.get('recommendation', ''),
+                'priority': recommendations.get('priority', 'low'),
+                'product_name': recommendations.get('product_name', ''),
+                'created_at': datetime.utcnow().isoformat()
+            }
+            logger.info(f'Inserting restock recommendation to Supabase: {payload}')
+            resp = _supabase_client.table('restock_recommendations').insert(payload).execute()
+            if getattr(resp, 'error', None):
+                logger.error('Supabase insert restock recommendation error: %s', getattr(resp, 'error', None))
+                raise RuntimeError(str(getattr(resp, 'error', None)))
+            logger.info(f'Successfully inserted restock recommendation to Supabase')
+            return True
+        except Exception as e:
+            logger.exception('Failed to insert restock recommendation to Supabase: %s', str(e))
+            return False
+
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        now = datetime.utcnow().isoformat()
+        logger.info(f'Inserting restock recommendation to PostgreSQL: product_id={product_id}, branch_id={branch_id}, product_name={recommendations.get("product_name", "")}')
+        cur.execute(
+            """INSERT INTO public.restock_recommendations 
+               (product_id, branch_id, last_sold_qty, daily_rate, recommendation, priority, product_name, created_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (product_id, branch_id, recommendations.get('last_sold_qty', 0), 
+             recommendations.get('daily_rate', 0), recommendations.get('recommendation', ''),
+             recommendations.get('priority', 'low'), recommendations.get('product_name', ''), now)
+        )
+        conn.commit()
+        logger.info(f'Successfully inserted restock recommendation to PostgreSQL')
+        return True
+    except Exception as e:
+        logger.exception('Failed to insert restock recommendation to PostgreSQL: %s', str(e))
+        if conn:
+            conn.rollback()
+        return False
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def fetch_restock_recommendations(days: int = 30, branch_id: int | None = None, limit: int = 100):
+    """Fetch recent restock recommendations from the database.
+    
+    If branch_id is provided, filter to that branch only (for Branch Manager).
+    Otherwise, return all branches (for Super Admin).
+    """
+    from datetime import datetime, timedelta
+    from_date = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
+
+    if _supabase_client:
+        try:
+            query = _supabase_client.table('restock_recommendations').select('*').gte('created_at', from_date).order('created_at', desc=True)
+            if branch_id is not None:
+                query = query.eq('branch_id', branch_id)
+            resp = query.limit(limit).execute()
+            if getattr(resp, 'error', None):
+                logger.error('Supabase fetch restock_recommendations error: %s', getattr(resp, 'error', None))
+                raise RuntimeError(str(getattr(resp, 'error', None)))
+            return getattr(resp, 'data', []) or []
+        except Exception:
+            logger.exception('Failed to fetch restock recommendations from Supabase')
+            raise
+
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        if branch_id is not None:
+            cur.execute(
+                """SELECT id, product_id, branch_id, last_sold_qty, daily_rate, recommendation, priority, product_name, created_at 
+                   FROM public.restock_recommendations 
+                   WHERE created_at >= %s::date AND branch_id = %s 
+                   ORDER BY created_at DESC LIMIT %s""",
+                (from_date, branch_id, limit)
+            )
+        else:
+            cur.execute(
+                """SELECT id, product_id, branch_id, last_sold_qty, daily_rate, recommendation, priority, product_name, created_at 
+                   FROM public.restock_recommendations 
+                   WHERE created_at >= %s::date 
+                   ORDER BY created_at DESC LIMIT %s""",
+                (from_date, limit)
+            )
+        cols = [c[0] for c in cur.description]
+        rows = cur.fetchall()
+        results = [dict(zip(cols, r)) for r in rows]
+        return results
+    except Exception:
+        logger.exception('Failed to fetch restock recommendations')
         raise
     finally:
         if cur:

@@ -308,6 +308,7 @@ app.put("/api/products/:id", authenticateUser, async (req, res) => {
       quantity: Number(product.stock),
       status: product.status,
       branch_id: product.branch_id, // already int
+      updated_at: new Date().toISOString(), // Explicitly set updated_at timestamp
       // Add other fields as needed
     })
     .eq("id", id) // id is int from params
@@ -427,6 +428,7 @@ app.post(
                   price: Number(product.price),
                   status: newStatus,
                   category_id: product.category,
+                  updated_at: new Date().toISOString(), // Explicitly set updated_at timestamp
                 })
                 .eq("id", existingProduct.id);
 
@@ -1429,6 +1431,7 @@ app.put(
             .update({
               quantity: newQuantity,
               reserved_quantity: newReservedQuantity,
+              updated_at: new Date().toISOString(), // Track when product was updated
             })
             .eq("id", item.product_id);
 
@@ -1464,6 +1467,7 @@ app.put(
               .from("centralized_product")
               .update({
                 quantity: existingProduct.quantity + reservedAmount,
+                updated_at: new Date().toISOString(), // Track when product was updated
               })
               .eq("id", existingProduct.id);
 
@@ -1548,6 +1552,7 @@ app.put(
             .from("centralized_product")
             .update({
               reserved_quantity: newReservedQuantity,
+              updated_at: new Date().toISOString(), // Track when product was updated
             })
             .eq("id", item.product_id);
 

@@ -32,6 +32,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { useTheme } from "../ThemeContext/ThemeContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Get backend URL from environment variables
 const PYTHON_BACKEND_URL =
@@ -85,6 +86,7 @@ interface ModalState {
 
 const EOQAnalyticsDashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
+  const { user } = useAuth();
   const [eoqData, setEOQData] = useState<EOQData | null>(null);
   const [inventoryAnalytics, setInventoryAnalytics] = useState<any[]>([]);
   const [inventoryTimeframe, setInventoryTimeframe] = useState<string>("");
@@ -142,6 +144,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
       try {
         const formData = new FormData();
         formData.append("file", file);
+        const branchId = user?.branch_id;
+        if (branchId) {
+          formData.append("branch_id", branchId.toString());
+        }
 
         console.log("Uploading file:", file.name, "Size:", file.size);
 
@@ -217,9 +223,15 @@ const EOQAnalyticsDashboard: React.FC = () => {
   const fetchEOQCalculationsFromServer = useCallback(async () => {
     setLoadingEOQ(true);
     try {
-      const res = await fetch(
+      const branchId = user?.branch_id || null;
+      const url = new URL(
         `${PYTHON_BACKEND_URL}/api/analytics/eoq-calculations?limit=50`
       );
+      if (branchId) {
+        url.searchParams.append("branch_id", branchId.toString());
+      }
+
+      const res = await fetch(url.toString());
       if (!res.ok) {
         console.error(
           `Failed to fetch EOQ calculations: ${res.status} ${res.statusText}`
@@ -315,7 +327,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
     } finally {
       setLoadingEOQ(false);
     }
-  }, []);
+  }, [user?.branch_id]);
 
   const calculateEOQWithData = useCallback(
     async (demandValue: number) => {
@@ -328,7 +340,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               product_id: 1,
-              branch_id: 1,
+              branch_id: user?.branch_id || 1,
               annual_demand: demandValue,
               holding_cost: 50,
               ordering_cost: 100,
@@ -386,78 +398,157 @@ const EOQAnalyticsDashboard: React.FC = () => {
         });
       }
     },
-    [fetchEOQCalculationsFromServer]
+    [user?.branch_id, fetchEOQCalculationsFromServer]
   );
 
-  const fetchTopProductsFromServer = useCallback(async (days = 30) => {
-    try {
-      const res = await fetch(
-        `${PYTHON_BACKEND_URL}/api/analytics/top-products?days=${days}&limit=10`
-      );
-      if (!res.ok)
-        throw new Error(`Failed to fetch top products: ${res.status}`);
-      const payload = await res.json();
-      if (payload.success && Array.isArray(payload.data)) {
-        setTopProducts(payload.data.map((p: any) => normalizeTopProduct(p)));
-      }
-    } catch (err) {
-      console.warn("Error fetching top products", err);
-    }
-  }, []);
-
-  const fetchInventoryAnalyticsFromServer = useCallback(async (days = 30) => {
-    try {
-      const res = await fetch(
-        `${PYTHON_BACKEND_URL}/api/analytics/inventory-analytics?days=${days}&limit=50`
-      );
-      if (!res.ok)
-        throw new Error(`Failed to fetch inventory analytics: ${res.status}`);
-      const payload = await res.json();
-      if (payload.success && Array.isArray(payload.data)) {
-        setInventoryAnalytics(payload.data);
-        setInventoryTimeframe(
-          payload.timeframe || (days >= 365 ? "Annual" : "Monthly")
+  const fetchTopProductsFromServer = useCallback(
+    async (days = 30) => {
+      try {
+        const branchId = user?.branch_id || null;
+        const url = new URL(
+          `${PYTHON_BACKEND_URL}/api/analytics/top-products?days=${days}&limit=10`
         );
+        if (branchId) {
+          url.searchParams.append("branch_id", branchId.toString());
+        }
+
+        const res = await fetch(url.toString());
+        if (!res.ok)
+          throw new Error(`Failed to fetch top products: ${res.status}`);
+        const payload = await res.json();
+        if (payload.success && Array.isArray(payload.data)) {
+          setTopProducts(payload.data.map((p: any) => normalizeTopProduct(p)));
+        }
+      } catch (err) {
+        console.warn("Error fetching top products", err);
+      }
+    },
+    [user?.branch_id]
+  );
+
+  // Fetch restock recommendations from backend
+  const fetchRestockRecommendationsFromServer = useCallback(async () => {
+    try {
+      const branchId = user?.branch_id || null;
+      const url = new URL(
+        `${PYTHON_BACKEND_URL}/api/analytics/restock-recommendations`
+      );
+      if (branchId) {
+        url.searchParams.append("branch_id", branchId.toString());
+      }
+
+      console.log("Fetching restock recommendations from:", url.toString());
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        console.warn(`Failed to fetch restock recommendations: ${res.status}`);
+        return;
+      }
+      const payload = await res.json();
+      console.log("Restock recommendations API response:", payload);
+
+      if (payload.success && Array.isArray(payload.data)) {
+        // Map restock recommendations from database
+        const recommendations: RestockRecommendation[] = payload.data.map(
+          (item: any) => normalizeRestock(item)
+        );
+        console.log("Mapped recommendations:", recommendations);
+        if (recommendations.length > 0) {
+          setRestockRecommendations(recommendations);
+          console.log(
+            "✓ Loaded restock recommendations:",
+            recommendations.length
+          );
+        } else {
+          console.log("No recommendations after mapping");
+        }
+      } else {
+        console.warn("Invalid payload structure or no success flag:", payload);
       }
     } catch (err) {
-      console.warn("Error fetching inventory analytics", err);
+      console.error("Error fetching restock recommendations:", err);
     }
-  }, []);
+  }, [user?.branch_id]);
+
+  const fetchInventoryAnalyticsFromServer = useCallback(
+    async (days = 30) => {
+      try {
+        const branchId = user?.branch_id || null;
+        const url = new URL(
+          `${PYTHON_BACKEND_URL}/api/analytics/inventory-analytics?days=${days}&limit=50`
+        );
+        if (branchId) {
+          url.searchParams.append("branch_id", branchId.toString());
+        }
+
+        const res = await fetch(url.toString());
+        if (!res.ok)
+          throw new Error(`Failed to fetch inventory analytics: ${res.status}`);
+        const payload = await res.json();
+        if (payload.success && Array.isArray(payload.data)) {
+          setInventoryAnalytics(payload.data);
+          setInventoryTimeframe(
+            payload.timeframe || (days >= 365 ? "Annual" : "Monthly")
+          );
+        }
+      } catch (err) {
+        console.warn("Error fetching inventory analytics", err);
+      }
+    },
+    [user?.branch_id]
+  );
 
   // Fetch sales summary from backend
-  const fetchSalesSummaryFromServer = useCallback(async (days = 30) => {
-    try {
-      const res = await fetch(
-        `${PYTHON_BACKEND_URL}/api/analytics/sales-summary?days=${days}`
-      );
-      if (!res.ok)
-        throw new Error(`Failed to fetch sales summary: ${res.status}`);
-      const payload = await res.json();
-      if (payload.success && payload.data) {
-        const d = payload.data;
-        setSalesMetrics({
-          total_quantity: Number(d.total_quantity || 0),
-          average_daily: Number(d.average_daily || 0),
-          annual_demand: Number(
-            d.annual_demand || (d.average_daily ? d.average_daily * 365 : 0)
-          ),
-          days_of_data: Number(d.days_of_data || days),
-          date_range: d.date_range || { start: "", end: "" },
-        });
-      }
-    } catch (err) {
-      console.warn("Error fetching sales summary", err);
-    }
-  }, []);
+  const fetchSalesSummaryFromServer = useCallback(
+    async (days = 30) => {
+      try {
+        const branchId = user?.branch_id || null;
+        const url = new URL(
+          `${PYTHON_BACKEND_URL}/api/analytics/sales-summary?days=${days}`
+        );
+        if (branchId) {
+          url.searchParams.append("branch_id", branchId.toString());
+        }
 
-  // Fetch persisted data on mount
+        const res = await fetch(url.toString());
+        if (!res.ok)
+          throw new Error(`Failed to fetch sales summary: ${res.status}`);
+        const payload = await res.json();
+        if (payload.success && payload.data) {
+          const d = payload.data;
+          setSalesMetrics({
+            total_quantity: Number(d.total_quantity || 0),
+            average_daily: Number(d.average_daily || 0),
+            annual_demand: Number(
+              d.annual_demand || (d.average_daily ? d.average_daily * 365 : 0)
+            ),
+            days_of_data: Number(d.days_of_data || days),
+            date_range: d.date_range || { start: "", end: "" },
+          });
+        }
+      } catch (err) {
+        console.warn("Error fetching sales summary", err);
+      }
+    },
+    [user?.branch_id]
+  );
+
+  // Fetch persisted data on mount and when branch changes
   useEffect(() => {
-    fetchSalesSummaryFromServer();
-    fetchEOQCalculationsFromServer();
-    fetchTopProductsFromServer();
-    fetchInventoryAnalyticsFromServer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (user) {
+      fetchSalesSummaryFromServer();
+      fetchEOQCalculationsFromServer();
+      fetchTopProductsFromServer();
+      fetchInventoryAnalyticsFromServer();
+      fetchRestockRecommendationsFromServer();
+    }
+  }, [
+    user?.branch_id,
+    fetchSalesSummaryFromServer,
+    fetchEOQCalculationsFromServer,
+    fetchTopProductsFromServer,
+    fetchInventoryAnalyticsFromServer,
+    fetchRestockRecommendationsFromServer,
+  ]);
 
   const generateInventoryChart = () => {
     if (!eoqData) return [];
@@ -515,17 +606,30 @@ const EOQAnalyticsDashboard: React.FC = () => {
   }));
   // Process restock recommendations to compute days-until-stockout and recommended qty
   const processedRestocks = restockRecommendations.map((rec) => {
-    const leadTimeDays = 7; // fallback - use backend-provided value if available
+    const leadTimeDays = 7;
     const daily = rec.daily_rate || 0.001;
     const daysUntilStockout = daily > 0 ? rec.last_sold_qty / daily : Infinity;
-    // Suggest to restock enough for lead time + safety stock, but at least EOQ
-    const baseNeeded = Math.ceil(
-      daily * leadTimeDays + (eoqData?.safety_stock || 0)
+
+    // Calculate per-product EOQ based on demand
+    // EOQ = sqrt((2 * D * S) / H)
+    // Where D = annual demand, S = ordering cost, H = holding cost
+    const annualDemand = daily * 365; // Convert daily rate to annual
+    const orderingCost = 100; // Default ordering cost per order
+    const holdingCost = 50; // Default holding cost per unit per year
+    const perProductEOQ = Math.sqrt(
+      (2 * annualDemand * orderingCost) / holdingCost
     );
+
+    // Safety stock based on demand variability
+    const safetyStock = Math.ceil(daily * 7); // 7 days of safety stock
+
+    // Recommend enough for lead time + safety stock, but at least the product's EOQ
+    const baseNeeded = Math.ceil(daily * leadTimeDays + safetyStock);
     const recommendedQty = Math.max(
       baseNeeded - Math.ceil(rec.last_sold_qty),
-      Math.ceil(eoqData?.eoq_quantity || baseNeeded)
+      Math.ceil(perProductEOQ)
     );
+
     return {
       ...rec,
       daysUntilStockout: Number.isFinite(daysUntilStockout)
@@ -787,6 +891,33 @@ const EOQAnalyticsDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {!loadingEOQ &&
+              (!salesMetrics || salesMetrics.total_quantity === 0) && (
+                <div className="bg-white/80 dark:bg-gray-900/70 rounded-2xl shadow-md border border-amber-200 dark:border-amber-700/30 p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-xl bg-gradient-to-tr from-amber-500/20 to-amber-700/20 dark:from-amber-800/30 dark:to-amber-600/30 mt-0.5 flex-shrink-0">
+                      <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-2 text-xl">
+                        No Sales Data Has Been Analyzed
+                      </h3>
+                      <p className="text-base text-slate-600 dark:text-gray-400">
+                        Upload a CSV or Excel file with sales data containing{" "}
+                        <code className="bg-amber-100 dark:bg-amber-800/50 px-2 py-1 rounded text-amber-900 dark:text-amber-100 font-mono">
+                          quantity
+                        </code>{" "}
+                        and{" "}
+                        <code className="bg-amber-100 dark:bg-amber-800/50 px-2 py-1 rounded text-amber-900 dark:text-amber-100 font-mono">
+                          date
+                        </code>{" "}
+                        columns to get started with EOQ analysis.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
