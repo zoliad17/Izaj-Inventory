@@ -924,3 +924,144 @@ def calculate_ordering_cost():
     except Exception as e:
         logger.error(f'Error calculating ordering cost: {str(e)}')
         return jsonify({'success': False, 'error': 'Failed to calculate ordering cost'}), 500
+
+
+@analytics_bp.route('/stock-deductions', methods=['GET'])
+def get_stock_deductions():
+    """Get recent stock deductions from sales imports.
+    
+    Query Parameters:
+    - branch_id: Filter by branch (required)
+    - limit: Maximum number of results (default: 50)
+    - days: Days back to look (default: 1)
+    """
+    try:
+        branch_id = request.args.get('branch_id', type=int)
+        limit = request.args.get('limit', default=50, type=int)
+        days = request.args.get('days', default=1, type=int)
+        
+        if not branch_id:
+            return jsonify({'success': False, 'error': 'branch_id is required'}), 400
+        
+        # Fetch recent sales grouped by product to show deductions
+        if db_module._supabase_client:
+            # Query sales from the past N days, grouped by product
+            import datetime
+            start_date = (datetime.datetime.utcnow() - datetime.timedelta(days=days)).isoformat()
+            
+            resp = db_module._supabase_client.table('sales').select(
+                'product_id, branch_id, quantity_sold, transaction_date'
+            ).eq('branch_id', branch_id).gte('transaction_date', start_date).execute()
+            
+            if not resp.data:
+                # No sales found, return empty list
+                return jsonify({'success': True, 'data': []}), 200
+            
+            # Group sales by product_id and aggregate
+            sales_by_product = {}
+            for sale in resp.data:
+                product_id = sale['product_id']
+                if product_id not in sales_by_product:
+                    sales_by_product[product_id] = {
+                        'quantity_sold': 0,
+                        'transaction_dates': []
+                    }
+                sales_by_product[product_id]['quantity_sold'] += sale['quantity_sold']
+                sales_by_product[product_id]['transaction_dates'].append(sale['transaction_date'])
+            
+            # Get product names and current quantities
+            product_ids = list(sales_by_product.keys())
+            if not product_ids:
+                return jsonify({'success': True, 'data': []}), 200
+            
+            # Fetch product details
+            resp_products = db_module._supabase_client.table('centralized_product').select(
+                'id, product_name, quantity'
+            ).eq('branch_id', branch_id).in_('id', product_ids).execute()
+            
+            product_details = {p['id']: p for p in (resp_products.data or [])}
+            
+            # Build deduction records
+            deductions = []
+            for product_id, sales_info in sales_by_product.items():
+                product = product_details.get(product_id, {})
+                current_qty = product.get('quantity', 0)
+                quantity_deducted = sales_info['quantity_sold']
+                previous_qty = current_qty + quantity_deducted  # Estimate previous quantity
+                
+                deductions.append({
+                    'product_id': product_id,
+                    'product_name': product.get('product_name', f'Product {product_id}'),
+                    'branch_id': branch_id,
+                    'quantity_deducted': quantity_deducted,
+                    'previous_quantity': previous_qty,
+                    'updated_quantity': current_qty,
+                    'first_transaction': min(sales_info['transaction_dates']),
+                    'last_transaction': max(sales_info['transaction_dates'])
+                })
+            
+            # Sort by quantity deducted (descending)
+            deductions.sort(key=lambda x: x['quantity_deducted'], reverse=True)
+            
+            return jsonify({
+                'success': True,
+                'data': deductions[:limit],
+                'count': len(deductions)
+            }), 200
+        else:
+            # Fallback to psycopg2
+            try:
+                import datetime
+                start_date = (datetime.datetime.utcnow() - datetime.timedelta(days=days)).isoformat()
+                
+                conn = db_module.get_conn()
+                cur = conn.cursor()
+                
+                # Query sales grouped by product
+                cur.execute('''
+                    SELECT 
+                        s.product_id,
+                        SUM(s.quantity_sold) as total_quantity_sold,
+                        MIN(s.transaction_date) as first_transaction,
+                        MAX(s.transaction_date) as last_transaction,
+                        cp.product_name,
+                        cp.quantity as current_quantity
+                    FROM public.sales s
+                    JOIN public.centralized_product cp ON s.product_id = cp.id AND s.branch_id = cp.branch_id
+                    WHERE s.branch_id = %s AND s.transaction_date >= %s
+                    GROUP BY s.product_id, cp.product_name, cp.quantity
+                    ORDER BY total_quantity_sold DESC
+                    LIMIT %s
+                ''', (branch_id, start_date, limit))
+                
+                rows = cur.fetchall()
+                cur.close()
+                conn.close()
+                
+                deductions = []
+                for row in rows:
+                    product_id, total_qty_sold, first_trans, last_trans, product_name, current_qty = row
+                    deductions.append({
+                        'product_id': product_id,
+                        'product_name': product_name or f'Product {product_id}',
+                        'branch_id': branch_id,
+                        'quantity_deducted': int(total_qty_sold),
+                        'previous_quantity': int(current_qty + total_qty_sold),
+                        'updated_quantity': int(current_qty),
+                        'first_transaction': first_trans.isoformat() if first_trans else None,
+                        'last_transaction': last_trans.isoformat() if last_trans else None
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'data': deductions,
+                    'count': len(deductions)
+                }), 200
+                
+            except Exception as e:
+                logger.error(f'Error fetching stock deductions: {str(e)}')
+                return jsonify({'success': False, 'error': 'Failed to fetch stock deductions'}), 500
+    
+    except Exception as e:
+        logger.error(f'Error in get_stock_deductions: {str(e)}')
+        return jsonify({'success': False, 'error': 'Failed to get stock deductions'}), 500

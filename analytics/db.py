@@ -60,6 +60,59 @@ def get_conn():
     return psycopg2.connect(host=host, port=port, dbname=dbname, user=user, password=password)
 
 
+def deduct_stock_from_sales(tuples: list, conn):
+    """Deduct stock from centralized_product when sales are inserted.
+    
+    tuples: list of tuples in format (product_id, branch_id, quantity_sold, ...)
+    conn: psycopg2 connection object
+    """
+    if not tuples:
+        return
+    
+    cur = None
+    try:
+        cur = conn.cursor()
+        
+        # Group sales by product_id and branch_id to aggregate quantities
+        stock_deductions = {}
+        for row in tuples:
+            product_id = row[0]  # product_id
+            branch_id = row[1]   # branch_id
+            quantity_sold = row[2]  # quantity_sold
+            
+            if product_id is None or quantity_sold is None:
+                continue
+                
+            key = (product_id, branch_id)
+            if key not in stock_deductions:
+                stock_deductions[key] = 0
+            stock_deductions[key] += quantity_sold
+        
+        # Update stock for each product/branch combination
+        for (product_id, branch_id), total_qty in stock_deductions.items():
+            update_sql = '''
+            UPDATE public.centralized_product 
+            SET quantity = quantity - %s,
+                updated_at = NOW()
+            WHERE id = %s AND branch_id = %s
+            '''
+            cur.execute(update_sql, (total_qty, product_id, branch_id))
+            logger.info(f'Deducted {total_qty} units from product {product_id} (branch {branch_id})')
+        
+        # Commit the deductions
+        conn.commit()
+        logger.info(f'Stock deductions completed for {len(stock_deductions)} product/branch combinations')
+        
+    except Exception as e:
+        logger.error(f'Error in deduct_stock_from_sales: {str(e)}')
+        if conn:
+            conn.rollback()
+        raise
+    finally:
+        if cur:
+            cur.close()
+
+
 def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bool = True):
     """Insert multiple sales rows into `public.sales`.
 
@@ -141,6 +194,51 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                 raise RuntimeError(f'Supabase insert error: {resp_error}')
             inserted = len(resp_data or payload)
             logger.info('Inserted %d sales rows to Supabase (data length=%s)', inserted, len(resp_data) if resp_data is not None else 'N/A')
+            
+            # Deduct stock from centralized_product after successful insert
+            if inserted > 0:
+                try:
+                    stock_deductions = {}
+                    for item in payload:
+                        product_id = item.get('product_id')
+                        branch_id = item.get('branch_id')
+                        quantity_sold = item.get('quantity_sold')
+                        
+                        if product_id is None or quantity_sold is None:
+                            continue
+                        
+                        key = (product_id, branch_id)
+                        if key not in stock_deductions:
+                            stock_deductions[key] = 0
+                        stock_deductions[key] += quantity_sold
+                    
+                    # Update stock via Supabase using RPC or direct SQL update
+                    for (product_id, branch_id), total_qty in stock_deductions.items():
+                        try:
+                            # Try using Supabase's raw SQL execution or direct update
+                            # First, get current quantity
+                            resp = _supabase_client.table('centralized_product').select('quantity').eq('id', product_id).eq('branch_id', branch_id).execute()
+                            if resp.data:
+                                current_qty = resp.data[0].get('quantity', 0)
+                                new_qty = current_qty - total_qty
+                                # Ensure we don't go negative
+                                new_qty = max(0, new_qty)
+                                
+                                # Update via Supabase
+                                update_resp = _supabase_client.table('centralized_product').update({
+                                    'quantity': new_qty,
+                                    'updated_at': datetime.utcnow().isoformat()
+                                }).eq('id', product_id).eq('branch_id', branch_id).execute()
+                                
+                                logger.info(f'Deducted {total_qty} units from product {product_id} (branch {branch_id}) via Supabase: {current_qty} -> {new_qty}')
+                            else:
+                                logger.warning(f'Product {product_id} branch {branch_id} not found in centralized_product')
+                        except Exception as e:
+                            logger.error(f'Error deducting stock for product {product_id} branch {branch_id}: {str(e)}')
+                            # Continue with other deductions
+                except Exception as e:
+                    logger.error(f'Error in stock deduction batch: {str(e)}', exc_info=True)
+            
             return inserted
         except Exception:
             logger.exception('Failed to insert sales rows to Supabase')
@@ -219,6 +317,17 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
             return 0
         execute_values(cur, insert_sql, tuples, template=None, page_size=100)
         inserted = cur.rowcount
+        
+        # Deduct stock from centralized_product for each sale
+        if inserted > 0:
+            try:
+                deduct_stock_from_sales(tuples, conn)
+            except Exception as e:
+                logger.error(f'Error deducting stock: {str(e)}')
+                if commit:
+                    conn.rollback()
+                raise
+        
         if commit:
             conn.commit()
         logger.info(f'Inserted {inserted} sales rows (psycopg2)')
@@ -239,7 +348,37 @@ def insert_eoq_calculation(product_id: int, branch_id: int, result: dict):
     """Persist EOQ calculation into `public.eoq_calculations`.
 
     result: dictionary containing EOQ values produced by EOQCalculator
+    
+    Validates that product exists in centralized_product before inserting.
     """
+    # First, validate that the product exists in centralized_product
+    if _supabase_client:
+        try:
+            # Check if product exists
+            resp = _supabase_client.table('centralized_product').select('id').eq('id', product_id).eq('branch_id', branch_id).execute()
+            if not getattr(resp, 'data', None):
+                logger.warning('Product %s branch %s not found in centralized_product. Skipping EOQ insertion.', product_id, branch_id)
+                return
+        except Exception as e:
+            logger.warning('Could not validate product existence: %s. Skipping EOQ insertion.', str(e))
+            return
+    else:
+        # For psycopg2, validate product exists
+        try:
+            conn = get_conn()
+            cur = conn.cursor()
+            cur.execute('SELECT id FROM centralized_product WHERE id = %s AND branch_id = %s LIMIT 1', (product_id, branch_id))
+            if not cur.fetchone():
+                logger.warning('Product %s branch %s not found in centralized_product. Skipping EOQ insertion.', product_id, branch_id)
+                cur.close()
+                conn.close()
+                return
+            cur.close()
+            conn.close()
+        except Exception as e:
+            logger.warning('Could not validate product existence: %s. Skipping EOQ insertion.', str(e))
+            return
+    
     sql = '''
     INSERT INTO public.eoq_calculations (
         product_id, branch_id, annual_demand, holding_cost, ordering_cost, unit_cost,
@@ -577,10 +716,11 @@ def insert_inventory_analytics(entries: Iterable[dict]):
 
     if _supabase_client:
         try:
-            # Ensure current_stock is always a number, never None
+            # Prepare rows - normalize current_stock, but exclude it from insert if column doesn't exist
             normalized_rows = []
             for e in rows:
                 normalized = dict(e)
+                # Keep current_stock for local processing, but may remove from Supabase insert
                 current_stock_val = normalized.get('current_stock')
                 if current_stock_val is None:
                     normalized['current_stock'] = 0
@@ -591,11 +731,24 @@ def insert_inventory_analytics(entries: Iterable[dict]):
                         normalized['current_stock'] = 0
                 normalized_rows.append(normalized)
             
-            resp = _supabase_client.table('inventory_analytics').insert(normalized_rows).execute()
-            if getattr(resp, 'error', None):
-                logger.error('Supabase insert inventory_analytics error: %s', getattr(resp, 'error', None))
-                raise RuntimeError(str(getattr(resp, 'error', None)))
-            return len(getattr(resp, 'data', []) or normalized_rows)
+            # Try insert with current_stock first
+            try:
+                resp = _supabase_client.table('inventory_analytics').insert(normalized_rows).execute()
+                if getattr(resp, 'error', None):
+                    logger.error('Supabase insert inventory_analytics error: %s', getattr(resp, 'error', None))
+                    raise RuntimeError(str(getattr(resp, 'error', None)))
+                return len(getattr(resp, 'data', []) or normalized_rows)
+            except Exception as e:
+                # If column doesn't exist, try without current_stock
+                if 'current_stock' in str(e):
+                    logger.warning('current_stock column not found, inserting without it. Please run: ALTER TABLE inventory_analytics ADD COLUMN current_stock INTEGER DEFAULT 0;')
+                    # Remove current_stock from all rows
+                    for row in normalized_rows:
+                        row.pop('current_stock', None)
+                    resp = _supabase_client.table('inventory_analytics').insert(normalized_rows).execute()
+                    return len(getattr(resp, 'data', []) or normalized_rows)
+                else:
+                    raise
         except Exception:
             logger.exception('Failed to insert inventory_analytics to Supabase')
             raise

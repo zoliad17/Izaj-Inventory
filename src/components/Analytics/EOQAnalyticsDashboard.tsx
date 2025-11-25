@@ -84,6 +84,21 @@ interface ModalState {
   details?: string;
 }
 
+interface StockDeductionItem {
+  product_id: number;
+  product_name: string;
+  branch_id: number;
+  quantity_deducted: number;
+  previous_quantity: number;
+  updated_quantity: number;
+}
+
+interface StockDeductionModalState {
+  isOpen: boolean;
+  items: StockDeductionItem[];
+  totalDeducted: number;
+}
+
 const EOQAnalyticsDashboard: React.FC = () => {
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
@@ -104,6 +119,12 @@ const EOQAnalyticsDashboard: React.FC = () => {
     status: "loading",
     message: "",
   });
+  const [stockDeductionModal, setStockDeductionModal] =
+    useState<StockDeductionModalState>({
+      isOpen: false,
+      items: [],
+      totalDeducted: 0,
+    });
   const [isSalesMetricsExpanded, setIsSalesMetricsExpanded] = useState(true); // Default to expanded
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -128,6 +149,53 @@ const EOQAnalyticsDashboard: React.FC = () => {
     recommendation: r?.recommendation || r?.note || "Restock based on usage",
     priority: r?.priority || "low",
   });
+
+  // Fetch stock deduction details from backend
+  const fetchStockDeductionDetails = useCallback(async (branchId: number) => {
+    try {
+      const url = new URL(
+        `${PYTHON_BACKEND_URL}/api/analytics/stock-deductions`
+      );
+      url.searchParams.append("branch_id", branchId.toString());
+      url.searchParams.append("limit", "100");
+
+      const res = await fetch(url.toString());
+      if (!res.ok) {
+        console.warn(
+          `Failed to fetch stock deductions: ${res.status}`,
+          res.statusText
+        );
+        return;
+      }
+
+      const payload = await res.json();
+      console.log("Stock deductions response:", payload);
+
+      if (payload.success && Array.isArray(payload.data)) {
+        const items: StockDeductionItem[] = payload.data.map((item: any) => ({
+          product_id: item.product_id,
+          product_name: item.product_name || `Product ${item.product_id}`,
+          branch_id: item.branch_id,
+          quantity_deducted: Number(item.quantity_deducted || 0),
+          previous_quantity: Number(item.previous_quantity || 0),
+          updated_quantity: Number(item.updated_quantity || 0),
+        }));
+
+        const totalDeducted = items.reduce(
+          (sum, item) => sum + item.quantity_deducted,
+          0
+        );
+
+        setStockDeductionModal({
+          isOpen: true,
+          items: items.slice(0, 20), // Show top 20 deductions
+          totalDeducted,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching stock deductions:", err);
+    }
+  }, []);
 
   const handleFileUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -174,6 +242,11 @@ const EOQAnalyticsDashboard: React.FC = () => {
               normalizeRestock(r)
             )
           );
+
+          // Fetch and display stock deduction details
+          if (user?.branch_id) {
+            await fetchStockDeductionDetails(user.branch_id);
+          }
 
           // Refresh persisted sales summary and EOQ calculations from backend
           try {
@@ -694,6 +767,148 @@ const EOQAnalyticsDashboard: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Stock Deduction Modal */}
+      {stockDeductionModal.isOpen && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">
+                    Stock Updated Successfully!
+                  </h2>
+                  <p className="text-sm text-green-50">
+                    {stockDeductionModal.items.length} product
+                    {stockDeductionModal.items.length !== 1 ? "s" : ""} updated
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  setStockDeductionModal((prev) => ({ ...prev, isOpen: false }))
+                }
+                className="text-white hover:text-green-100 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="bg-green-50 dark:bg-green-900/20 px-6 py-4 border-b border-green-200 dark:border-green-900/30">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Total Units Deducted
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stockDeductionModal.totalDeducted}
+                  </p>
+                </div>
+                <div className="text-center border-l border-r border-green-200 dark:border-green-900/30">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Products Updated
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stockDeductionModal.items.length}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Avg Per Product
+                  </p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {stockDeductionModal.items.length > 0
+                      ? Math.round(
+                          stockDeductionModal.totalDeducted /
+                            stockDeductionModal.items.length
+                        )
+                      : 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Items List */}
+            <div className="overflow-y-auto flex-1">
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {stockDeductionModal.items.map((item, index) => (
+                  <div
+                    key={`${item.product_id}-${index}`}
+                    className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900 dark:text-white">
+                          {item.product_name}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Product ID: {item.product_id} • Branch:{" "}
+                          {item.branch_id}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="mb-2">
+                          <span className="inline-block px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-sm font-semibold">
+                            -{item.quantity_deducted} units
+                          </span>
+                        </div>
+                        <div className="flex gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">
+                              Before:
+                            </p>
+                            <p className="font-semibold text-slate-900 dark:text-white">
+                              {item.previous_quantity}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-gray-600 dark:text-gray-400">
+                              →
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-600 dark:text-gray-400">
+                              After:
+                            </p>
+                            <p className="font-semibold text-green-600 dark:text-green-400">
+                              {item.updated_quantity}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+              <button
+                onClick={() =>
+                  setStockDeductionModal((prev) => ({ ...prev, isOpen: false }))
+                }
+                className="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() =>
+                  setStockDeductionModal((prev) => ({ ...prev, isOpen: false }))
+                }
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

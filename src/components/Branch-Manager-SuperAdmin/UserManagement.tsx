@@ -637,7 +637,7 @@ function UserManagement() {
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {currentUsers.length > 0 ? (
-                  currentUsers.map((user, idx) => (
+                  currentUsers.map((user) => (
                     <tr
                       key={user.user_id}
                       className="hover:bg-gray-50 dark:hover:bg-gray-800"
