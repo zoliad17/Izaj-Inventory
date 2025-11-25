@@ -12,6 +12,11 @@ import {
   Plus,
   Edit,
   Trash2,
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -112,14 +117,16 @@ function CentralizedProducts() {
       if (branchFilter !== "All") {
         params.append("branch_id", branchFilter);
       }
-      
-      const url = `${API_BASE_URL}/api/products/all${params.toString() ? `?${params.toString()}` : ""}`;
+
+      const url = `${API_BASE_URL}/api/products/all${
+        params.toString() ? `?${params.toString()}` : ""
+      }`;
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch products");
       }
-      
+
       const data = await response.json();
       setProducts(data || []);
     } catch (error) {
@@ -140,7 +147,9 @@ function CentralizedProducts() {
     return products.filter((product) => {
       const matchesSearch =
         product.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category_name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         product.branch_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.id.toString().includes(searchTerm.toLowerCase());
 
@@ -170,7 +179,13 @@ function CentralizedProducts() {
       return;
     }
 
-    if (!formData.name || !formData.category || !formData.price || !formData.stock || !formData.branch_id) {
+    if (
+      !formData.name ||
+      !formData.category ||
+      !formData.price ||
+      !formData.stock ||
+      !formData.branch_id
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -205,7 +220,9 @@ function CentralizedProducts() {
       await fetchProducts();
     } catch (error) {
       console.error("Error creating product:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create product");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create product"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -218,7 +235,13 @@ function CentralizedProducts() {
       return;
     }
 
-    if (!formData.name || !formData.category || !formData.price || !formData.stock || !formData.branch_id) {
+    if (
+      !formData.name ||
+      !formData.category ||
+      !formData.price ||
+      !formData.stock ||
+      !formData.branch_id
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -258,7 +281,9 @@ function CentralizedProducts() {
       await fetchProducts();
     } catch (error) {
       console.error("Error updating product:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update product");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update product"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -285,7 +310,9 @@ function CentralizedProducts() {
       await fetchProducts();
     } catch (error) {
       console.error("Error deleting product:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete product");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete product"
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -335,12 +362,14 @@ function CentralizedProducts() {
       const exportData = filteredProducts.map((product) => ({
         "Product ID": product.id,
         "Product Name": product.product_name,
-        "Category": product.category_name || "N/A",
-        "Branch": product.branch_name || "N/A",
-        "Quantity": product.quantity,
-        "Price": product.price,
-        "Status": product.status || "N/A",
-        "Updated At": product.updated_at ? formatDate(product.updated_at) : "N/A",
+        Category: product.category_name || "N/A",
+        Branch: product.branch_name || "N/A",
+        Quantity: product.quantity,
+        Price: product.price,
+        Status: product.status || "N/A",
+        "Updated At": product.updated_at
+          ? formatDate(product.updated_at)
+          : "N/A",
       }));
 
       // Create a new workbook
@@ -382,10 +411,10 @@ function CentralizedProducts() {
   return (
     <div
       className={`transition-all duration-300 ${
-        isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+        isCollapsed ? "ml-5" : "ml-0.5"
+      } p-1 sm:p-4 dark:bg-gray-900/70 min-h-screen w-full overflow-x-hidden`}
     >
-      <div className="p-2">
+      <div className="p-1">
         {/* Toaster for success and error */}
         <Toaster
           position="top-center"
@@ -410,204 +439,190 @@ function CentralizedProducts() {
         </div>
 
         {/* Search, Branch Filter and Export Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           {/* Search + Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <Search className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
                 placeholder="Search products..."
-                className="
-          w-full pl-10 pr-4 py-3 rounded-2xl font-semibold text-base
-          text-gray-800 dark:text-gray-100
-          bg-gray-50 dark:bg-gray-800
-          shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.6)]
-          dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
-          hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.6)]
-          dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
-          focus:outline-none focus:ring-2 focus:ring-blue-500/50
-          transition-all duration-300
-        "
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+                  bg-white dark:bg-gray-900 border border-transparent
+                  text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-300
+                  shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+                  dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+                  transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             {/* Branch Filter */}
-            <select
-              value={branchFilter}
-              onChange={(e) => {
-                setBranchFilter(e.target.value);
-                setCurrentPage(1); // Reset to first page when filter changes
-              }}
-              className="
-        w-full sm:w-auto px-6 py-3 rounded-2xl font-semibold text-base
-        text-gray-800 dark:text-gray-100
-        bg-gray-50 dark:bg-gray-800
-        shadow-[6px_6px_12px_rgba(0,0,0,0.1),-6px_-6px_12px_rgba(255,255,255,0.6)]
-        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
-        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.15),inset_-6px_-6px_12px_rgba(255,255,255,0.6)]
-        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
-        focus:outline-none focus:ring-2 focus:ring-blue-500/50
-        transition-all duration-300
-      "
-            >
-              <option value="All">All Branches</option>
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.location}
-                </option>
-              ))}
-            </select>
+            <div className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Building className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                value={branchFilter}
+                onChange={(e) => {
+                  setBranchFilter(e.target.value);
+                  setCurrentPage(1); // Reset to first page when filter changes
+                }}
+                className="block w-full pl-10 pr-3 py-2 rounded-xl 
+                  bg-white dark:bg-gray-900 border border-transparent
+                  text-gray-900 dark:text-white
+                  shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.6)] 
+                  dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(255,255,255,0.05)]
+                  focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm
+                  transition-all"
+              >
+                <option value="All">All Branches</option>
+                {branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.location}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="
-        flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-base
-        text-green-600 dark:text-green-400
-        bg-transparent
-        shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.6)]
-        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
-        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.2),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
-        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
-        hover:scale-[1.05] active:scale-95
-        transition-all duration-300
-      "
+              className="flex items-center space-x-2 text-blue-700 px-4 py-2 rounded-xl font-semibold shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
             >
-              <Plus size={16} />
-              Add Product
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Add Product</span>
             </button>
             <button
               onClick={exportToExcel}
-              className="
-        flex items-center gap-2 px-6 py-3 rounded-2xl font-semibold text-base
-        text-blue-600 dark:text-blue-400
-        bg-transparent
-        shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.6)]
-        dark:shadow-[6px_6px_12px_rgba(0,0,0,0.7),-6px_-6px_12px_rgba(40,40,40,0.6)]
-        hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.2),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
-        dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.6),inset_-6px_-6px_12px_rgba(30,30,30,0.4)]
-        hover:scale-[1.05] active:scale-95
-        transition-all duration-300
-      "
+              className="flex items-center space-x-2 px-4 py-2 rounded-xl font-semibold text-green-600 shadow-[6px_6px_12px_rgba(0,0,0,0.12),-6px_-6px_12px_rgba(255,255,255,0.7)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] hover:scale-[1.05] active:scale-[0.97] transition-all duration-200"
             >
-              <Download size={16} />
-              Export to Excel
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export to Excel</span>
             </button>
           </div>
         </div>
 
         {/* Products Table */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+          <div className="flex justify-center items-center p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 shadow sm:rounded-lg mt-3.5 w-full">
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r text-base text-bold from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+              <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Product ID
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-40 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Product Name
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Category
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Branch
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-24 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Quantity
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-24 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Price
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-24 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Updated At
                     </th>
-                    <th className="px-6 py-4 text-left font-semibold text-gray-700 dark:text-blue-200">
+                    <th className="w-32 px-2 sm:px-4 lg:px-6 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {currentProducts.length > 0 ? (
-                    currentProducts.map((product, idx) => (
+                    currentProducts.map((product) => (
                       <tr
                         key={product.id}
-                        className={`group transition-colors font-semibold${
-                          idx % 2 === 0
-                            ? "bg-white dark:bg-gray-800"
-                            : "bg-gray-50 dark:bg-gray-800"
-                        } hover:bg-gray-100 dark:hover:bg-gray-900`}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          {product.id}
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base font-medium text-gray-900 dark:text-white">
+                            {product.id}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          <span className="font-medium">{product.product_name}</span>
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div
+                            className="text-base font-small text-gray-900 dark:text-white clamp-1"
+                            title={product.product_name}
+                          >
+                            {product.product_name}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          <span className="inline-block px-2 py-1 rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="font-small text-gray-900 dark:text-white">
                             {product.category_name || "N/A"}
-                          </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          <span className="inline-block px-2 py-1 rounded bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="font-small text-gray-900 dark:text-white">
                             {product.branch_name || "N/A"}
-                          </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          {product.quantity}
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base text-gray-900 dark:text-white">
+                            {product.quantity}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">
-                          Php {Number(product.price).toFixed(2)}
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base text-gray-900 dark:text-white">
+                            Php {Number(product.price).toFixed(2)}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
                           <span
-                            className={`px-3 py-1 inline-flex text-xs font-bold rounded-full ${
+                            className={`px-3 py-1.5 inline-flex text-sm leading-5 font-semibold rounded-lg shadow-sm border-2 backdrop-blur-sm ${
                               product.status === "In Stock"
-                                ? "bg-green-200 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                ? "bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700"
                                 : product.status === "Low Stock"
-                                ? "bg-yellow-200 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                : "bg-red-200 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                ? "bg-gradient-to-r from-amber-50 to-yellow-100 dark:from-amber-900/20 dark:to-yellow-800/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700"
+                                : "bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700"
                             }`}
                           >
                             {product.status || "N/A"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white text-xs">
-                          {formatDate(product.updated_at)}
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="text-base font-small text-gray-900 dark:text-white">
+                            {formatDate(product.updated_at)}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex gap-2">
+                        <td className="px-2 sm:px-4 lg:px-6 py-4">
+                          <div className="flex flex-col space-y-2">
                             <button
                               onClick={() => openEditModal(product)}
-                              className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition"
-                              title="Edit"
+                              className="inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-xl text-blue-700 dark:text-blue-500 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200"
                             >
-                              <Edit size={16} />
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
                             </button>
                             <button
                               onClick={() => openDeleteModal(product.id)}
-                              className="p-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
-                              title="Delete"
+                              className="inline-flex items-center px-4 py-2 border-2 border-gray-300 dark:border-gray-600 text-sm font-semibold rounded-xl text-red-700 dark:text-red-400 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition-all duration-200"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
                             </button>
                           </div>
                         </td>
@@ -617,7 +632,7 @@ function CentralizedProducts() {
                     <tr>
                       <td
                         colSpan={9}
-                        className="px-6 py-8 text-center text-base text-gray-500 dark:text-gray-400"
+                        className="px-4 py-6 text-center text-base text-gray-500 dark:text-gray-400"
                       >
                         No products found
                       </td>
@@ -629,60 +644,111 @@ function CentralizedProducts() {
 
             {/* Pagination */}
             {filteredProducts.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 px-4 py-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-800">
-                <div className="text-sm text-gray-700 dark:text-gray-300">
-                  Showing{" "}
-                  <span className="font-semibold">
-                    {(currentPage - 1) * itemsPerPage + 1}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-semibold">
-                    {Math.min(currentPage * itemsPerPage, filteredProducts.length)}
-                  </span>{" "}
-                  of <span className="font-semibold">{filteredProducts.length}</span>{" "}
-                  results
-                </div>
-                <nav className="flex gap-2">
+              <div className="bg-white dark:bg-gray-800 px-2 sm:px-4 lg:px-6 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700">
+                <div className="flex-1 flex justify-between sm:hidden">
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
-                      currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
+                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (pageNum) => (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
-                          currentPage === pageNum
-                            ? "bg-blue-500 dark:bg-blue-700 text-white"
-                            : "bg-white dark:bg-gray-800"
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  )}
                   <button
                     onClick={() =>
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 transition ${
-                      currentPage === totalPages
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
+                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </button>
-                </nav>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                      Showing{" "}
+                      <span className="font-medium">
+                        {(currentPage - 1) * itemsPerPage + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-medium">
+                        {Math.min(
+                          currentPage * itemsPerPage,
+                          filteredProducts.length
+                        )}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium">
+                        {filteredProducts.length}
+                      </span>{" "}
+                      results
+                    </p>
+                  </div>
+                  <div>
+                    <nav
+                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                      aria-label="Pagination"
+                    >
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">First</span>
+                        <ChevronsLeft size={20} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <ChevronLeft size={20} />
+                      </button>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (pageNum) => (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNum
+                                ? "z-10 bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-600 dark:text-blue-300"
+                                : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      )}
+
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Next</span>
+                        <ChevronRight size={20} />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Last</span>
+                        <ChevronsRight size={20} />
+                      </button>
+                    </nav>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -692,7 +758,7 @@ function CentralizedProducts() {
       {/* Add Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 z-50 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.8)] dark:shadow-[8px_8px_16px_rgba(0,0,0,0.6),-8px_-8px_16px_rgba(255,255,255,0.05)] transition-all duration-300">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               Add New Product
             </h2>
@@ -865,7 +931,7 @@ function CentralizedProducts() {
       {/* Edit Product Modal */}
       {isEditModalOpen && selectedProduct && (
         <div className="fixed inset-0 bg-black/40 dark:bg-black/60 z-50 flex justify-center items-center">
-          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.8)] dark:shadow-[8px_8px_16px_rgba(0,0,0,0.6),-8px_-8px_16px_rgba(255,255,255,0.05)] transition-all duration-300">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300">
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">
               Edit Product
             </h2>
@@ -1045,18 +1111,13 @@ function CentralizedProducts() {
               if (!isDeleting) setIsDeleteModalOpen(false);
             }}
           ></div>
-          <div
-            className="relative bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 w-96
-      shadow-[9px_9px_18px_rgba(0,0,0,0.25),-9px_-9px_18px_rgba(255,255,255,0.9)]
-      dark:shadow-[9px_9px_18px_rgba(0,0,0,0.9),-9px_-9px_18px_rgba(40,40,40,0.5)]
-      transition-all duration-300"
-          >
+          <div className="relative bg-gray-100 dark:bg-gray-900 rounded-2xl p-6 w-96 transition-all duration-300">
             <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
               Confirm Delete
             </h3>
             <p className="mb-6 text-gray-700 dark:text-gray-300">
-              Are you sure you want to delete this product? This action cannot be
-              undone.
+              Are you sure you want to delete this product? This action cannot
+              be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button

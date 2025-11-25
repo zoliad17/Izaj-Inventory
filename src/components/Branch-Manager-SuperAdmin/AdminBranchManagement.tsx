@@ -370,17 +370,17 @@ function AdminBranchManagement() {
     <div
       className={`transition-all duration-300 ${
         isCollapsed ? "ml-5" : "ml-1"
-      } p-2 sm:p-4 `}
+      } p-2 sm:p-4 dark:bg-gray-900/70 min-h-screen `}
     >
       <div className="px-4 py-6 rounded-lg mb-3.5 shadow-md bg-white dark:bg-gray-900 transition-colors">
         <div className="">
           {/* Header with Back Button and Title in One Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
               {/* Back Button with Neumorphic Design */}
               <button
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 sm:py-2
                  text-gray-700 dark:text-gray-300 rounded-xl 
                   duration-300 font-medium 
                   text-sm sm:text-base"
