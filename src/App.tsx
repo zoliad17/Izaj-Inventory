@@ -13,6 +13,7 @@ import ResetPassword from "./components/Aut/ResetPassword";
 import AddUser from "./components/Branch-Manager-SuperAdmin/AddUser";
 import UserManagement from "./components/Branch-Manager-SuperAdmin/UserManagement";
 import AdminBranchManagement from "./components/Branch-Manager-SuperAdmin/AdminBranchManagement";
+import CentralizedProducts from "./components/Branch-Manager-SuperAdmin/CentralizedProducts";
 import Branch_location from "./components/Branch/Branch_location";
 import Pending_request from "./components/Branch_Request/Pending_request";
 import Dashboard from "./components/Dashboard/Dashboard";
@@ -65,6 +66,7 @@ const routeRoles: RouteRoles = {
   addUser: ["Super Admin", "Branch Manager"],
   userManagement: ["Super Admin", "Branch Manager"],
   branchManagement: ["Super Admin", "Admin"],
+  centralizedProducts: ["Super Admin"],
   auditlogs: ["Super Admin", "Branch Manager"],
   myActivity: ["Admin", "Branch Manager", "Super Admin"],
   UserAuditLogDetails: ["Admin", "Branch Manager", "Super Admin"],
@@ -269,6 +271,17 @@ const App: React.FC = () => {
                   <ProtectedRoute allowedRoles={routeRoles.branchManagement}>
                     <Layout>
                       <AdminBranchManagement />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/centralized-products"
+                element={
+                  <ProtectedRoute allowedRoles={routeRoles.centralizedProducts}>
+                    <Layout>
+                      <CentralizedProducts />
                     </Layout>
                   </ProtectedRoute>
                 }

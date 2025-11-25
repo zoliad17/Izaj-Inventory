@@ -156,6 +156,9 @@ export const api = {
   getProducts: (branchId: number) =>
     apiClient.get("/products", { branch_id: branchId }),
 
+  getAllProducts: (branchId?: number) =>
+    apiClient.get("/products/all", branchId ? { branch_id: branchId } : undefined),
+
   createProduct: (productData: any, userId: string) =>
     apiClient.post("/products", { ...productData, user_id: userId }),
 

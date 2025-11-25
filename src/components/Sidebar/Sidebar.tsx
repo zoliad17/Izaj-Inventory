@@ -7,7 +7,7 @@ import {
   MenuIcon,
   Home,
   MapPin,
-  // Package,
+  Package,
   ClipboardList,
   ArrowRightLeft,
   Users,
@@ -282,6 +282,12 @@ function Sidebar() {
       icon: Building2,
       label: "Branches",
       path: "/branch-management",
+      allowedRoles: ["Super Admin"],
+    },
+    {
+      icon: Package,
+      label: "Centralized Products",
+      path: "/centralized-products",
       allowedRoles: ["Super Admin"],
     },
     {

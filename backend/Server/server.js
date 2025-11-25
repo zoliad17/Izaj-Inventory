@@ -210,6 +210,60 @@ app.get("/api/products", rateLimits.stockMonitoring, async (req, res) => {
   res.json(mapped);
 });
 
+// GET all centralized products (for Super Admin) - optional branch filter
+app.get("/api/products/all", rateLimits.stockMonitoring, async (req, res) => {
+  try {
+    let query = supabase
+      .from("centralized_product")
+      .select(
+        `
+        id,
+        product_name,
+        quantity,
+        price,
+        status,
+        branch_id,
+        category_id,
+        updated_at,
+        created_at,
+        branch:branch_id (
+          id,
+          location
+        ),
+        category:category_id (
+          id,
+          category_name
+        )
+      `
+      );
+
+    // Optional branch filter
+    const branchId = req.query.branch_id;
+    if (branchId) {
+      query = query.eq("branch_id", Number(branchId));
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching all products:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Map category and branch names to top-level for frontend
+    const mapped = data.map((product) => ({
+      ...product,
+      category_name: product.category?.category_name || "",
+      branch_name: product.branch?.location || "",
+    }));
+
+    res.json(mapped);
+  } catch (error) {
+    console.error("Error in /api/products/all:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // POST add new product to Supabase (with authentication)
 app.post(
   "/api/products",
