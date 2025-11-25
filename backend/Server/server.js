@@ -2674,8 +2674,8 @@ app.post(
         });
       }
 
-      // Generate setup link - use the correct frontend port
-      const setupLink = `${FRONTEND_URL}/setup-account?token=${setupToken}`;
+      // Generate setup link - use buildFrontendLink to support both HTTP(S) and custom schemes
+      const setupLink = buildFrontendLink(`/setup-account?token=${setupToken}`);
 
       // Send email with setup link
       const emailResult = await sendSetupEmail(
