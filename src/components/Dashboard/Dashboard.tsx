@@ -375,13 +375,13 @@ function Dashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-3 rounded-xl bg-gradient-to-tr from-blue-500/20 to-blue-700/20 dark:from-blue-800/30 dark:to-blue-600/30">
-                    <TrendingUp
+                    <Lightbulb
                       className="text-blue-600 dark:text-blue-400"
                       size={22}
                     />
                   </div>
                   <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
-                    Recent Activity
+                    All Products
                   </h5>
                 </div>
                 {isLoading && (
@@ -393,10 +393,10 @@ function Dashboard() {
                   ? "..."
                   : error
                   ? "Error"
-                  : stats?.recentActivity || "0"}
+                  : stats?.totalProducts || "0"}
               </h6>
               <p className="text-sm text-gray-500 mt-1">
-                Actions in the last 7 days
+                Total centralized products
               </p>
               {error && (
                 <p className="text-sm text-red-500 mt-2">Failed to load data</p>
