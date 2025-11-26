@@ -19,6 +19,7 @@ import { useDashboardStats } from "../../hooks/useDashboardStats";
 import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "../../config/config";
 
 // Types for analytics data
 interface TopProduct {
@@ -36,6 +37,11 @@ interface RestockRecommendation {
   daily_rate: number;
   recommendation: string;
   priority: "high" | "medium" | "low";
+}
+
+interface Branch {
+  id: number;
+  location: string;
 }
 
 // shadcn
@@ -109,15 +115,32 @@ function Dashboard() {
   >([]);
   const [chartData, setChartData] = React.useState<any[]>([]);
   const [timeRange, setTimeRange] = React.useState("30d");
+  const [selectedBranch, setSelectedBranch] = React.useState<string | null>(
+    null
+  );
+  const [branches, setBranches] = React.useState<Branch[]>([]);
 
   const PYTHON_BACKEND_URL =
     import.meta.env.VITE_PYTHON_BACKEND_URL || "http://localhost:5001";
+
+  // Fetch branches for Super Admin
+  const fetchBranches = React.useCallback(async () => {
+    if (!isSuperAdmin()) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/branches`);
+      if (!response.ok) throw new Error("Failed to fetch branches");
+      const data = await response.json();
+      setBranches(data || []);
+    } catch (err) {
+      console.error("Error fetching branches:", err);
+    }
+  }, [isSuperAdmin]);
 
   // Fetch top products with branch filtering
   const fetchTopProducts = React.useCallback(async () => {
     try {
       const days = timeRange === "7d" ? 7 : timeRange === "90d" ? 90 : 30;
-      const branchId = isSuperAdmin() ? null : currentUser?.branch_id;
+      const branchId = isSuperAdmin() ? selectedBranch : currentUser?.branch_id;
       const params = new URLSearchParams({
         days: days.toString(),
         limit: "10",
@@ -137,13 +160,19 @@ function Dashboard() {
     } catch (err) {
       console.error("Error fetching top products:", err);
     }
-  }, [timeRange, isSuperAdmin, currentUser?.branch_id, PYTHON_BACKEND_URL]);
+  }, [
+    timeRange,
+    isSuperAdmin,
+    selectedBranch,
+    currentUser?.branch_id,
+    PYTHON_BACKEND_URL,
+  ]);
 
   // Fetch inventory analytics (restock recommendations)
   const fetchRestockRecommendations = React.useCallback(async () => {
     try {
       const days = timeRange === "7d" ? 7 : timeRange === "90d" ? 90 : 30;
-      const branchId = isSuperAdmin() ? null : currentUser?.branch_id;
+      const branchId = isSuperAdmin() ? selectedBranch : currentUser?.branch_id;
       const params = new URLSearchParams({
         days: days.toString(),
         limit: "10",
@@ -180,7 +209,13 @@ function Dashboard() {
     } catch (err) {
       console.error("Error fetching restock recommendations:", err);
     }
-  }, [timeRange, isSuperAdmin, currentUser?.branch_id, PYTHON_BACKEND_URL]);
+  }, [
+    timeRange,
+    isSuperAdmin,
+    selectedBranch,
+    currentUser?.branch_id,
+    PYTHON_BACKEND_URL,
+  ]);
 
   // Generate chart data from top products
   const generateChartData = React.useCallback(() => {
@@ -219,12 +254,19 @@ function Dashboard() {
     generateChartData();
   }, [generateChartData]);
 
-  // Fetch analytics data on mount and when user/timeRange changes
+  // Fetch branches for Super Admin on mount
+  React.useEffect(() => {
+    if (isSuperAdmin()) {
+      fetchBranches();
+    }
+  }, [isSuperAdmin, fetchBranches]);
+
+  // Fetch analytics data on mount and when user/timeRange/selectedBranch changes
   React.useEffect(() => {
     if (currentUser) {
       fetchAnalyticsData();
     }
-  }, [currentUser, timeRange, fetchAnalyticsData]);
+  }, [currentUser, timeRange, selectedBranch, fetchAnalyticsData]);
 
   // Generate dynamic chart config from top products
   const dynamicChartConfig = React.useMemo(() => {
@@ -627,6 +669,43 @@ function Dashboard() {
         )}
       </div>
 
+      {/* Super Admin Analytics Section */}
+      {isSuperAdmin() && (
+        <div className="mt-8">
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Analytics Dashboard - All Branches
+              </h3>
+              <Select
+                value={selectedBranch || "all"}
+                onValueChange={(value) =>
+                  setSelectedBranch(value === "all" ? null : value)
+                }
+              >
+                <SelectTrigger className="w-[250px] rounded-lg">
+                  <SelectValue placeholder="Select Branch" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all" className="rounded-lg">
+                    All Branches
+                  </SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem
+                      key={branch.id}
+                      value={branch.id.toString()}
+                      className="rounded-lg"
+                    >
+                      {branch.location}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
         {/* Line Chart Card */}
@@ -636,7 +715,9 @@ function Dashboard() {
               <CardTitle>Top Products Sales Trends</CardTitle>
               <CardDescription>
                 {isSuperAdmin()
-                  ? "Showing sales trends across all branches"
+                  ? selectedBranch
+                    ? `Showing sales trends for selected branch`
+                    : "Showing sales trends across all branches"
                   : "Showing sales trends for your branch"}
               </CardDescription>
             </div>

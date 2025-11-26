@@ -263,7 +263,7 @@ function Sidebar() {
       icon: BarChart3,
       label: "Analytics",
       path: "/analytics",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
+      allowedRoles: ["Admin", "Branch Manager"],
     },
     {
       icon: Warehouse,
