@@ -1203,44 +1203,6 @@ app.post(
         console.error("Error logging audit trail:", auditError);
       }
 
-      // Create notification for requester when request is approved/denied
-      if (action === "approved" || action === "denied") {
-        try {
-          const notifTitle =
-            action === "approved" ? "Request Approved" : "Request Denied";
-          const notifMessage =
-            action === "approved"
-              ? `Your request #${requestId} was approved by ${
-                  reviewerData?.name || "Reviewer"
-                }`
-              : `Your request #${requestId} was denied by ${
-                  reviewerData?.name || "Reviewer"
-                }`;
-
-          await supabase.from("notifications").insert([
-            {
-              user_id: requestData.request_from,
-              title: notifTitle,
-              message: notifMessage,
-              link: action === "approved" ? "/transferred" : "/requested_item",
-              type:
-                action === "approved" ? "request_approved" : "request_denied",
-              read: false,
-              metadata: {
-                request_id: requestId,
-                reviewer: reviewerData?.name || null,
-                notes: notes || null,
-              },
-            },
-          ]);
-        } catch (notifErr) {
-          console.error(
-            "Failed to create notification for request review:",
-            notifErr
-          );
-        }
-      }
-
       res.status(201).json({
         success: true,
         request_id: requestData.request_id,
@@ -1701,6 +1663,42 @@ app.put(
 
       if (auditError) {
         console.error("Error logging audit trail:", auditError);
+      }
+
+      // Create notification for requester when request is approved/denied
+      try {
+        const notifTitle =
+          action === "approved" ? "Request Approved" : "Request Denied";
+        const notifMessage =
+          action === "approved"
+            ? `Your request #${requestId} was approved by ${
+                reviewerData?.name || "Reviewer"
+              }`
+            : `Your request #${requestId} was denied by ${
+                reviewerData?.name || "Reviewer"
+              }`;
+
+        await supabase.from("notifications").insert([
+          {
+            user_id: requestData.request_from,
+            title: notifTitle,
+            message: notifMessage,
+            link: action === "approved" ? "/transferred" : "/requested_item",
+            type:
+              action === "approved" ? "request_approved" : "request_denied",
+            read: false,
+            metadata: {
+              request_id: requestId,
+              reviewer: reviewerData?.name || null,
+              notes: notes || null,
+            },
+          },
+        ]);
+      } catch (notifErr) {
+        console.error(
+          "Failed to create notification for request review:",
+          notifErr
+        );
       }
 
       res.json({
