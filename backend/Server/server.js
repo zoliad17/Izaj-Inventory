@@ -118,7 +118,10 @@ const isDev = process.env.NODE_ENV === "development";
 // that registers a custom URI scheme (recommended), set `FRONTEND_SCHEME`
 // to something like `izaj-inventory://`. Otherwise set `FRONTEND_URL` to
 // your hosted frontend (e.g. https://app.example.com) or leave default for dev.
-const FRONTEND_BASE = process.env.FRONTEND_URL || process.env.FRONTEND_SCHEME || "http://localhost:5173";
+const FRONTEND_BASE =
+  process.env.FRONTEND_URL ||
+  process.env.FRONTEND_SCHEME ||
+  "http://localhost:5173";
 
 // Small helper to build frontend links that work for both http(s) hosts and
 // custom desktop URI schemes (e.g. izaj-inventory://reset-password?token=...)
@@ -139,7 +142,9 @@ const buildFrontendLink = (path) => {
     return `${base}//${path.replace(/^\//, "")}`;
   }
   // Default: append path directly
-  return `${base}${base.endsWith("/") ? "" : ""}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${base}${base.endsWith("/") ? "" : ""}${
+    path.startsWith("/") ? path : `/${path}`
+  }`;
 };
 
 const corsOptions = {
@@ -170,6 +175,71 @@ app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
 // ✅ Rate limiter
 app.use(rateLimits.general);
+
+const SUPER_ADMIN_ROLE_ID = 1;
+const MAX_SUPER_ADMIN_COUNT = 1;
+const SUPER_ADMIN_EMAIL = (
+  process.env.SUPER_ADMIN_EMAIL || "admin@izaj.com"
+).toLowerCase();
+const SUPER_ADMIN_LIMIT_MESSAGE = "Only one super admin account is allowed";
+const SUPER_ADMIN_EMAIL_MESSAGE = `Super admin must use ${SUPER_ADMIN_EMAIL}`;
+
+const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
+const isAllowedSuperAdminEmail = (email) =>
+  normalizeEmail(email) === SUPER_ADMIN_EMAIL;
+
+async function getActiveSuperAdminCount(excludeUserId) {
+  let query = supabase
+    .from("user")
+    .select("user_id", { count: "exact", head: true })
+    .eq("role_id", SUPER_ADMIN_ROLE_ID);
+
+  if (excludeUserId) {
+    query = query.neq("user_id", excludeUserId);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw new Error(`Error counting super admin users: ${error.message}`);
+  }
+
+  return count || 0;
+}
+
+async function getPendingSuperAdminCount(excludePendingId) {
+  let query = supabase
+    .from("pending_user")
+    .select("pending_user_id", { count: "exact", head: true })
+    .eq("role_id", SUPER_ADMIN_ROLE_ID);
+
+  if (excludePendingId) {
+    query = query.neq("pending_user_id", excludePendingId);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw new Error(
+      `Error counting pending super admin users: ${error.message}`
+    );
+  }
+
+  return count || 0;
+}
+
+async function isSuperAdminLimitReached({
+  excludeUserId,
+  excludePendingId,
+  includePending = true,
+} = {}) {
+  const activeCount = await getActiveSuperAdminCount(excludeUserId);
+  const pendingCount = includePending
+    ? await getPendingSuperAdminCount(excludePendingId)
+    : 0;
+
+  return activeCount + pendingCount >= MAX_SUPER_ADMIN_COUNT;
+}
 
 // ✅ Test route
 app.get("/", (req, res) => {
@@ -213,10 +283,8 @@ app.get("/api/products", rateLimits.stockMonitoring, async (req, res) => {
 // GET all centralized products (for Super Admin) - optional branch filter
 app.get("/api/products/all", rateLimits.stockMonitoring, async (req, res) => {
   try {
-    let query = supabase
-      .from("centralized_product")
-      .select(
-        `
+    let query = supabase.from("centralized_product").select(
+      `
         id,
         product_name,
         quantity,
@@ -235,7 +303,7 @@ app.get("/api/products/all", rateLimits.stockMonitoring, async (req, res) => {
           category_name
         )
       `
-      );
+    );
 
     // Optional branch filter
     const branchId = req.query.branch_id;
@@ -858,7 +926,12 @@ app.get("/api/categories", async (req, res) => {
 app.get("/api/roles", async (req, res) => {
   const { data, error } = await supabase.from("role").select("*");
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+
+  const filteredRoles = (data || []).filter(
+    (role) => role.id !== SUPER_ADMIN_ROLE_ID
+  );
+
+  res.json(filteredRoles);
 });
 
 // POST validate session
@@ -1684,8 +1757,7 @@ app.put(
             title: notifTitle,
             message: notifMessage,
             link: action === "approved" ? "/transferred" : "/requested_item",
-            type:
-              action === "approved" ? "request_approved" : "request_denied",
+            type: action === "approved" ? "request_approved" : "request_denied",
             read: false,
             metadata: {
               request_id: requestId,
@@ -2524,10 +2596,12 @@ app.post(
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(user.password, 12);
 
+    const normalizedEmail = normalizeEmail(user.email);
+
     const insertPayload = {
       name: user.name,
       contact: cleanContact, // Use cleaned contact number
-      email: user.email,
+      email: normalizedEmail,
       password: hashedPassword,
       role_id: user.role_id, // already int
       branch_id: user.branch_id ? user.branch_id : null, // already int or null
@@ -2536,11 +2610,25 @@ app.post(
     console.log("Insert payload:", insertPayload);
 
     try {
+      if (
+        user.role_id === SUPER_ADMIN_ROLE_ID &&
+        !isAllowedSuperAdminEmail(user.email)
+      ) {
+        return res.status(400).json({ error: SUPER_ADMIN_EMAIL_MESSAGE });
+      }
+
+      if (user.role_id === SUPER_ADMIN_ROLE_ID) {
+        const limitReached = await isSuperAdminLimitReached();
+        if (limitReached) {
+          return res.status(400).json({ error: SUPER_ADMIN_LIMIT_MESSAGE });
+        }
+      }
+
       // First, check if the user already exists
       const { data: existingUser, error: checkError } = await supabase
         .from("user")
         .select("user_id")
-        .eq("email", user.email)
+        .eq("email", normalizedEmail)
         .single();
 
       if (checkError && checkError.code !== "PGRST116") {
@@ -2605,19 +2693,35 @@ app.post(
     // Contact validation is now handled by the validation middleware
     const cleanContact = user.contact;
 
+    const normalizedEmail = normalizeEmail(user.email);
+
     try {
+      if (
+        user.role_id === SUPER_ADMIN_ROLE_ID &&
+        !isAllowedSuperAdminEmail(user.email)
+      ) {
+        return res.status(400).json({ error: SUPER_ADMIN_EMAIL_MESSAGE });
+      }
+
+      if (user.role_id === SUPER_ADMIN_ROLE_ID) {
+        const limitReached = await isSuperAdminLimitReached();
+        if (limitReached) {
+          return res.status(400).json({ error: SUPER_ADMIN_LIMIT_MESSAGE });
+        }
+      }
+
       // First, check if the user already exists in either table
       const { data: existingUser, error: checkError } = await supabase
         .from("user")
         .select("user_id")
-        .eq("email", user.email)
+        .eq("email", normalizedEmail)
         .single();
 
       const { data: existingPendingUser, error: checkPendingError } =
         await supabase
           .from("pending_user")
           .select("pending_user_id")
-          .eq("email", user.email)
+          .eq("email", normalizedEmail)
           .single();
 
       if (
@@ -2649,7 +2753,7 @@ app.post(
       const insertPayload = {
         name: user.name,
         contact: cleanContact,
-        email: user.email,
+        email: normalizedEmail,
         role_id: user.role_id,
         branch_id: user.branch_id ? user.branch_id : null,
         status: "Pending",
@@ -2677,7 +2781,7 @@ app.post(
 
       // Send email with setup link
       const emailResult = await sendSetupEmail(
-        user.email,
+        normalizedEmail,
         user.name,
         setupLink
       );
@@ -2739,6 +2843,22 @@ app.post("/api/complete_user_setup", async (req, res) => {
       return res.status(400).json({
         error: "Setup token has expired",
       });
+    }
+
+    if (
+      pendingUser.role_id === SUPER_ADMIN_ROLE_ID &&
+      !isAllowedSuperAdminEmail(pendingUser.email)
+    ) {
+      return res.status(400).json({ error: SUPER_ADMIN_EMAIL_MESSAGE });
+    }
+
+    if (pendingUser.role_id === SUPER_ADMIN_ROLE_ID) {
+      const limitReached = await isSuperAdminLimitReached({
+        excludePendingId: pendingUser.pending_user_id,
+      });
+      if (limitReached) {
+        return res.status(400).json({ error: SUPER_ADMIN_LIMIT_MESSAGE });
+      }
     }
 
     // Hash the password using bcrypt
@@ -3077,23 +3197,62 @@ app.get("/api/get_users", async (req, res) => {
 app.put("/api/users/:user_id", async (req, res) => {
   const { user_id } = req.params;
   const user = req.body;
-  const { data, error } = await supabase
-    .from("user")
-    .update({
-      name: user.name,
-      contact: user.contact,
-      email: user.email,
-      password: user.password,
-      role_id: user.role_id, // already int
-      branch_id: user.branch_id ? user.branch_id : null, // already int or null
-      status: user.status,
-    })
-    .eq("user_id", user_id) // user_id is a UUID string, not a number
-    .select();
-  if (error) return res.status(500).json({ error: error.message });
-  if (!data || data.length === 0)
-    return res.status(404).json({ error: "User not found" });
-  res.json(data[0]);
+
+  try {
+    const { data: existingUser, error: existingError } = await supabase
+      .from("user")
+      .select("user_id, role_id, email")
+      .eq("user_id", user_id)
+      .single();
+
+    if (existingError && existingError.code !== "PGRST116") {
+      console.error("Error fetching user:", existingError);
+      return res.status(500).json({ error: "Failed to fetch user" });
+    }
+
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const targetRoleId = user.role_id ?? existingUser.role_id;
+    const isCurrentlySuperAdmin = existingUser.role_id === SUPER_ADMIN_ROLE_ID;
+    const isTargetSuperAdmin = targetRoleId === SUPER_ADMIN_ROLE_ID;
+
+    if (isTargetSuperAdmin && !isCurrentlySuperAdmin) {
+      const limitReached = await isSuperAdminLimitReached({
+        excludeUserId: user_id,
+      });
+      if (limitReached) {
+        return res.status(400).json({ error: SUPER_ADMIN_LIMIT_MESSAGE });
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("user")
+      .update({
+        name: user.name,
+        contact: user.contact,
+        email: user.email,
+        password: user.password,
+        role_id: targetRoleId, // already int
+        branch_id: user.branch_id ? user.branch_id : null, // already int or null
+        status: user.status,
+      })
+      .eq("user_id", user_id) // user_id is a UUID string, not a number
+      .select();
+
+    if (error) {
+      console.error("Error updating user:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0)
+      return res.status(404).json({ error: "User not found" });
+    res.json(data[0]);
+  } catch (error) {
+    console.error("Unexpected error updating user:", error);
+    res.status(500).json({ error: "Failed to update user" });
+  }
 });
 
 // DELETE user

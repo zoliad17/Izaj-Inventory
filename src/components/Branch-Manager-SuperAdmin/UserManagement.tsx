@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "react-toastify/dist/ReactToastify.css";
@@ -37,6 +37,9 @@ interface User {
   role_name?: string;
 }
 
+const SUPER_ADMIN_ROLE_ID = 1;
+const ADMIN_ROLE_NAME = "Admin";
+
 function UserManagement() {
   const { isCollapsed } = useSidebar();
   const navigate = useNavigate();
@@ -59,7 +62,7 @@ function UserManagement() {
     contact: "",
     email: "",
     status: "Active",
-    role_id: 1, // Default role ID
+    role_id: 0,
     branch_id: "",
   });
 
@@ -107,16 +110,40 @@ function UserManagement() {
     }
   };
 
+  const superAdminExists = useMemo(
+    () => users.some((user) => user.role_id === SUPER_ADMIN_ROLE_ID),
+    [users]
+  );
+
+  const availableRoles = useMemo(
+    () =>
+      roles.filter(
+        (role) =>
+          role.id !== SUPER_ADMIN_ROLE_ID &&
+          role.role_name?.toLowerCase() !== ADMIN_ROLE_NAME.toLowerCase()
+      ),
+    [roles]
+  );
+
+  const pickDefaultRoleId = useCallback(
+    (roleList: { id: number; role_name: string }[]) =>
+      roleList.find((role) => role.id !== SUPER_ADMIN_ROLE_ID)?.id ??
+      roleList[0]?.id ??
+      SUPER_ADMIN_ROLE_ID,
+    []
+  );
+
   // Fetch roles from API
   useEffect(() => {
     async function fetchRoles() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/roles`);
         if (response.ok) {
-          const data = await response.json();
-          setRoles(data || []);
-          if (data && data.length > 0) {
-            setNewUser((prev) => ({ ...prev, role_id: data[0].id }));
+          const data = (await response.json()) || [];
+          setRoles(data);
+          if (data.length > 0) {
+            const defaultRoleId = pickDefaultRoleId(data);
+            setNewUser((prev) => ({ ...prev, role_id: defaultRoleId }));
           }
         }
       } catch (error) {
@@ -124,7 +151,7 @@ function UserManagement() {
       }
     }
     fetchRoles();
-  }, []);
+  }, [pickDefaultRoleId]);
 
   useEffect(() => {
     async function fetchBranches() {
@@ -147,18 +174,20 @@ function UserManagement() {
 
   // Filter users based on search term and branch
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch = Object.values(user).some(
-        (value) =>
-          typeof value === "string" &&
-          value.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    return users
+      .filter((user) => user.role_id !== SUPER_ADMIN_ROLE_ID)
+      .filter((user) => {
+        const matchesSearch = Object.values(user).some(
+          (value) =>
+            typeof value === "string" &&
+            value.toLowerCase().includes(searchTerm.toLowerCase())
+        );
 
-      const matchesBranch =
-        branchFilter === "All" || user.branch_id === branchFilter;
+        const matchesBranch =
+          branchFilter === "All" || user.branch_id === branchFilter;
 
-      return matchesSearch && matchesBranch;
-    });
+        return matchesSearch && matchesBranch;
+      });
   }, [users, searchTerm, branchFilter]);
 
   // Pagination logic
@@ -272,6 +301,11 @@ function UserManagement() {
       return;
     }
 
+    if (newUser.role_id === SUPER_ADMIN_ROLE_ID && superAdminExists) {
+      toast.error("A super admin already exists");
+      return;
+    }
+
     // Validate contact number format
     const cleanContact = newUser.contact.replace(/\D/g, "").slice(0, 11);
     if (cleanContact.length !== 11) {
@@ -334,7 +368,8 @@ function UserManagement() {
         contact: "",
         email: "",
         status: "Active",
-        role_id: roles[0]?.id || 1,
+        role_id:
+          pickDefaultRoleId(roles) ?? roles[0]?.id ?? SUPER_ADMIN_ROLE_ID,
         branch_id: branches[0]?.id || "",
       });
     } catch (error) {
@@ -1073,14 +1108,16 @@ function UserManagement() {
                       name="role_id"
                       value={newUser.role_id}
                       onChange={(e) => handleInputChange(e)}
-                      disabled={isAddingUser}
+                      disabled={isAddingUser || availableRoles.length === 0}
                       className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-inner focus:ring-2 focus:ring-blue-500 outline-none transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       required
                     >
                       <option value="" disabled>
-                        Select Role *
+                        {availableRoles.length === 0
+                          ? "No roles available"
+                          : "Select Role *"}
                       </option>
-                      {roles.map((role) => (
+                      {availableRoles.map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.role_name}
                         </option>
@@ -1126,7 +1163,7 @@ function UserManagement() {
                 {/* Add User Button */}
                 <button
                   onClick={handleAddUser}
-                  disabled={isAddingUser}
+                  disabled={isAddingUser || availableRoles.length === 0}
                   className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium shadow-md transition-all duration-300 
       ${
         isAddingUser

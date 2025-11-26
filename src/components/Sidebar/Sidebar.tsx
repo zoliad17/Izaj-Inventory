@@ -57,6 +57,12 @@ interface Branch {
   location: string;
 }
 
+const ROLE_LABELS: Record<number, string> = {
+  1: "Super Admin",
+  2: "Branch Manager",
+  3: "Admin",
+};
+
 function Sidebar() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -334,6 +340,7 @@ function Sidebar() {
     })
     .filter(Boolean) as NavItem[];
 
+  const userRoleLabel = user.role_name || ROLE_LABELS[user.role_id] || "User";
   // Find the user's branch based on branch_id
   const userBranch = branches.find((branch) => branch.id === user?.branch_id);
 
@@ -678,7 +685,7 @@ function Sidebar() {
                         {user.name || user.email}
                       </h4>
                       <p className="text-base text-gray-600 dark:text-gray-400 truncate">
-                        User
+                        {userRoleLabel}
                       </p>
                     </div>
                   </div>
@@ -687,7 +694,9 @@ function Sidebar() {
                   <div className="space-y-2">
                     <div className="flex items-center text-xs text-gray-600 dark:text-gray-400">
                       <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                      <span className="font-bold text-base">Active</span>
+                      <span className="font-bold text-base">
+                        {user.status || "Active"}
+                      </span>
                     </div>
                     <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
                       <MapPin className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />

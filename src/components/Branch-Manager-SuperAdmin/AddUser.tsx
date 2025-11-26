@@ -30,7 +30,7 @@ interface User {
   contact: string;
   image: string;
   isVerified: boolean;
-  role: "SuperAdmin" | "BranchManager"; // Added role field
+  role: "BranchManager";
   branch: "Lucena" | "San Pablo"; // Added branch field
   description?: string; // Optional property
 }
@@ -43,7 +43,7 @@ interface NewUser {
   location: string;
   contact: string;
   image: string;
-  role: "SuperAdmin" | "BranchManager"; // Added role field
+  role: "BranchManager";
   branch: "Lucena" | "San Pablo"; // Added branch field
 }
 
@@ -71,20 +71,7 @@ function AddUser() {
   });
 
   // State to manage users list
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 1,
-      name: "Killua Zoldick",
-      username: "killua_z",
-      email: "killua@hunter.com",
-      image: "/dist/assets/image/user.png",
-      location: "123 Main Street, Lucena City",
-      contact: "(042) 123-4567",
-      isVerified: true,
-      role: "SuperAdmin",
-      branch: "Lucena",
-    },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
 
   // Function to generate random OTP
   const generateOTP = (): string => {
@@ -339,7 +326,6 @@ function AddUser() {
                       className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
                     >
-                      <option value="SuperAdmin">Super Admin</option>
                       <option value="BranchManager">Branch Manager</option>
                     </select>
                     <Key className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
