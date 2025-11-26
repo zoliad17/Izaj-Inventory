@@ -11,6 +11,7 @@ const {
   sendResetPasswordEmail,
   sendRequestNotificationEmail,
   sendRequestStatusEmail,
+  sendTransferArrivalEmail,
 } = require("./utils/emailService");
 const { validateRequest, schemas } = require("./utils/validation");
 const {
@@ -1057,6 +1058,8 @@ app.get(
         reserved_quantity,
         price,
         status,
+        transfer_tag,
+        transfer_tag_set_at,
         category_id,
         category:category_id (
           id,
@@ -1078,6 +1081,8 @@ app.get(
           total_quantity: product.quantity, // Keep original total for reference
           reserved_quantity: product.reserved_quantity || 0,
           category_name: product.category?.category_name || "",
+          transfer_tag: product.transfer_tag,
+          transfer_tag_set_at: product.transfer_tag_set_at,
         };
       });
 
@@ -1531,91 +1536,6 @@ app.put(
             );
             continue;
           }
-
-          // Add products to requester's branch
-          // Check if product already exists in requester's branch
-          const { data: existingProduct, error: checkError } = await supabase
-            .from("centralized_product")
-            .select("id, quantity")
-            .eq("product_name", productData.product_name)
-            .eq("branch_id", requesterData.branch_id)
-            .single();
-
-          if (checkError && checkError.code !== "PGRST116") {
-            // PGRST116 = no rows found
-            console.error(
-              "Error checking existing product in requester's branch:",
-              checkError
-            );
-            continue;
-          }
-
-          if (existingProduct) {
-            // Product exists in requester's branch - update quantity
-            const { error: updateRequesterError } = await supabase
-              .from("centralized_product")
-              .update({
-                quantity: existingProduct.quantity + reservedAmount,
-                updated_at: new Date().toISOString(), // Track when product was updated
-              })
-              .eq("id", existingProduct.id);
-
-            if (updateRequesterError) {
-              console.error(
-                "Error updating product in requester's branch:",
-                updateRequesterError
-              );
-            }
-          } else {
-            // Product doesn't exist in requester's branch - create new entry
-            const { error: createError } = await supabase
-              .from("centralized_product")
-              .insert({
-                product_name: productData.product_name,
-                quantity: reservedAmount,
-                price: productData.price,
-                category_id: productData.category_id,
-                status: productData.status,
-                branch_id: requesterData.branch_id,
-                reserved_quantity: 0,
-              });
-
-            if (createError) {
-              console.error(
-                "Error creating product in requester's branch:",
-                createError
-              );
-            }
-          }
-        }
-
-        // Log inventory transfer for approved requests
-        const { error: transferAuditError } = await supabase
-          .from("audit_logs")
-          .insert([
-            {
-              user_id: reviewedBy,
-              action: "INVENTORY_TRANSFER",
-              description: `Approved request #${requestId}: Transferred ${requestData.items.length} items to requester's branch`,
-              entity_type: "centralized_product",
-              entity_id: requestId,
-              metadata: {
-                requester_id: requestData.request_from,
-                requester_branch_id: requesterData.branch_id,
-                items_transferred: requestData.items.map((item) => ({
-                  product_name: item.product_name,
-                  quantity: item.quantity,
-                  product_id: item.product_id,
-                })),
-              },
-            },
-          ]);
-
-        if (transferAuditError) {
-          console.error(
-            "Error logging inventory transfer:",
-            transferAuditError
-          );
         }
       } else if (action === "denied") {
         // For denied requests: simply reset reserved_quantity to 0 without altering quantity
@@ -1881,30 +1801,93 @@ app.put("/api/product-requests/:requestId/mark-arrived", async (req, res) => {
   const { requestId } = req.params;
   const { user_id, branch_id } = req.body;
 
+  if (!user_id || !branch_id) {
+    return res
+      .status(400)
+      .json({ error: "user_id and branch_id are required to mark arrival" });
+  }
+
   try {
-    // Update request status to arrived
+    const now = new Date().toISOString();
+
+    // Fetch request details
     const { data: requestData, error: requestError } = await supabase
-      .from("product_requisition") // Changed from product_requests to product_requisition
-      .update({
-        status: "arrived",
-        arrived_at: new Date().toISOString(),
-      })
+      .from("product_requisition")
+      .select(
+        `
+        request_id,
+        request_from,
+        request_to,
+        status,
+        arrived_at
+      `
+      )
       .eq("request_id", requestId)
-      .select()
       .single();
 
     if (requestError) throw requestError;
 
-    // Get the request items with product details
+    if (!requestData) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+
+    if (requestData.status === "arrived") {
+      return res
+        .status(409)
+        .json({ error: "Request already marked as arrived" });
+    }
+
+    if (requestData.status !== "approved") {
+      return res.status(400).json({
+        error: "Only approved requests can be marked as arrived",
+      });
+    }
+
+    // Fetch requester (destination) and source branch managers
+    const [
+      { data: requesterUser, error: requesterError },
+      { data: sourceUser, error: sourceError },
+    ] = await Promise.all([
+      supabase
+        .from("user")
+        .select("user_id, name, email, branch_id, branch:branch_id(location)")
+        .eq("user_id", requestData.request_from)
+        .single(),
+      supabase
+        .from("user")
+        .select("user_id, name, email, branch_id, branch:branch_id(location)")
+        .eq("user_id", requestData.request_to)
+        .single(),
+    ]);
+
+    if (requesterError) throw requesterError;
+    if (sourceError) throw sourceError;
+
+    if (!requesterUser?.branch_id) {
+      return res
+        .status(400)
+        .json({ error: "Requester is not linked to any branch" });
+    }
+
+    if (Number(requesterUser.branch_id) !== Number(branch_id)) {
+      return res.status(403).json({
+        error: "You are not authorized to mark this request as arrived",
+      });
+    }
+
+    // Fetch request items with product details
     const { data: items, error: itemsError } = await supabase
-      .from("product_requisition_items") // Get items from requisition items table
+      .from("product_requisition_items")
       .select(
         `
         product_id,
         quantity,
         product:product_id (
+          id,
           product_name,
-          category_id
+          price,
+          category_id,
+          status
         )
       `
       )
@@ -1912,29 +1895,207 @@ app.put("/api/product-requests/:requestId/mark-arrived", async (req, res) => {
 
     if (itemsError) throw itemsError;
 
-    if (items && items.length > 0) {
-      // Create transfer records for each item
-      const transferRecords = items.map((item) => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        branch_id: branch_id,
-        transferred_at: new Date().toISOString(),
-        request_id: requestId,
-        status: "Completed",
-      }));
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: "No items found for this request" });
+    }
 
-      // Insert transfer records
-      const { error: transferError } = await supabase
-        .from("product_transfers")
-        .insert(transferRecords);
+    // Preload destination products to avoid duplicate inserts
+    const productNames = Array.from(
+      new Set(
+        items
+          .map((item) => item.product?.product_name)
+          .filter((name) => Boolean(name))
+      )
+    );
 
-      if (transferError) throw transferError;
+    let destinationProducts = [];
+    if (productNames.length > 0) {
+      const { data: destData, error: destError } = await supabase
+        .from("centralized_product")
+        .select("id, product_name, quantity, status")
+        .eq("branch_id", branch_id)
+        .in("product_name", productNames);
+
+      if (destError && destError.code !== "PGRST116") throw destError;
+      destinationProducts = destData || [];
+    }
+
+    const destinationMap = new Map(
+      destinationProducts.map((product) => [product.product_name, product])
+    );
+
+    const mergeSummary = [];
+
+    for (const item of items) {
+      const sourceProduct = item.product;
+      if (!sourceProduct?.product_name) continue;
+
+      const destinationProduct = destinationMap.get(sourceProduct.product_name);
+
+      if (destinationProduct) {
+        const newQuantity = (destinationProduct.quantity || 0) + item.quantity;
+        const { data: updatedProduct, error: updateError } = await supabase
+          .from("centralized_product")
+          .update({
+            quantity: newQuantity,
+            transfer_tag: "Updated Stock (Transfer)",
+            transfer_tag_set_at: now,
+            updated_at: now,
+          })
+          .eq("id", destinationProduct.id)
+          .select("id, product_name, quantity")
+          .single();
+
+        if (updateError) throw updateError;
+
+        mergeSummary.push({
+          product_id: updatedProduct.id,
+          product_name: updatedProduct.product_name,
+          added_quantity: item.quantity,
+          previous_quantity: destinationProduct.quantity || 0,
+          new_quantity: newQuantity,
+          tag: "Updated Stock (Transfer)",
+        });
+      } else {
+        const { data: newProduct, error: createError } = await supabase
+          .from("centralized_product")
+          .insert({
+            product_name: sourceProduct.product_name,
+            quantity: item.quantity,
+            price: sourceProduct.price,
+            category_id: sourceProduct.category_id,
+            status: sourceProduct.status || "In Stock",
+            branch_id,
+            reserved_quantity: 0,
+            transfer_tag: "New Item from Transfer",
+            transfer_tag_set_at: now,
+          })
+          .select("id, product_name, quantity")
+          .single();
+
+        if (createError) throw createError;
+
+        // Track newly created product for future iterations
+        destinationMap.set(sourceProduct.product_name, {
+          id: newProduct.id,
+          product_name: newProduct.product_name,
+          quantity: newProduct.quantity,
+        });
+
+        mergeSummary.push({
+          product_id: newProduct.id,
+          product_name: newProduct.product_name,
+          added_quantity: item.quantity,
+          previous_quantity: 0,
+          new_quantity: item.quantity,
+          tag: "New Item from Transfer",
+        });
+      }
+    }
+
+    if (mergeSummary.length === 0) {
+      return res.status(400).json({
+        error: "No inventory changes were recorded for this transfer",
+      });
+    }
+
+    // Update request status to arrived
+    const { error: statusError } = await supabase
+      .from("product_requisition")
+      .update({
+        status: "arrived",
+        arrived_at: now,
+      })
+      .eq("request_id", requestId);
+
+    if (statusError) throw statusError;
+
+    // Record transfer history
+    const transferRecords = mergeSummary.map((summary) => ({
+      product_id: summary.product_id,
+      quantity: summary.added_quantity,
+      branch_id,
+      transferred_at: now,
+      request_id: Number(requestId),
+      status: "Completed",
+      change_type:
+        summary.tag === "New Item from Transfer" ? "new_item" : "updated_stock",
+    }));
+
+    const { error: transferError } = await supabase
+      .from("product_transfers")
+      .insert(transferRecords);
+    if (transferError) throw transferError;
+
+    // Send arrival notification email to source branch manager
+    if (sourceUser?.email) {
+      await sendTransferArrivalEmail(
+        sourceUser.email,
+        sourceUser.name,
+        requestId,
+        requesterUser?.branch?.location || "Destination Branch",
+        mergeSummary
+      );
+    }
+
+    // Create application notification for source branch manager
+    try {
+      await supabase.from("notifications").insert([
+        {
+          user_id: requestData.request_to,
+          title: "Transfer Received",
+          message: `${
+            requesterUser?.name || "A branch"
+          } merged request #${requestId} into their inventory`,
+          link: "/pending_request",
+          type: "transfer_update",
+          read: false,
+          metadata: {
+            request_id: requestId,
+            destination_branch: requesterUser?.branch?.location || "Unknown",
+            item_count: mergeSummary.length,
+            total_quantity: mergeSummary.reduce(
+              (sum, item) => sum + item.added_quantity,
+              0
+            ),
+          },
+        },
+      ]);
+    } catch (notifError) {
+      console.error("Failed to create arrival notification:", notifError);
+    }
+
+    // Log audit entry for receiving branch
+    const { error: auditError } = await supabase.from("audit_logs").insert([
+      {
+        user_id,
+        action: "INVENTORY_TRANSFER",
+        description: `Request #${requestId} arrived with ${
+          mergeSummary.length
+        } items merged into ${
+          requesterUser?.branch?.location || "destination branch"
+        }`,
+        entity_type: "product_requisition",
+        entity_id: requestId,
+        metadata: {
+          request_id: requestId,
+          requester_id: requestData.request_from,
+          requester_branch_id: branch_id,
+          source_branch_id: sourceUser?.branch_id || null,
+          source_branch_name: sourceUser?.branch?.location || "Unknown Branch",
+          items_merged: mergeSummary,
+        },
+      },
+    ]);
+
+    if (auditError) {
+      console.error("Error logging arrival audit trail:", auditError);
     }
 
     res.json({
       success: true,
-      message: "Request marked as arrived and transfers recorded",
-      data: requestData,
+      message: "Request marked as arrived and inventory updated",
+      summary: mergeSummary,
     });
   } catch (error) {
     console.error("Error marking request as arrived:", error);
@@ -1947,7 +2108,6 @@ app.get("/api/transfers/:branchId", async (req, res) => {
   const { branchId } = req.params;
 
   try {
-    console.log(`Fetching transfers for branch ${branchId}`);
 
     // First, get all product transfers for this branch
     const { data: transfers, error: transferError } = await supabase
@@ -1963,7 +2123,6 @@ app.get("/api/transfers/:branchId", async (req, res) => {
         .json({ error: "Failed to fetch transfers: " + transferError.message });
     }
 
-    console.log(`Found ${transfers?.length || 0} transfers`);
 
     if (!transfers || transfers.length === 0) {
       return res.status(200).json([]);
@@ -1983,6 +2142,8 @@ app.get("/api/transfers/:branchId", async (req, res) => {
             product_name,
             price,
             category_id,
+            transfer_tag,
+            transfer_tag_set_at,
             category:category_id (
               category_name
             )
@@ -2040,6 +2201,14 @@ app.get("/api/transfers/:branchId", async (req, res) => {
               : transfer.quantity < 20
               ? "Low Stock"
               : "In Stock",
+          change_type: transfer.change_type || null,
+          transfer_tag:
+            product?.transfer_tag ||
+            (transfer.change_type === "new_item"
+              ? "New Item from Transfer"
+              : transfer.change_type === "updated_stock"
+              ? "Updated Stock (Transfer)"
+              : null),
           transferred_from:
             request?.user_from?.branch?.location || "Unknown Branch",
           transferred_at: transfer.transferred_at,

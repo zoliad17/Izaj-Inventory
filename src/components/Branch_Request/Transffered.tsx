@@ -36,7 +36,19 @@ interface TransferredProduct {
   requester_name: string;
   transfer_status: "Completed" | "Pending" | "Partial";
   notes?: string;
+  transfer_tag?: string | null;
+  change_type?: string | null;
 }
+
+const transferBadgeClasses = (tag?: string | null) => {
+  if (tag === "New Item from Transfer") {
+    return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200";
+  }
+  if (tag === "Updated Stock (Transfer)") {
+    return "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
+  }
+  return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200";
+};
 
 const Transferred = memo(() => {
   const { isCollapsed } = useSidebar();
@@ -122,6 +134,8 @@ const Transferred = memo(() => {
           notes: `Transferred on ${new Date(
             item.transferred_at
           ).toLocaleDateString()}`,
+          transfer_tag: item.transfer_tag || null,
+          change_type: item.change_type || null,
         })
       );
 
@@ -576,7 +590,18 @@ const Transferred = memo(() => {
                           {product.id}
                         </td>
                         <td className="px-2 py-2 break-words">
-                          {product.product_name}
+                          <div className="flex flex-col">
+                            <span>{product.product_name}</span>
+                            {product.transfer_tag && (
+                              <span
+                                className={`mt-1 inline-flex w-fit px-2 py-0.5 rounded-full text-[11px] font-medium ${transferBadgeClasses(
+                                  product.transfer_tag
+                                )}`}
+                              >
+                                {product.transfer_tag}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-2 py-2 break-words">
                           {product.category_name}

@@ -279,6 +279,65 @@ BEGIN
 END $$;
 
 -- =============================================
+-- TRANSFER TAGGING SUPPORT
+-- =============================================
+
+DO $$
+BEGIN
+    -- Add transfer_tag column if missing
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'centralized_product'
+        AND column_name = 'transfer_tag'
+    ) THEN
+        ALTER TABLE public.centralized_product
+        ADD COLUMN transfer_tag text;
+    END IF;
+
+    -- Add transfer_tag_set_at column if missing
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'centralized_product'
+        AND column_name = 'transfer_tag_set_at'
+    ) THEN
+        ALTER TABLE public.centralized_product
+        ADD COLUMN transfer_tag_set_at timestamp with time zone;
+    END IF;
+END $$;
+
+-- Ensure product requisition has arrived_at column
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'product_requisition'
+        AND column_name = 'arrived_at'
+    ) THEN
+        ALTER TABLE public.product_requisition
+        ADD COLUMN arrived_at timestamp with time zone;
+    END IF;
+END $$;
+
+-- Add change tracking columns for product_transfers if table exists
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'product_transfers'
+    ) THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name = 'product_transfers'
+            AND column_name = 'change_type'
+        ) THEN
+            ALTER TABLE public.product_transfers
+            ADD COLUMN change_type text;
+        END IF;
+    END IF;
+END $$;
+
+-- =============================================
 -- UTILITY FUNCTIONS
 -- =============================================
 

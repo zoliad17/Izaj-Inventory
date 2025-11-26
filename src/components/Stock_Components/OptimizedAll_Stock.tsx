@@ -37,6 +37,9 @@ interface Product {
   transferred_from?: string;
   transferred_at?: string;
   request_id?: number;
+  transferTag?: string | null;
+  transferTagAppliedAt?: string | null;
+  quantityAdded?: number; // Quantity added during transfer
 }
 
 const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
@@ -104,22 +107,7 @@ const ProductRow = memo(
           ).padStart(4, "0")}`}
         </td>
         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 relative cursor-pointer">
-          <div className="flex items-center gap-2">
-            <span>{product.name}</span>
-            {product.source === "Transferred" && (
-              <div className="flex items-center gap-1">
-                <span className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-full flex items-center gap-1">
-                  <ArrowRight className="w-3 h-3" />
-                  Transferred
-                </span>
-                {product.transferred_from && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    from {product.transferred_from}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          <span>{product.name}</span>
         </td>
         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
           {categoryName}
@@ -271,7 +259,6 @@ function OptimizedAllStock() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(0);
   const [selectedStatus, setSelectedStatus] = useState<string>("All");
-  const [selectedSource, setSelectedSource] = useState<string>("All");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -330,10 +317,14 @@ function OptimizedAllStock() {
         stock: product.quantity,
         status: product.status, // Use status from database instead of calculating
         detailsPage: `/product/${product.id}`,
-        source: "Local" as const,
+        source: product.transfer_tag
+          ? ("Transferred" as const)
+          : ("Local" as const),
         transferred_from: undefined,
         transferred_at: undefined,
         request_id: undefined,
+        transferTag: product.transfer_tag,
+        transferTagAppliedAt: product.transfer_tag_set_at,
       }));
 
       // Fetch audit logs to identify transferred products
@@ -353,11 +344,26 @@ function OptimizedAllStock() {
 
             // Update products that were transferred
             const updatedProducts = mappedProducts.map((product: Product) => {
-              const transferLog = transferLogs.find(
-                (log: any) => log.metadata?.product_id === product.id
-              );
+              const transferLog = transferLogs.find((log: any) => {
+                if (Array.isArray(log.metadata?.items_merged)) {
+                  return log.metadata.items_merged.some(
+                    (merged: any) => merged.product_id === product.id
+                  );
+                }
+                return log.metadata?.product_id === product.id;
+              });
 
               if (transferLog) {
+                // Find the specific merged item to get quantity added
+                let quantityAdded = 0;
+                if (Array.isArray(transferLog.metadata?.items_merged)) {
+                  const mergedItem = transferLog.metadata.items_merged.find(
+                    (merged: any) =>
+                      Number(merged.product_id) === Number(product.id)
+                  );
+                  quantityAdded = mergedItem?.added_quantity || 0;
+                }
+
                 return {
                   ...product,
                   source: "Transferred" as const,
@@ -366,6 +372,7 @@ function OptimizedAllStock() {
                     "Unknown Branch",
                   transferred_at: transferLog.timestamp,
                   request_id: transferLog.metadata?.request_id,
+                  quantityAdded: quantityAdded || undefined,
                 };
               }
 
@@ -407,37 +414,79 @@ function OptimizedAllStock() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Memoized filtered products
+  // Separate products into local inventory and transferred items
+  const { localProducts, transferredProducts } = useMemo(() => {
+    const local = products.filter((product: Product) => !product.transferTag);
+    const transferred = products.filter(
+      (product: Product) => product.transferTag
+    );
+    return { localProducts: local, transferredProducts: transferred };
+  }, [products]);
+
+  const [transferSearchTerm, setTransferSearchTerm] = useState("");
+  const [transferTypeFilter, setTransferTypeFilter] = useState<
+    "All" | "New" | "Updated"
+  >("All");
+
+  const getFormattedProductId = useCallback(
+    (product: Product) => {
+      const branchCode = product.branch_id || branchId || "N/A";
+      return `${branchCode}-${String(product.id).padStart(4, "0")}`;
+    },
+    [branchId]
+  );
+
+  const filteredTransferredProducts = useMemo(() => {
+    return transferredProducts.filter((product) => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(transferSearchTerm.toLowerCase()) ||
+        String(product.id).includes(transferSearchTerm) ||
+        getFormattedProductId(product)
+          .toLowerCase()
+          .includes(transferSearchTerm.toLowerCase());
+
+      const isNew = product.transferTag === "New Item from Transfer";
+      const matchesType =
+        transferTypeFilter === "All" ||
+        (transferTypeFilter === "New" && isNew) ||
+        (transferTypeFilter === "Updated" && !isNew);
+
+      return matchesSearch && matchesType;
+    });
+  }, [
+    transferredProducts,
+    transferSearchTerm,
+    transferTypeFilter,
+    getFormattedProductId,
+  ]);
+
+  // Memoized filtered products (ALL products for main table - final state)
   const filteredProducts = useMemo(() => {
     return products.filter((product: Product) => {
       // First filter: Only show products from the current user's branch
       const matchesBranch = branchId ? product.branch_id === branchId : true;
 
+      const normalizedSearch = searchTerm.toLowerCase();
       const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(product.id).toLowerCase().includes(searchTerm.toLowerCase());
+        product.name.toLowerCase().includes(normalizedSearch) ||
+        String(product.id).toLowerCase().includes(normalizedSearch) ||
+        getFormattedProductId(product)
+          .toLowerCase()
+          .includes(normalizedSearch);
       const matchesCategory =
         selectedCategory === 0 || product.category === selectedCategory;
       const matchesStatus =
         selectedStatus === "All" || product.status === selectedStatus;
-      const matchesSource =
-        selectedSource === "All" || product.source === selectedSource;
 
-      return (
-        matchesBranch &&
-        matchesSearch &&
-        matchesCategory &&
-        matchesStatus &&
-        matchesSource
-      );
+      return matchesBranch && matchesSearch && matchesCategory && matchesStatus;
     });
   }, [
-    products,
+    localProducts,
     branchId,
     searchTerm,
     selectedCategory,
     selectedStatus,
-    selectedSource,
+    getFormattedProductId,
   ]);
 
   // Memoized pagination data
@@ -1219,25 +1268,6 @@ function OptimizedAllStock() {
                   ))}
                 </select>
               </div>
-
-              {/* Source Filter */}
-              <div className="flex-shrink-0 w-full sm:w-auto">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Source
-                </label>
-                <select
-                  className="block w-full pl-3 pr-8 py-2 rounded-2xl text-sm bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white
-                 border border-gray-300 dark:border-gray-600 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)]
-                 dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
-                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={selectedSource}
-                  onChange={(e) => setSelectedSource(e.target.value)}
-                >
-                  <option value="All">All Sources</option>
-                  <option value="Local">Local Inventory</option>
-                  <option value="Transferred">Transferred Products</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -1328,6 +1358,171 @@ function OptimizedAllStock() {
             indexOfFirstItem={paginatedData.indexOfFirstItem}
             indexOfLastItem={paginatedData.indexOfLastItem}
           />
+
+          {/* Transferred Items Table */}
+          {transferredProducts.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                Updated Products From Transfer
+              </h3>
+              <div className="flex flex-col gap-4 mb-4 sm:flex-row">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Search Products
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search by name or ID"
+                    value={transferSearchTerm}
+                    onChange={(e) => setTransferSearchTerm(e.target.value)}
+                    className="w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="w-full sm:w-52">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Transfer Type
+                  </label>
+                  <select
+                    value={transferTypeFilter}
+                    onChange={(e) =>
+                      setTransferTypeFilter(e.target.value as
+                        | "All"
+                        | "New"
+                        | "Updated")
+                    }
+                    className="block w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="All">All Transfers</option>
+                    <option value="New">New Items</option>
+                    <option value="Updated">Updated Stock</option>
+                  </select>
+                </div>
+              </div>
+              <div className="w-full overflow-hidden">
+                <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto break-words">
+                  <thead>
+                    <tr className="bg-blue-50 dark:bg-blue-900/20 text-lg">
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Product ID
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Product Name
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Old Quantity
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Added Quantity
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        New / Updated Quantity
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Transfer Type
+                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                        Arrival Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-lg text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-neutral-700">
+                    {filteredTransferredProducts.length > 0 ? (
+                      filteredTransferredProducts.map((product: Product) => {
+                      const categoryName =
+                        categories.find(
+                          (cat) => Number(cat.id) === product.category
+                        )?.category_name || "Unknown";
+                      const changeType =
+                        product.transferTag === "New Item from Transfer"
+                          ? "New Product"
+                          : "Stock Update";
+                      const changeTypeBadge =
+                        product.transferTag === "New Item from Transfer"
+                          ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200"
+                          : "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
+
+                      const addedQuantity =
+                        typeof product.quantityAdded === "number"
+                          ? product.quantityAdded
+                          : product.transferTag === "New Item from Transfer"
+                          ? product.stock
+                          : 0;
+
+                      const oldQuantity =
+                        product.transferTag === "New Item from Transfer"
+                          ? 0
+                          : Math.max(product.stock - addedQuantity, 0);
+
+                      const newQuantity = oldQuantity + addedQuantity;
+
+                        return (
+                        <tr
+                          key={product.id}
+                          className="hover:bg-gray-50 dark:hover:bg-neutral-700"
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-mono">
+                            {`${
+                              product.branch_id || branchId || "N/A"
+                            }-${String(product.id).padStart(4, "0")}`}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {product.name}
+                              </span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {categoryName}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                            {oldQuantity} units
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                            +{addedQuantity} units
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                            {newQuantity} units
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${changeTypeBadge}`}
+                            >
+                              {changeType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                            {product.transferTagAppliedAt
+                              ? new Date(
+                                  product.transferTagAppliedAt
+                                ).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : "N/A"}
+                          </td>
+                        </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-6 py-10 text-center text-base text-gray-500 dark:text-gray-400"
+                        >
+                          No transfers match your filters
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-gray-100 dark:bg-gray-900/70">
@@ -1338,19 +1533,20 @@ function OptimizedAllStock() {
               </small>
               <div className="flex items-center gap-4">
                 <span className="text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">
-                    {products.filter((p) => p.source === "Local").length}
-                  </span>{" "}
+                  <span className="font-medium">{localProducts.length}</span>{" "}
                   Local
                 </span>
-                <span className="text-gray-600 dark:text-gray-300">
-                  <span className="font-medium">
-                    {products.filter((p) => p.source === "Transferred").length}
-                  </span>{" "}
-                  Transferred
-                </span>
+                {transferredProducts.length > 0 && (
+                  <span className="text-gray-600 dark:text-gray-300">
+                    <span className="font-medium">
+                      {transferredProducts.length}
+                    </span>{" "}
+                    Updated via Transfer
+                  </span>
+                )}
                 <span className="text-gray-600 dark:text-gray-300">
                   <span className="font-medium">{products.length}</span> Total
+                  Products
                 </span>
               </div>
             </div>

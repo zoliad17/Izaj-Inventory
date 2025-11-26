@@ -44,7 +44,11 @@ const createEmailTemplate = (
           </a>
         </div>
         
-        ${expiryText ? `<p style="color: #666; line-height: 1.6;">${expiryText}</p>` : ""}
+        ${
+          expiryText
+            ? `<p style="color: #666; line-height: 1.6;">${expiryText}</p>`
+            : ""
+        }
         
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
         
@@ -64,7 +68,10 @@ const createEmailTemplate = (
 };
 
 // --- Frontend link builder (supports custom schemes) ---
-const FRONTEND_BASE = process.env.FRONTEND_URL || process.env.FRONTEND_SCHEME || "http://localhost:3000";
+const FRONTEND_BASE =
+  process.env.FRONTEND_URL ||
+  process.env.FRONTEND_SCHEME ||
+  "http://localhost:3000";
 const buildFrontendLink = (path) => {
   const base = String(FRONTEND_BASE || "");
   if (/^https?:\/\//i.test(base)) {
@@ -104,7 +111,11 @@ const sendSetupEmail = async (userEmail, userName, setupLink) => {
       "This link will expire in 24 hours. If you didn't expect this email, please contact your administrator."
     );
 
-    return await sendEmail(userEmail, "Set Up Your Account - Izaj Inventory", html);
+    return await sendEmail(
+      userEmail,
+      "Set Up Your Account - Izaj Inventory",
+      html
+    );
   } catch (error) {
     return { success: false, error: error.message };
   }
@@ -123,14 +134,23 @@ const sendResetPasswordEmail = async (userEmail, userName, resetLink) => {
       "This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email."
     );
 
-    return await sendEmail(userEmail, "Reset Your Password - Izaj Inventory", html);
+    return await sendEmail(
+      userEmail,
+      "Reset Your Password - Izaj Inventory",
+      html
+    );
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
 
 // --- Request Notification Email ---
-const sendRequestNotificationEmail = async (userEmail, userName, requesterName, requestId) => {
+const sendRequestNotificationEmail = async (
+  userEmail,
+  userName,
+  requesterName,
+  requestId
+) => {
   try {
     const html = createEmailTemplate(
       "New Product Request",
@@ -142,23 +162,38 @@ const sendRequestNotificationEmail = async (userEmail, userName, requesterName, 
       "Please respond to this request as soon as possible to maintain efficient inventory management."
     );
 
-    return await sendEmail(userEmail, "New Product Request - Izaj Inventory", html);
+    return await sendEmail(
+      userEmail,
+      "New Product Request - Izaj Inventory",
+      html
+    );
   } catch (error) {
     return { success: false, error: error.message };
   }
 };
 
 // --- Request Status Update Email ---
-const sendRequestStatusEmail = async (userEmail, userName, status, requestId, reviewerName, notes) => {
+const sendRequestStatusEmail = async (
+  userEmail,
+  userName,
+  status,
+  requestId,
+  reviewerName,
+  notes
+) => {
   try {
     const isApproved = status === "approved";
     const statusText = isApproved ? "approved" : "denied";
     const buttonColor = isApproved ? "#28a745" : "#dc3545";
 
     const html = createEmailTemplate(
-      `Product Request ${statusText.charAt(0).toUpperCase() + statusText.slice(1)}`,
+      `Product Request ${
+        statusText.charAt(0).toUpperCase() + statusText.slice(1)
+      }`,
       userName,
-      `Your product request (Request ID: ${requestId}) has been ${statusText} by ${reviewerName}.${notes ? ` Notes: ${notes}` : ""}`,
+      `Your product request (Request ID: ${requestId}) has been ${statusText} by ${reviewerName}.${
+        notes ? ` Notes: ${notes}` : ""
+      }`,
       "View Request",
       buildFrontendLink("/requested_item"),
       buttonColor,
@@ -169,7 +204,52 @@ const sendRequestStatusEmail = async (userEmail, userName, status, requestId, re
 
     return await sendEmail(
       userEmail,
-      `Product Request ${statusText.charAt(0).toUpperCase() + statusText.slice(1)} - Izaj Inventory`,
+      `Product Request ${
+        statusText.charAt(0).toUpperCase() + statusText.slice(1)
+      } - Izaj Inventory`,
+      html
+    );
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+// --- Transfer Arrival Email ---
+const sendTransferArrivalEmail = async (
+  userEmail,
+  userName,
+  requestId,
+  receivingBranch,
+  changes = []
+) => {
+  try {
+    const changeDetails =
+      changes.length > 0
+        ? `<ul style="color: #666; line-height: 1.6; padding-left: 20px;">
+            ${changes
+              .map(
+                (change) => `
+                <li>
+                  <strong>${change.product_name}</strong> - ${change.tag} (+${change.added_quantity})
+                </li>`
+              )
+              .join("")}
+          </ul>`
+        : "";
+
+    const html = createEmailTemplate(
+      "Transfer Received",
+      userName,
+      `Branch ${receivingBranch} has confirmed that request #${requestId} arrived and has been merged into their local inventory.${changeDetails}`,
+      "View Request",
+      buildFrontendLink("/pending_request"),
+      "#0d9488",
+      "You can review the updated request details anytime inside the application."
+    );
+
+    return await sendEmail(
+      userEmail,
+      `Request #${requestId} Received - Izaj Inventory`,
       html
     );
   } catch (error) {
@@ -182,4 +262,5 @@ module.exports = {
   sendResetPasswordEmail,
   sendRequestNotificationEmail,
   sendRequestStatusEmail,
+  sendTransferArrivalEmail,
 };
