@@ -99,6 +99,93 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
     }));
   };
 
+  // Helper function to format values for display
+  const formatValue = (value: any): React.ReactNode => {
+    if (value === null || value === undefined) {
+      return "—";
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Yes" : "No";
+    }
+
+    if (typeof value === "string" || typeof value === "number") {
+      return String(value);
+    }
+
+    if (Array.isArray(value)) {
+      // Handle arrays of items
+      if (value.length === 0) {
+        return "[]";
+      }
+
+      // If it's an array of objects with common fields, display as table
+      if (
+        value.length > 0 &&
+        typeof value[0] === "object" &&
+        value[0] !== null
+      ) {
+        return (
+          <div className="mt-2 space-y-2">
+            {value.map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs border border-gray-200 dark:border-gray-600"
+              >
+                {typeof item === "object" ? (
+                  <div className="space-y-1">
+                    {Object.entries(item).map(([k, v]) => (
+                      <div key={k} className="flex justify-between">
+                        <span className="font-medium text-gray-600 dark:text-gray-300">
+                          {k}:
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">
+                          {typeof v === "object"
+                            ? JSON.stringify(v)
+                            : String(v)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  String(item)
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      // Simple array of primitives
+      return value.join(", ");
+    }
+
+    if (typeof value === "object") {
+      // Display object as key-value pairs
+      const entries = Object.entries(value);
+      if (entries.length === 0) {
+        return "{}";
+      }
+
+      return (
+        <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs space-y-1 border border-gray-200 dark:border-gray-600">
+          {entries.map(([k, v]) => (
+            <div key={k} className="flex justify-between">
+              <span className="font-medium text-gray-600 dark:text-gray-300">
+                {k}:
+              </span>
+              <span className="text-gray-900 dark:text-gray-100 ml-2">
+                {typeof v === "object" ? JSON.stringify(v) : String(v)}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return String(value);
+  };
+
   const getSeverityIcon = (level: string) => {
     switch (level?.toLowerCase()) {
       case "high":
@@ -672,9 +759,10 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
 
                       {expandedSections.changes && (
                         <div
-                          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-3
+                          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4
                           shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
-                          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.5),inset_-4px_-4px_8px_rgba(60,60,60,0.2)]"
+                          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.5),inset_-4px_-4px_8px_rgba(60,60,60,0.2)]
+                          space-y-4"
                         >
                           {Object.keys({
                             ...log.old_values,
@@ -682,37 +770,35 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
                           }).map((key) => (
                             <div
                               key={key}
-                              className="py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
+                              className="py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
                             >
-                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                {key
-                                  .split("_")
-                                  .map(
-                                    (word) =>
-                                      word.charAt(0).toUpperCase() +
-                                      word.slice(1)
-                                  )
-                                  .join(" ")}
+                              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                <span className="flex-1">
+                                  {key
+                                    .split("_")
+                                    .map(
+                                      (word) =>
+                                        word.charAt(0).toUpperCase() +
+                                        word.slice(1)
+                                    )
+                                    .join(" ")}
+                                </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                                  <span className="text-xs font-medium text-red-700 dark:text-red-400 block mb-2">
                                     Previous Value
                                   </span>
-                                  <div className="text-sm text-red-600 dark:text-red-400">
-                                    {log.old_values?.[key] !== undefined
-                                      ? String(log.old_values[key])
-                                      : "—"}
+                                  <div className="text-sm text-red-900 dark:text-red-100 break-words">
+                                    {formatValue(log.old_values?.[key])}
                                   </div>
                                 </div>
-                                <div>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                                  <span className="text-xs font-medium text-green-700 dark:text-green-400 block mb-2">
                                     New Value
                                   </span>
-                                  <div className="text-sm text-green-600 dark:text-green-400">
-                                    {log.new_values?.[key] !== undefined
-                                      ? String(log.new_values[key])
-                                      : "—"}
+                                  <div className="text-sm text-green-900 dark:text-green-100 break-words">
+                                    {formatValue(log.new_values?.[key])}
                                   </div>
                                 </div>
                               </div>

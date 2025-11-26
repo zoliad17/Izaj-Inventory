@@ -1242,6 +1242,31 @@ app.post(
         );
       }
 
+      // Fetch product details from centralized_product table for audit logging
+      const { data: productsForAudit } = await supabase
+        .from("centralized_product")
+        .select("id, product_name, quantity, price, category_id, status")
+        .in("id", items.map((item) => item.product_id));
+
+      // Map products by ID for easy lookup
+      const productMapForAudit = new Map(
+        (productsForAudit || []).map((p) => [p.id, p])
+      );
+
+      // Build old_values with actual product data from centralized_product table
+      const oldItemsData = items.map((item) => {
+        const product = productMapForAudit.get(item.product_id);
+        return {
+          product_id: item.product_id,
+          product_name: product?.product_name || "Unknown",
+          quantity: product?.quantity || 0, // Quantity available before request
+          price: product?.price || 0,
+          category_id: product?.category_id || null,
+          status: product?.status || "Unknown",
+          requested_quantity: item.quantity,
+        };
+      });
+
       // Log audit trail
       const { error: auditError } = await supabase.from("audit_logs").insert([
         {
@@ -1258,15 +1283,25 @@ app.post(
           },
           old_values: {
             status: null,
-            items: [],
+            items: oldItemsData, // Include actual product data from centralized_product
             notes: null,
           },
           new_values: {
             status: "pending",
-            items: items.map((item) => ({
-              product_id: item.product_id,
-              quantity: item.quantity,
-            })),
+            items: items.map((item) => {
+              const product = productMapForAudit.get(item.product_id);
+              const oldQuantity = product?.quantity || 0;
+              const newQuantity = Math.max(0, oldQuantity - item.quantity); // Calculate resulting quantity after request
+              return {
+                product_id: item.product_id,
+                product_name: product?.product_name || "Unknown",
+                quantity: newQuantity, // Updated quantity after request processing
+                price: product?.price || 0,
+                category_id: product?.category_id || null,
+                status: product?.status || "Unknown",
+                quantity_change: item.quantity, // Track what was deducted
+              };
+            }),
             notes: notes || null,
           },
         },
@@ -1589,33 +1624,59 @@ app.put(
           }
         }
 
-        // Log inventory transfer for approved requests
-        const { error: transferAuditError } = await supabase
-          .from("audit_logs")
-          .insert([
-            {
-              user_id: reviewedBy,
-              action: "INVENTORY_TRANSFER",
-              description: `Approved request #${requestId}: Transferred ${requestData.items.length} items to requester's branch`,
-              entity_type: "centralized_product",
-              entity_id: requestId,
-              metadata: {
-                requester_id: requestData.request_from,
-                requester_branch_id: requesterData.branch_id,
-                items_transferred: requestData.items.map((item) => ({
-                  product_name: item.product_name,
-                  quantity: item.quantity,
-                  product_id: item.product_id,
-                })),
-              },
-            },
-          ]);
+        // Log inventory transfer for each item (detailed records for accurate tracking)
+        for (const item of requestData.items) {
+          // Fetch the final product state for accurate old/new values
+          const { data: finalProductData, error: fetchError } = await supabase
+            .from("centralized_product")
+            .select("quantity, product_name, price, category_id")
+            .eq("id", item.product_id)
+            .single();
 
-        if (transferAuditError) {
-          console.error(
-            "Error logging inventory transfer:",
-            transferAuditError
-          );
+          if (fetchError) {
+            console.error("Error fetching final product state:", fetchError);
+            continue;
+          }
+
+          // Calculate the old quantity before the transfer
+          const oldQuantity = (finalProductData?.quantity || 0) + item.quantity;
+
+          const { error: transferAuditError } = await supabase
+            .from("audit_logs")
+            .insert([
+              {
+                user_id: reviewedBy,
+                action: "INVENTORY_TRANSFER",
+                description: `Approved request #${requestId}: Transferred ${item.quantity} units of ${finalProductData?.product_name || "Unknown Product"} to requester's branch`,
+                entity_type: "centralized_product",
+                entity_id: item.product_id.toString(),
+                metadata: {
+                  request_id: requestId,
+                  requester_id: requestData.request_from,
+                  requester_branch_id: requesterData.branch_id,
+                  product_id: item.product_id,
+                  product_name: finalProductData?.product_name || "Unknown Product",
+                  price: finalProductData?.price || 0,
+                  category_id: finalProductData?.category_id || null,
+                  quantity: item.quantity,
+                  old_quantity: oldQuantity,
+                },
+                old_values: {
+                  quantity: oldQuantity,
+                },
+                new_values: {
+                  quantity: finalProductData?.quantity || 0,
+                },
+              },
+            ]);
+
+          if (transferAuditError) {
+            console.error(
+              "Error logging inventory transfer for item:",
+              item.product_id,
+              transferAuditError
+            );
+          }
         }
       } else if (action === "denied") {
         // For denied requests: simply reset reserved_quantity to 0 without altering quantity
@@ -1949,115 +2010,254 @@ app.get("/api/transfers/:branchId", async (req, res) => {
   try {
     console.log(`Fetching transfers for branch ${branchId}`);
 
-    // First, get all product transfers for this branch
-    const { data: transfers, error: transferError } = await supabase
-      .from("product_transfers")
-      .select("*")
-      .eq("branch_id", branchId)
-      .order("transferred_at", { ascending: false });
+    // Strategy: Fetch BOTH INVENTORY_TRANSFER and PRODUCT_REQUEST_CREATED actions
+    const { data: auditLogs, error: auditError } = await supabase
+      .from("audit_logs")
+      .select(
+        `
+        id,
+        user_id,
+        action,
+        description,
+        entity_type,
+        entity_id,
+        metadata,
+        old_values,
+        new_values,
+        created_at
+      `
+      )
+      .in("action", ["INVENTORY_TRANSFER", "PRODUCT_REQUEST_CREATED"])
+      .order("created_at", { ascending: false });
 
-    if (transferError) {
-      console.error("Error fetching transfers:", transferError);
-      return res
-        .status(500)
-        .json({ error: "Failed to fetch transfers: " + transferError.message });
+    if (auditError) {
+      console.error("Error fetching audit logs:", auditError);
+      return res.status(500).json({
+        error: "Failed to fetch transfers: " + auditError.message,
+      });
     }
 
-    console.log(`Found ${transfers?.length || 0} transfers`);
+    console.log(
+      `Found ${auditLogs?.length || 0} audit logs (INVENTORY_TRANSFER + PRODUCT_REQUEST_CREATED)`
+    );
 
-    if (!transfers || transfers.length === 0) {
+    if (!auditLogs || auditLogs.length === 0) {
       return res.status(200).json([]);
     }
 
-    // Get product details for each transfer
+    // Filter and transform audit logs for this branch
     const transformedItems = [];
 
-    for (const transfer of transfers) {
+    for (const log of auditLogs) {
       try {
-        // Get product details
-        const { data: product, error: productError } = await supabase
-          .from("centralized_product")
-          .select(
-            `
-            id,
-            product_name,
-            price,
-            category_id,
-            category:category_id (
-              category_name
-            )
-          `
-          )
-          .eq("id", transfer.product_id)
-          .single();
+        // Parse all JSON string fields comprehensively
+        let metadata = {};
+        let oldValues = {};
+        let newValues = {};
 
-        if (productError) {
-          console.error(
-            `Error fetching product ${transfer.product_id}:`,
-            productError
-          );
-          continue;
+        // Parse metadata JSON string
+        if (typeof log.metadata === 'string') {
+          try {
+            metadata = JSON.parse(log.metadata);
+          } catch (parseErr) {
+            console.warn(`Failed to parse metadata for audit log ${log.id}:`, parseErr);
+            metadata = {};
+          }
+        } else {
+          metadata = log.metadata || {};
         }
 
-        // Get request details to find the source branch
-        const { data: request, error: requestError } = await supabase
-          .from("product_requisition")
-          .select(
-            `
-            request_from,
-            request_to,
-            user_from:request_from (
-              name,
-              branch_id,
-              branch:branch_id (
-                location
+        // Parse old_values JSON string
+        if (typeof log.old_values === 'string') {
+          try {
+            oldValues = JSON.parse(log.old_values);
+          } catch (parseErr) {
+            console.warn(`Failed to parse old_values for audit log ${log.id}:`, parseErr);
+            oldValues = {};
+          }
+        } else {
+          oldValues = log.old_values || {};
+        }
+
+        // Parse new_values JSON string
+        if (typeof log.new_values === 'string') {
+          try {
+            newValues = JSON.parse(log.new_values);
+          } catch (parseErr) {
+            console.warn(`Failed to parse new_values for audit log ${log.id}:`, parseErr);
+            newValues = {};
+          }
+        } else {
+          newValues = log.new_values || {};
+        }
+
+        // Handle different audit log types
+        if (log.action === "INVENTORY_TRANSFER") {
+          // For INVENTORY_TRANSFER: check if destination branch matches
+          const destBranchId = metadata?.requester_branch_id;
+          if (destBranchId !== parseInt(branchId)) {
+            continue;
+          }
+
+          const productId = metadata?.product_id || parseInt(log.entity_id);
+          const requestId = metadata?.request_id;
+
+          // Extract product details from audit log metadata
+          const productNameFromAudit = metadata?.product_name;
+          const priceFromAudit = metadata?.price;
+          const categoryFromAudit = metadata?.category_name;
+
+          // Try to get current product info
+          let currentProduct = null;
+          if (productId) {
+            const { data: product } = await supabase
+              .from("centralized_product")
+              .select(
+                `
+                id,
+                product_name,
+                price,
+                category_id,
+                category:category_id (
+                  category_name
+                ),
+                quantity
+              `
               )
+              .eq("id", productId)
+              .maybeSingle();
+
+            currentProduct = product;
+          }
+
+          // Get request details to find the source branch
+          const { data: request } = await supabase
+            .from("product_requisition")
+            .select(
+              `
+              request_from,
+              request_to,
+              user_from:request_from (
+                name,
+                branch_id,
+                branch:branch_id (
+                  location
+                )
+              )
+            `
             )
-          `
-          )
-          .eq("request_id", transfer.request_id)
-          .single();
+            .eq("request_id", requestId)
+            .maybeSingle();
 
-        if (requestError) {
-          console.error(
-            `Error fetching request ${transfer.request_id}:`,
-            requestError
-          );
+          // Extract quantities - with proper defaults
+          const oldQuantity = metadata?.old_quantity || oldValues?.quantity || 0;
+          const newQuantity = currentProduct?.quantity || metadata?.quantity || newValues?.quantity || 0;
+          const quantityChange = newQuantity - oldQuantity;
+
+          transformedItems.push({
+            id: log.id,
+            product_id: productId,
+            product_name:
+              currentProduct?.product_name ||
+              productNameFromAudit ||
+              "Unknown Product",
+            category_name:
+              currentProduct?.category?.category_name ||
+              categoryFromAudit ||
+              "Uncategorized",
+            price: currentProduct?.price || priceFromAudit || 0,
+            old_quantity: Math.max(0, oldQuantity),
+            new_quantity: Math.max(0, newQuantity),
+            quantity_change: Math.abs(quantityChange),
+            change_type: quantityChange > 0 ? "Added" : "Deducted",
+            transferred_from: request?.user_from?.branch?.location || "Unknown Branch",
+            transferred_at: log.created_at,
+            request_id: requestId,
+            requester_name: request?.user_from?.name || "Unknown User",
+          });
+
+        } else if (log.action === "PRODUCT_REQUEST_CREATED") {
+          // For PRODUCT_REQUEST_CREATED: check if request_to matches branch
+          const requestTo = metadata?.request_to;
+          if (!requestTo) {
+            continue;
+          }
+
+          // Get user info to check their branch
+          const { data: toUser } = await supabase
+            .from("user")
+            .select("branch_id")
+            .eq("user_id", requestTo)
+            .maybeSingle();
+
+          if (!toUser || toUser.branch_id !== parseInt(branchId)) {
+            continue;
+          }
+
+          // Extract items from new_values
+          const items = newValues?.items || [];
+          if (!Array.isArray(items) || items.length === 0) {
+            continue;
+          }
+
+          // Get requester info
+          const { data: requester } = await supabase
+            .from("user")
+            .select("name, branch_id, branch:branch_id(location)")
+            .eq("user_id", log.user_id)
+            .maybeSingle();
+
+          // Process each item in the request
+          for (const item of items) {
+            const productId = item.product_id;
+            const requestedQuantity = item.quantity || 0;
+
+            // Get product details
+            const { data: product } = await supabase
+              .from("centralized_product")
+              .select(
+                `
+                id,
+                product_name,
+                price,
+                quantity,
+                category_id,
+                category:category_id (
+                  category_name
+                )
+              `
+              )
+              .eq("id", productId)
+              .maybeSingle();
+
+            if (!product) {
+              continue; // Skip if product not found
+            }
+
+            transformedItems.push({
+              id: `${log.id}-${productId}`,
+              product_id: productId,
+              product_name: product.product_name || "Unknown Product",
+              category_name: product.category?.category_name || "Uncategorized",
+              price: product.price || 0,
+              old_quantity: 0,
+              new_quantity: requestedQuantity,
+              quantity_change: requestedQuantity,
+              change_type: "Requested",
+              transferred_from: requester?.branch?.location || "Unknown Branch",
+              transferred_at: log.created_at,
+              request_id: log.entity_id,
+              requester_name: requester?.name || "Unknown User",
+            });
+          }
         }
-
-        const transformedItem = {
-          id: transfer.id,
-          product_id: transfer.product_id,
-          product: {
-            product_name: product?.product_name || "Unknown Product",
-            category_name: product?.category?.category_name || "Uncategorized",
-            price: product?.price || 0,
-          },
-          quantity: transfer.quantity || 0,
-          status:
-            transfer.quantity === 0
-              ? "Out of Stock"
-              : transfer.quantity < 20
-              ? "Low Stock"
-              : "In Stock",
-          transferred_from:
-            request?.user_from?.branch?.location || "Unknown Branch",
-          transferred_at: transfer.transferred_at,
-          request_id: transfer.request_id || 0,
-          source: "Transferred",
-          total_value: (product?.price || 0) * (transfer.quantity || 0),
-          requester_name: request?.user_from?.name || "Unknown User",
-          transfer_status: transfer.status || "Completed",
-        };
-
-        transformedItems.push(transformedItem);
-      } catch (itemError) {
-        console.error(`Error processing transfer ${transfer.id}:`, itemError);
+      } catch (logError) {
+        console.error(`Error processing audit log ${log.id}:`, logError);
         continue;
       }
     }
 
-    console.log(`Returning ${transformedItems.length} transformed items`);
+    console.log(`Transformed ${transformedItems.length} items`);
     res.json(transformedItems);
   } catch (error) {
     console.error("Error in transfers endpoint:", error);
