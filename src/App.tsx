@@ -68,7 +68,6 @@ const routeRoles: RouteRoles = {
   branchManagement: ["Super Admin", "Admin"],
   centralizedProducts: ["Super Admin"],
   auditlogs: ["Super Admin", "Branch Manager"],
-  myActivity: ["Admin", "Branch Manager", "Super Admin"],
   UserAuditLogDetails: ["Admin", "Branch Manager", "Super Admin"],
   analytics: ["Admin", "Branch Manager", "Super Admin"],
 };
@@ -299,19 +298,9 @@ const App: React.FC = () => {
               />
 
               <Route
-                path="/my-activity"
-                element={
-                  <ProtectedRoute allowedRoles={routeRoles.myActivity}>
-                    <Layout>
-                      <UserAuditLogsPage />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/user-audit-log-details/:id"
                 element={
-                  <ProtectedRoute allowedRoles={routeRoles.myActivity}>
+                  <ProtectedRoute allowedRoles={routeRoles.UserAuditLogDetails}>
                     <Layout>
                       <UserAuditLogsDetailView />
                     </Layout>

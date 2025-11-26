@@ -12,7 +12,6 @@ import {
   ArrowRightLeft,
   Users,
   Building2,
-  Activity,
   Moon,
   Sun,
   // ShoppingCart,
@@ -301,12 +300,6 @@ function Sidebar() {
       label: "Audit Logs",
       path: "/auditlogs",
       allowedRoles: ["Super Admin"],
-    },
-    {
-      icon: Activity,
-      label: "My Activity",
-      path: "/my-activity",
-      allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
   ];
 
