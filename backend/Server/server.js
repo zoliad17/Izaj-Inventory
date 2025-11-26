@@ -1247,6 +1247,34 @@ app.post(
         );
       }
 
+      // Fetch product details from centralized_product table for audit logging
+      const { data: productsForAudit } = await supabase
+        .from("centralized_product")
+        .select("id, product_name, quantity, price, category_id, status")
+        .in(
+          "id",
+          items.map((item) => item.product_id)
+        );
+
+      // Map products by ID for easy lookup
+      const productMapForAudit = new Map(
+        (productsForAudit || []).map((p) => [p.id, p])
+      );
+
+      // Build old_values with actual product data from centralized_product table
+      const oldItemsData = items.map((item) => {
+        const product = productMapForAudit.get(item.product_id);
+        return {
+          product_id: item.product_id,
+          product_name: product?.product_name || "Unknown",
+          quantity: product?.quantity || 0, // Quantity available before request
+          price: product?.price || 0,
+          category_id: product?.category_id || null,
+          status: product?.status || "Unknown",
+          requested_quantity: item.quantity,
+        };
+      });
+
       // Log audit trail
       const { error: auditError } = await supabase.from("audit_logs").insert([
         {
@@ -1263,15 +1291,25 @@ app.post(
           },
           old_values: {
             status: null,
-            items: [],
+            items: oldItemsData, // Include actual product data from centralized_product
             notes: null,
           },
           new_values: {
             status: "pending",
-            items: items.map((item) => ({
-              product_id: item.product_id,
-              quantity: item.quantity,
-            })),
+            items: items.map((item) => {
+              const product = productMapForAudit.get(item.product_id);
+              const oldQuantity = product?.quantity || 0;
+              const newQuantity = Math.max(0, oldQuantity - item.quantity); // Calculate resulting quantity after request
+              return {
+                product_id: item.product_id,
+                product_name: product?.product_name || "Unknown",
+                quantity: newQuantity, // Updated quantity after request processing
+                price: product?.price || 0,
+                category_id: product?.category_id || null,
+                status: product?.status || "Unknown",
+                quantity_change: item.quantity, // Track what was deducted
+              };
+            }),
             notes: notes || null,
           },
         },
@@ -1535,6 +1573,122 @@ app.put(
               updateError
             );
             continue;
+          }
+
+          // Add products to requester's branch
+          // Check if product already exists in requester's branch
+          const { data: existingProduct, error: checkError } = await supabase
+            .from("centralized_product")
+            .select("id, quantity")
+            .eq("product_name", productData.product_name)
+            .eq("branch_id", requesterData.branch_id)
+            .single();
+
+          if (checkError && checkError.code !== "PGRST116") {
+            // PGRST116 = no rows found
+            console.error(
+              "Error checking existing product in requester's branch:",
+              checkError
+            );
+            continue;
+          }
+
+          if (existingProduct) {
+            // Product exists in requester's branch - update quantity
+            const { error: updateRequesterError } = await supabase
+              .from("centralized_product")
+              .update({
+                quantity: existingProduct.quantity + reservedAmount,
+                updated_at: new Date().toISOString(), // Track when product was updated
+              })
+              .eq("id", existingProduct.id);
+
+            if (updateRequesterError) {
+              console.error(
+                "Error updating product in requester's branch:",
+                updateRequesterError
+              );
+            }
+          } else {
+            // Product doesn't exist in requester's branch - create new entry
+            const { error: createError } = await supabase
+              .from("centralized_product")
+              .insert({
+                product_name: productData.product_name,
+                quantity: reservedAmount,
+                price: productData.price,
+                category_id: productData.category_id,
+                status: productData.status,
+                branch_id: requesterData.branch_id,
+                reserved_quantity: 0,
+              });
+
+            if (createError) {
+              console.error(
+                "Error creating product in requester's branch:",
+                createError
+              );
+            }
+          }
+        }
+
+        // Log inventory transfer for each item (detailed records for accurate tracking)
+        for (const item of requestData.items) {
+          // Fetch the final product state for accurate old/new values
+          const { data: finalProductData, error: fetchError } = await supabase
+            .from("centralized_product")
+            .select("quantity, product_name, price, category_id")
+            .eq("id", item.product_id)
+            .single();
+
+          if (fetchError) {
+            console.error("Error fetching final product state:", fetchError);
+            continue;
+          }
+
+          // Calculate the old quantity before the transfer
+          const oldQuantity = (finalProductData?.quantity || 0) + item.quantity;
+
+          const { error: transferAuditError } = await supabase
+            .from("audit_logs")
+            .insert([
+              {
+                user_id: reviewedBy,
+                action: "INVENTORY_TRANSFER",
+                description: `Approved request #${requestId}: Transferred ${
+                  item.quantity
+                } units of ${
+                  finalProductData?.product_name || "Unknown Product"
+                } to requester's branch`,
+                entity_type: "centralized_product",
+                entity_id: item.product_id.toString(),
+                metadata: {
+                  request_id: requestId,
+                  requester_id: requestData.request_from,
+                  requester_branch_id: requesterData.branch_id,
+                  product_id: item.product_id,
+                  product_name:
+                    finalProductData?.product_name || "Unknown Product",
+                  price: finalProductData?.price || 0,
+                  category_id: finalProductData?.category_id || null,
+                  quantity: item.quantity,
+                  old_quantity: oldQuantity,
+                },
+                old_values: {
+                  quantity: oldQuantity,
+                },
+                new_values: {
+                  quantity: finalProductData?.quantity || 0,
+                },
+              },
+            ]);
+
+          if (transferAuditError) {
+            console.error(
+              "Error logging inventory transfer for item:",
+              item.product_id,
+              transferAuditError
+            );
           }
         }
       } else if (action === "denied") {
@@ -2108,7 +2262,6 @@ app.get("/api/transfers/:branchId", async (req, res) => {
   const { branchId } = req.params;
 
   try {
-
     // First, get all product transfers for this branch
     const { data: transfers, error: transferError } = await supabase
       .from("product_transfers")
@@ -2122,7 +2275,6 @@ app.get("/api/transfers/:branchId", async (req, res) => {
         .status(500)
         .json({ error: "Failed to fetch transfers: " + transferError.message });
     }
-
 
     if (!transfers || transfers.length === 0) {
       return res.status(200).json([]);

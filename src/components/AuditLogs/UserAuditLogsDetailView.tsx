@@ -52,6 +52,59 @@ interface AuditLogDetail {
   };
 }
 
+// Helper function to format values for display
+function formatValue(value: any): string {
+  if (value === null || value === undefined) {
+    return "—";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "[]";
+    }
+
+    // If it's an array of objects, format them nicely
+    if (value.length > 0 && typeof value[0] === "object" && value[0] !== null) {
+      return value
+        .map((item) =>
+          typeof item === "object"
+            ? Object.entries(item)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join("; ")
+            : String(item)
+        )
+        .join(" | ");
+    }
+
+    // Simple array of primitives
+    return value.join(", ");
+  }
+
+  if (typeof value === "object") {
+    // Format object as key-value pairs
+    const entries = Object.entries(value);
+    if (entries.length === 0) {
+      return "{}";
+    }
+
+    return entries
+      .map(([k, v]) =>
+        typeof v === "object" ? `${k}: ${JSON.stringify(v)}` : `${k}: ${v}`
+      )
+      .join("; ");
+  }
+
+  return String(value);
+}
+
 // Helper function to parse change history from old_values and new_values
 function parseChangeHistory(oldValues: any, newValues: any): any[] {
   if (!oldValues || !newValues) return [];
@@ -67,10 +120,8 @@ function parseChangeHistory(oldValues: any, newValues: any): any[] {
       changes.push({
         id: changes.length + 1,
         field: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " "),
-        oldValue:
-          oldVal !== null && oldVal !== undefined ? String(oldVal) : "-",
-        newValue:
-          newVal !== null && newVal !== undefined ? String(newVal) : "-",
+        oldValue: formatValue(oldVal),
+        newValue: formatValue(newVal),
         changedAt: new Date().toLocaleString(),
         changedBy: "System",
       });
