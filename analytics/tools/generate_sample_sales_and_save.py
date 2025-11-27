@@ -116,7 +116,8 @@ def generate_sales_rows():
         d = START_DATE + timedelta(days=day_offset)
         for p in PRODUCTS:
             # Skip if inventory depleted
-            if inventory_tracker[p['id']] <= 0:
+            available = inventory_tracker[p['id']]
+            if available <= 0:
                 continue
             
             # Get velocity pattern for this product
@@ -128,14 +129,24 @@ def generate_sales_rows():
             std_daily = pattern['std']
             sold = max(0, int(np.random.normal(mean_daily, std_daily)))
             
-            # Never exceed available inventory - ensure sold never goes negative or exceeds available
-            available = inventory_tracker[p['id']]
-            sold = min(sold, available)  # Cap sold to available inventory
+            # CRITICAL: Never exceed available inventory
+            # Also reduce sales probability for low stock items
+            if available < 10:
+                # For low stock items, reduce sales probability and cap at available
+                if random.random() > 0.3:  # Only 30% chance of sale for low stock
+                    continue
+                sold = min(sold, available, random.randint(1, min(3, available)))  # Max 3 units per day for low stock
+            else:
+                # For normal stock, cap sold to available inventory
+                sold = min(sold, available)
+            
+            # Final safety check
+            sold = min(sold, available)
             
             if sold <= 0:
                 continue
             
-            # Deduct from inventory tracker
+            # Deduct from inventory tracker BEFORE creating the row
             inventory_tracker[p['id']] -= sold
                 
             unit_price = p.get('price') or 0

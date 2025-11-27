@@ -1,16 +1,49 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import { ArrowLeft } from "lucide-react";
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { api } from "../../utils/apiClient";
+import toast, { Toaster } from "react-hot-toast";
+import { Loader2 } from "lucide-react";
 
 function AddCategoryPage() {
   const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log("Category added");
-    navigate("/dashboard"); // Redirect back to dashboard after adding
+    
+    if (isLoading) return; // Prevent multiple submissions
+
+    const formData = new FormData(e.currentTarget);
+    const categoryName = formData.get("name") as string;
+
+    if (!categoryName || !categoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const { data, error } = await api.createCategory({
+        category_name: categoryName.trim(),
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      toast.success("Category added successfully!");
+      navigate("/dashboard"); // Redirect back to dashboard after adding
+    } catch (error: any) {
+      console.error("Error adding category:", error);
+      const errorMessage =
+        error?.message || error || "Failed to add category";
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -19,12 +52,22 @@ function AddCategoryPage() {
         isCollapsed ? "ml-5" : "ml-1"
       } p-2 sm:p-4 bg-gray-50 dark:bg-gray-900`}
     >
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+        }}
+      />
       <div className="p-2 max-w-6xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold px-6 mt-6 text-gray-800 dark:text-white">
           Add New Lighting Category
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6 p-6">
+        <form onSubmit={handleSubmit} action="#" method="post" className="space-y-6 p-6">
           {/* Basic Information Section */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
@@ -78,9 +121,21 @@ function AddCategoryPage() {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 neumorphic-button-transparent outline-1 dark:outline-0 bg-green-600 text-green-700 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+              disabled={isLoading}
+              className={`px-6 py-2 neumorphic-button-transparent outline-1 dark:outline-0 bg-green-600 text-green-700 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                isLoading
+                  ? "opacity-75 cursor-not-allowed"
+                  : "hover:bg-green-700"
+              } flex items-center gap-2`}
             >
-              Add Category
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Category"
+              )}
             </button>
           </div>
         </form>

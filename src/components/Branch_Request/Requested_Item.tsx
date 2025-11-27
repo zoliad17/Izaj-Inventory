@@ -14,6 +14,7 @@ import {
   TruckIcon,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -57,6 +58,7 @@ export default function Requested_Item() {
     null
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isMarkingArrived, setIsMarkingArrived] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -711,7 +713,10 @@ export default function Requested_Item() {
                 {selectedRequest.status === "approved" && (
                   <button
                     onClick={async () => {
+                      if (isMarkingArrived) return; // Prevent multiple clicks
+                      
                       try {
+                        setIsMarkingArrived(true);
                         const response = await fetch(
                           `${API_BASE_URL}/api/product-requests/${selectedRequest.request_id}/mark-arrived`,
                           {
@@ -736,12 +741,28 @@ export default function Requested_Item() {
                       } catch (error) {
                         console.error("Error marking items as arrived:", error);
                         toast.error("Failed to mark items as arrived");
+                      } finally {
+                        setIsMarkingArrived(false);
                       }
                     }}
-                    className="px-5 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2 text-base font-medium"
+                    disabled={isMarkingArrived}
+                    className={`px-5 py-3 rounded-md transition-colors flex items-center gap-2 text-base font-medium ${
+                      isMarkingArrived
+                        ? "bg-green-500 text-white cursor-not-allowed opacity-75"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
                   >
-                    <Package className="h-5 w-5" />
-                    Mark as Arrived
+                    {isMarkingArrived ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Marking as Arrived...
+                      </>
+                    ) : (
+                      <>
+                        <Package className="h-5 w-5" />
+                        Mark as Arrived
+                      </>
+                    )}
                   </button>
                 )}
                 <button

@@ -3,7 +3,11 @@ import { errorHandler } from "./errorHandler";
 import { API_BASE_URL } from "../config/config";
 
 // Ensure we always call the backend under the /api path
-const API_ROOT = API_BASE_URL.replace(/\/$/, "") + "/api";
+// Validate API_BASE_URL is set
+if (!API_BASE_URL || API_BASE_URL.trim() === "") {
+  console.error("API_BASE_URL is not set! Please set VITE_API_URL environment variable.");
+}
+const API_ROOT = (API_BASE_URL || "http://localhost:5000").replace(/\/$/, "") + "/api";
 
 interface ApiClientConfig {
   baseURL: string;
@@ -28,7 +32,9 @@ class ApiClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<{ data: T | null; error: string | null }> {
-    const url = `${this.config.baseURL}${endpoint}`;
+    // Ensure endpoint starts with /
+    const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = `${this.config.baseURL}${normalizedEndpoint}`;
 
     const defaultOptions: RequestInit = {
       headers: {
@@ -62,7 +68,9 @@ class ApiClient {
 
         const apiError = await errorHandler.handleApiError(response);
         const errorType = errorHandler.categorizeError(apiError, response);
-        const errorMessage = errorHandler.getErrorMessage(apiError, errorType);
+        
+        // Prefer message field (more descriptive) over error field, then fall back to generic message
+        const errorMessage = apiError.message || apiError.error || errorHandler.getErrorMessage(apiError, errorType);
 
         return { data: null, error: errorMessage };
       }
@@ -173,6 +181,12 @@ export const api = {
 
   // Categories
   getCategories: () => apiClient.get("/categories"),
+  createCategory: (categoryData: { category_name: string }) =>
+    apiClient.post("/categories", categoryData),
+  updateCategory: (id: number, categoryData: { category_name: string }, userId: string) =>
+    apiClient.put(`/categories/${id}`, { ...categoryData, user_id: userId }),
+  deleteCategory: (id: number, userId: string) =>
+    apiClient.delete(`/categories/${id}?user_id=${userId}`),
 
   // Branches
   getBranches: () => apiClient.get("/branches"),

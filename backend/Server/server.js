@@ -923,6 +923,251 @@ app.get("/api/categories", async (req, res) => {
   res.json(data);
 });
 
+// POST create new category (Super Admin only)
+app.post("/api/categories", authenticateUser, async (req, res) => {
+  try {
+    const user = req.user; // Get authenticated user from middleware
+
+    // Only Super Admin can create categories
+    if (user.role_id !== SUPER_ADMIN_ROLE_ID) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Only Super Admin can create categories",
+      });
+    }
+
+    const { category_name } = req.body;
+
+    if (!category_name || !category_name.trim()) {
+      return res.status(400).json({ error: "Category name is required" });
+    }
+
+    // Check if category already exists
+    const { data: existingCategory, error: checkError } = await supabase
+      .from("category")
+      .select("id")
+      .eq("category_name", category_name.trim())
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 is "no rows returned" error
+      console.error("Error checking existing category:", checkError);
+      return res.status(500).json({
+        error: "Error checking for existing category",
+        details: checkError,
+      });
+    }
+
+    if (existingCategory) {
+      return res
+        .status(400)
+        .json({ error: "Category with this name already exists" });
+    }
+
+    // Insert the new category - explicitly exclude id to let PostgreSQL auto-generate it
+    const { data, error } = await supabase
+      .from("category")
+      .insert([{ category_name: category_name.trim() }])
+      .select("id, category_name");
+
+    if (error) {
+      console.error("Error inserting category:", error);
+
+      // Handle sequence out-of-sync error (duplicate key on identity column)
+      if (error.code === "23505" && error.message.includes("category_pkey")) {
+        return res.status(500).json({
+          error: "Database sequence error",
+          message:
+            "The category ID sequence is out of sync. Please run this SQL command in your database to fix it: SELECT setval('category_id_seq', (SELECT MAX(id) FROM category) + 1, false);",
+          code: error.code,
+        });
+      }
+
+      return res.status(500).json({
+        error: "Failed to create category",
+        details: error,
+        message: error.message,
+      });
+    }
+
+    res.status(201).json(data[0]);
+  } catch (error) {
+    console.error("Error in create category:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT update category by ID (Super Admin only)
+app.put("/api/categories/:id", authenticateUser, async (req, res) => {
+  try {
+    const user = req.user; // Get authenticated user from middleware
+
+    // Only Super Admin can update categories
+    if (user.role_id !== SUPER_ADMIN_ROLE_ID) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Only Super Admin can update categories",
+      });
+    }
+
+    const { id } = req.params;
+    const categoryId = parseInt(id, 10);
+    const { category_name } = req.body;
+
+    // Validate ID
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: "Invalid category ID" });
+    }
+
+    if (!category_name || !category_name.trim()) {
+      return res.status(400).json({ error: "Category name is required" });
+    }
+
+    // Check if category exists
+    const { data: existingCategory, error: checkError } = await supabase
+      .from("category")
+      .select("id, category_name")
+      .eq("id", categoryId)
+      .single();
+
+    if (checkError || !existingCategory) {
+      return res.status(404).json({
+        error: "Category not found",
+        message: `Category with ID ${categoryId} does not exist`,
+      });
+    }
+
+    // Check if new name already exists (excluding current category)
+    const { data: duplicateCategory, error: duplicateError } = await supabase
+      .from("category")
+      .select("id")
+      .eq("category_name", category_name.trim())
+      .neq("id", categoryId)
+      .single();
+
+    if (duplicateError && duplicateError.code !== "PGRST116") {
+      return res.status(500).json({
+        error: "Error checking for duplicate category",
+        details: duplicateError,
+      });
+    }
+
+    if (duplicateCategory) {
+      return res
+        .status(400)
+        .json({ error: "Category with this name already exists" });
+    }
+
+    // Update the category
+    const { data, error } = await supabase
+      .from("category")
+      .update({ category_name: category_name.trim() })
+      .eq("id", categoryId)
+      .select("id, category_name")
+      .single();
+
+    if (error) {
+      console.error("Error updating category:", error);
+      return res.status(500).json({
+        error: "Failed to update category",
+        details: error,
+        message: error.message,
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error in update category:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE category by ID (Super Admin only)
+app.delete("/api/categories/:id", authenticateUser, async (req, res) => {
+  try {
+    const user = req.user; // Get authenticated user from middleware
+
+    // Only Super Admin can delete categories
+    if (user.role_id !== SUPER_ADMIN_ROLE_ID) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "Only Super Admin can delete categories",
+      });
+    }
+
+    const { id } = req.params;
+    const categoryId = parseInt(id, 10);
+
+    // Validate ID
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ error: "Invalid category ID" });
+    }
+
+    // Check if category exists
+    const { data: existingCategory, error: checkError } = await supabase
+      .from("category")
+      .select("id, category_name")
+      .eq("id", categoryId)
+      .single();
+
+    if (checkError || !existingCategory) {
+      return res.status(404).json({
+        error: "Category not found",
+        message: `Category with ID ${categoryId} does not exist`,
+      });
+    }
+
+    // Check if category is being used by any products
+    const {
+      data: productsUsingCategory,
+      error: productsError,
+      count,
+    } = await supabase
+      .from("centralized_product")
+      .select("id", { count: "exact" })
+      .eq("category_id", categoryId);
+
+    if (productsError) {
+      console.error("Error checking products:", productsError);
+      return res.status(500).json({
+        error: "Error checking if category is in use",
+        details: productsError,
+      });
+    }
+
+    const productCount =
+      count !== null ? count : productsUsingCategory?.length || 0;
+
+    if (productCount > 0) {
+      return res.status(400).json({
+        error: "Cannot delete category",
+        message: `This category is being used by ${productCount} product(s). Please remove or reassign these products before deleting the category.`,
+        productCount: productCount,
+      });
+    }
+
+    // Delete the category
+    const { error } = await supabase
+      .from("category")
+      .delete()
+      .eq("id", categoryId);
+
+    if (error) {
+      console.error("Error deleting category:", error);
+      return res.status(500).json({
+        error: "Failed to delete category",
+        details: error,
+        message: error.message,
+      });
+    }
+
+    res.json({ message: "Category deleted successfully" });
+  } catch (error) {
+    console.error("Error in delete category:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GET all roles from Supabase
 app.get("/api/roles", async (req, res) => {
   const { data, error } = await supabase.from("role").select("*");
@@ -3736,47 +3981,41 @@ app.get(
 );
 
 // Get unread notifications count for the authenticated user (using /me endpoint)
-app.get(
-  "/api/notifications/unread/me",
-  authenticateUser,
-  async (req, res) => {
-    try {
-      // Derive user id from authenticated token to prevent forging
-      const userId = req.user?.user_id;
-      const { link } = req.query;
+app.get("/api/notifications/unread/me", authenticateUser, async (req, res) => {
+  try {
+    // Derive user id from authenticated token to prevent forging
+    const userId = req.user?.user_id;
+    const { link } = req.query;
 
-      if (!userId) {
-        return res
-          .status(400)
-          .json({ error: "Authenticated user id not found" });
-      }
-
-      let query = supabase
-        .from("notifications")
-        .select("*", { count: "exact" })
-        .eq("user_id", userId)
-        .eq("read", false);
-
-      if (link) {
-        query = query.eq("link", link);
-      }
-
-      const { data, error, count } = await query;
-      if (error) {
-        console.error("Error fetching unread notifications:", error);
-        return res.status(500).json({ error: error.message });
-      }
-
-      // count will be provided when using { count: 'exact' }
-      res.json({
-        count: typeof count === "number" ? count : data ? data.length : 0,
-      });
-    } catch (err) {
-      console.error("Unexpected error in unread notifications route:", err);
-      res.status(500).json({ error: "Internal server error" });
+    if (!userId) {
+      return res.status(400).json({ error: "Authenticated user id not found" });
     }
+
+    let query = supabase
+      .from("notifications")
+      .select("*", { count: "exact" })
+      .eq("user_id", userId)
+      .eq("read", false);
+
+    if (link) {
+      query = query.eq("link", link);
+    }
+
+    const { data, error, count } = await query;
+    if (error) {
+      console.error("Error fetching unread notifications:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    // count will be provided when using { count: 'exact' }
+    res.json({
+      count: typeof count === "number" ? count : data ? data.length : 0,
+    });
+  } catch (err) {
+    console.error("Unexpected error in unread notifications route:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
-);
+});
 
 // List notifications for authenticated user (paged)
 app.get("/api/notifications", authenticateUser, async (req, res) => {

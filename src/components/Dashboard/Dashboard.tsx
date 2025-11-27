@@ -20,6 +20,7 @@ import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
+import CategoryListModal from "./CategoryListModal";
 
 // Types for analytics data
 interface TopProduct {
@@ -103,6 +104,7 @@ function Dashboard() {
   );
   const [branches, setBranches] = React.useState<Branch[]>([]);
   const [analyticsServerAvailable, setAnalyticsServerAvailable] = React.useState<boolean | null>(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
@@ -342,7 +344,7 @@ function Dashboard() {
           </p>
         </div>
         {isSuperAdmin() ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Branches Card */}
             <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
@@ -398,7 +400,7 @@ function Dashboard() {
               </p>
             </div>
 
-            {/* Recent Activity Card */}
+            {/* All Products Card */}
             <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -430,10 +432,56 @@ function Dashboard() {
                 <p className="text-sm text-red-500 mt-2">Failed to load data</p>
               )}
             </div>
+
+            {/* Categories Card - Super Admin Only */}
+            <div 
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
+                    <Group
+                      className="text-green-600 dark:text-green-400"
+                      size={22}
+                    />
+                  </div>
+                  <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                    Categories
+                  </h5>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/categories/add");
+                    }}
+                    className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                    title="Add Category"
+                  >
+                    <Plus
+                      className="text-green-600 dark:text-green-400"
+                      size={16}
+                    />
+                  </button>
+                  <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                </div>
+              </div>
+              <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+                {isLoading
+                  ? "..."
+                  : error
+                  ? "Error"
+                  : stats?.totalCategories || "0"}
+              </h6>
+              <p className="text-sm text-gray-500 mt-1">
+                Total product categories
+              </p>
+            </div>
           </div>
         ) : (
           <>
-            {/* Row 1: Stock / Products / Categories */}
+            {/* Row 1: Total Stock / Products / Pending Requests */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {isBranchManager() && (
                 <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
@@ -498,121 +546,81 @@ function Dashboard() {
               )}
 
               {isBranchManager() && (
-                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+                <div
+                  onClick={() => navigate("/pending_request")}
+                  className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
+                    pendingRequestsCount > 0
+                      ? "bg-white/80 dark:bg-gray-900/70 border-gray-200 dark:border-gray-700"
+                      : "bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-600"
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
-                        <Group
-                          className="text-green-600 dark:text-green-400"
+                      <div
+                        className={`p-3 rounded-xl ${
+                          pendingRequestsCount > 0
+                            ? "bg-gradient-to-tr from-orange-500/20 to-orange-700/20 dark:from-orange-800/30 dark:to-orange-600/30"
+                            : "bg-gray-100 dark:bg-gray-700"
+                        }`}
+                      >
+                        <ClipboardList
+                          className={`${
+                            pendingRequestsCount > 0
+                              ? "text-orange-600 dark:text-orange-400"
+                              : "text-gray-400 dark:text-gray-500"
+                          }`}
                           size={22}
                         />
                       </div>
-                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
-                        Categories
+                      <h5
+                        className={`font-bold text-lg md:text-xl ${
+                          pendingRequestsCount > 0
+                            ? "text-gray-900 dark:text-gray-100"
+                            : "text-gray-400 dark:text-gray-500"
+                        }`}
+                      >
+                        Pending Requests
                       </h5>
                     </div>
-                    {isBranchManager() && (
-                      <button
-                        onClick={() => navigate("/categories/add")}
-                        className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                        title="Add Category"
-                      >
-                        <Plus
-                          className="text-green-600 dark:text-green-400"
-                          size={16}
-                        />
-                      </button>
-                    )}
+                    <ArrowRight
+                      className={`w-5 h-5 transition-colors ${
+                        pendingRequestsCount > 0
+                          ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                    />
                   </div>
-                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-                    {isLoading
+                  <h6
+                    className={`text-2xl font-bold mt-3 ${
+                      pendingRequestsCount > 0
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-400 dark:text-gray-500"
+                    }`}
+                  >
+                    {isPendingLoading
                       ? "..."
-                      : error
+                      : pendingError
                       ? "Error"
-                      : stats?.totalCategories || "0"}
+                      : pendingRequestsCount || "0"}
                   </h6>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Total product categories
+                  <p
+                    className={`text-sm mt-1 ${
+                      pendingRequestsCount > 0
+                        ? "text-gray-500 dark:text-gray-400"
+                        : "text-gray-400 dark:text-gray-500"
+                    }`}
+                  >
+                    {pendingRequestsCount > 0
+                      ? "Awaiting your review"
+                      : "No pending requests"}
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Row 2: Requests / Low Stock / Out of Stock */}
+            {/* Row 2: Low Stock / Out of Stock */}
             {!isSuperAdmin() && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {isBranchManager() && (
-                  <div
-                    onClick={() => navigate("/pending_request")}
-                    className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
-                      pendingRequestsCount > 0
-                        ? "bg-white/80 dark:bg-gray-900/70 border-gray-200 dark:border-gray-700"
-                        : "bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-600"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-3 rounded-xl ${
-                            pendingRequestsCount > 0
-                              ? "bg-gradient-to-tr from-orange-500/20 to-orange-700/20 dark:from-orange-800/30 dark:to-orange-600/30"
-                              : "bg-gray-100 dark:bg-gray-700"
-                          }`}
-                        >
-                          <ClipboardList
-                            className={`${
-                              pendingRequestsCount > 0
-                                ? "text-orange-600 dark:text-orange-400"
-                                : "text-gray-400 dark:text-gray-500"
-                            }`}
-                            size={22}
-                          />
-                        </div>
-                        <h5
-                          className={`font-bold text-lg md:text-xl ${
-                            pendingRequestsCount > 0
-                              ? "text-gray-900 dark:text-gray-100"
-                              : "text-gray-400 dark:text-gray-500"
-                          }`}
-                        >
-                          Pending Requests
-                        </h5>
-                      </div>
-                      <ArrowRight
-                        className={`w-5 h-5 transition-colors ${
-                          pendingRequestsCount > 0
-                            ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
-                            : "text-gray-300 dark:text-gray-600"
-                        }`}
-                      />
-                    </div>
-                    <h6
-                      className={`text-2xl font-bold mt-3 ${
-                        pendingRequestsCount > 0
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {isPendingLoading
-                        ? "..."
-                        : pendingError
-                        ? "Error"
-                        : pendingRequestsCount || "0"}
-                    </h6>
-                    <p
-                      className={`text-sm mt-1 ${
-                        pendingRequestsCount > 0
-                          ? "text-gray-500 dark:text-gray-400"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {pendingRequestsCount > 0
-                        ? "Awaiting your review"
-                        : "No pending requests"}
-                    </p>
-                  </div>
-                )}
-
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
                 {(isAdmin() || isBranchManager()) && (
                   <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                     <div className="flex items-center gap-3">
@@ -1106,6 +1114,12 @@ function Dashboard() {
           </div>
         </Card>
       )}
+
+      {/* Category List Modal */}
+      <CategoryListModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </div>
   );
 }
