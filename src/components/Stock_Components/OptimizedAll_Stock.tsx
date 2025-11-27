@@ -1082,64 +1082,64 @@ function OptimizedAllStock() {
   }, [products, categories, handleError]);
 
   // Download Excel Template
-  const handleDownloadTemplate = useCallback(() => {
-    try {
-      if (categories.length === 0) {
-        toast.error("Categories not loaded yet. Please try again in a moment.");
-        return;
-      }
+  // const handleDownloadTemplate = useCallback(() => {
+  //   try {
+  //     if (categories.length === 0) {
+  //       toast.error("Categories not loaded yet. Please try again in a moment.");
+  //       return;
+  //     }
 
-      // Create template with sample data using actual categories
-      const templateData = [
-        {
-          "Product Name": "LED Bulb 10W",
-          Category: categories[0]?.category_name || "Sample Category",
-          Price: 299.99,
-          Quantity: 100,
-          Status: "In Stock",
-        },
-        {
-          "Product Name": "Smart Light Strip",
-          Category:
-            categories[1]?.category_name ||
-            categories[0]?.category_name ||
-            "Sample Category",
-          Price: 1299.99,
-          Quantity: 50,
-          Status: "In Stock",
-        },
-        {
-          "Product Name": "Chandelier",
-          Category:
-            categories[2]?.category_name ||
-            categories[0]?.category_name ||
-            "Sample Category",
-          Price: 4999.99,
-          Quantity: 5,
-          Status: "Low Stock",
-        },
-        {
-          "Product Name": "Discontinued Lamp",
-          Category: categories[0]?.category_name || "Sample Category",
-          Price: 199.99,
-          Quantity: 0,
-          Status: "Out of Stock",
-        },
-      ];
+  //     // Create template with sample data using actual categories
+  //     const templateData = [
+  //       {
+  //         "Product Name": "LED Bulb 10W",
+  //         Category: categories[0]?.category_name || "Sample Category",
+  //         Price: 299.99,
+  //         Quantity: 100,
+  //         Status: "In Stock",
+  //       },
+  //       {
+  //         "Product Name": "Smart Light Strip",
+  //         Category:
+  //           categories[1]?.category_name ||
+  //           categories[0]?.category_name ||
+  //           "Sample Category",
+  //         Price: 1299.99,
+  //         Quantity: 50,
+  //         Status: "In Stock",
+  //       },
+  //       {
+  //         "Product Name": "Chandelier",
+  //         Category:
+  //           categories[2]?.category_name ||
+  //           categories[0]?.category_name ||
+  //           "Sample Category",
+  //         Price: 4999.99,
+  //         Quantity: 5,
+  //         Status: "Low Stock",
+  //       },
+  //       {
+  //         "Product Name": "Discontinued Lamp",
+  //         Category: categories[0]?.category_name || "Sample Category",
+  //         Price: 199.99,
+  //         Quantity: 0,
+  //         Status: "Out of Stock",
+  //       },
+  //     ];
 
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(templateData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+  //     // Create workbook and worksheet
+  //     const worksheet = XLSX.utils.json_to_sheet(templateData);
+  //     const workbook = XLSX.utils.book_new();
+  //     XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
 
-      // Download template file
-      XLSX.writeFile(workbook, "product_import_template.xlsx");
-      toast.success("Template downloaded successfully");
-    } catch (error) {
-      const errorMessage = handleError(error, "Download Template");
-      toast.error(errorMessage);
-    }
-  }, [categories, handleError]);
+  //     // Download template file
+  //     XLSX.writeFile(workbook, "product_import_template.xlsx");
+  //     toast.success("Template downloaded successfully");
+  //   } catch (error) {
+  //     const errorMessage = handleError(error, "Download Template");
+  //     toast.error(errorMessage);
+  //   }
+  // }, [categories, handleError]);
 
   // Show loading while user data is being fetched
   if (!currentUser) {
@@ -1275,12 +1275,12 @@ function OptimizedAllStock() {
                   handler: handleExportExcel,
                   bg: "blue",
                 },
-                {
-                  label: "Template",
-                  icon: Download,
-                  handler: handleDownloadTemplate,
-                  bg: "gray",
-                },
+                // {
+                //   label: "Template",
+                //   icon: Download,
+                //   handler: handleDownloadTemplate,
+                //   bg: "gray",
+                // },
                 {
                   label: "Add",
                   icon: Plus,

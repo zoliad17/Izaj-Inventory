@@ -18,7 +18,7 @@ import {
   Warehouse,
   Book,
   // Coins,
-  Rotate3D,
+  // Rotate3D,
   Building2Icon,
   BarChart3,
 } from "lucide-react";
@@ -148,7 +148,9 @@ function Sidebar() {
     if (!user?.user_id) return;
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/transferred&user_id=${encodeURIComponent(user.user_id)}`,
+        `${API_BASE_URL}/api/notifications/unread/${
+          user.user_id
+        }?link=/transferred&user_id=${encodeURIComponent(user.user_id)}`,
         { credentials: "include" }
       );
       if (!res.ok) {
@@ -165,7 +167,9 @@ function Sidebar() {
     if (!user?.user_id) return;
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/requested_item&user_id=${encodeURIComponent(user.user_id)}`,
+        `${API_BASE_URL}/api/notifications/unread/${
+          user.user_id
+        }?link=/requested_item&user_id=${encodeURIComponent(user.user_id)}`,
         { credentials: "include" }
       );
       if (!res.ok) {
@@ -205,13 +209,13 @@ function Sidebar() {
   useEffect(() => {
     fetchUnreadTransferred();
     fetchUnreadRequested();
-    
+
     // Set up periodic refresh for unread counts (every 30 seconds)
     const interval = setInterval(() => {
       fetchUnreadTransferred();
       fetchUnreadRequested();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [fetchUnreadTransferred, fetchUnreadRequested]);
 
@@ -267,12 +271,12 @@ function Sidebar() {
           path: "/pending_request",
           allowedRoles: ["Branch Manager"],
         },
-        {
-          icon: Rotate3D,
-          label: "Transferred",
-          path: "/transferred",
-          allowedRoles: ["Admin", "Branch Manager"],
-        },
+        // {
+        //   icon: Rotate3D,
+        //   label: "Transferred",
+        //   path: "/transferred",
+        //   allowedRoles: ["Admin", "Branch Manager"],
+        // },
         {
           icon: ArrowRightLeft,
           label: "Requested Item",
@@ -471,6 +475,13 @@ function Sidebar() {
                               {notificationsUnread}
                             </span>
                           )}
+                        {item.label === "Stock" &&
+                          (clearedTransferred ? 0 : unreadTransferredCount) >
+                            0 && (
+                            <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                              {clearedTransferred ? 0 : unreadTransferredCount}
+                            </span>
+                          )}
                       </span>
                     )}
                   </Link>
@@ -615,16 +626,6 @@ function Sidebar() {
                                                   : pendingCount}
                                               </span>
                                             )}
-                                          {subItem.label === "Transferred" &&
-                                            (clearedTransferred
-                                              ? 0
-                                              : unreadTransferredCount) > 0 && (
-                                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                                {clearedTransferred
-                                                  ? 0
-                                                  : unreadTransferredCount}
-                                              </span>
-                                            )}
                                           {subItem.label === "Requested Item" &&
                                             (clearedRequested
                                               ? 0
@@ -653,16 +654,6 @@ function Sidebar() {
                                                 {clearedPending
                                                   ? 0
                                                   : pendingCount}
-                                              </span>
-                                            )}
-                                          {subItem.label === "Transferred" &&
-                                            (clearedTransferred
-                                              ? 0
-                                              : unreadTransferredCount) > 0 && (
-                                              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                                {clearedTransferred
-                                                  ? 0
-                                                  : unreadTransferredCount}
                                               </span>
                                             )}
                                           {subItem.label === "Requested Item" &&
