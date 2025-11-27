@@ -91,8 +91,22 @@ function Dashboard() {
   // const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
   // const isAdmin = userRole === "Admin" || isBranchManager;
 
+  // State for analytics data - must be declared before hooks that use them
+  const [topProducts, setTopProducts] = React.useState<TopProduct[]>([]);
+  const [restockRecommendations, setRestockRecommendations] = React.useState<
+    RestockRecommendation[]
+  >([]);
+  const [chartData, setChartData] = React.useState<any[]>([]);
+  const [timeRange, setTimeRange] = React.useState("30d");
+  const [selectedBranch, setSelectedBranch] = React.useState<string | null>(
+    null
+  );
+  const [branches, setBranches] = React.useState<Branch[]>([]);
+  const [analyticsServerAvailable, setAnalyticsServerAvailable] = React.useState<boolean | null>(null);
+
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
+    branchId: isSuperAdmin() ? selectedBranch : currentUser?.branch_id,
     refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
     enabled: true,
   });
@@ -107,18 +121,6 @@ function Dashboard() {
     refreshInterval: 300000, // Refresh every 5 minutes
     enabled: isAdmin(),
   });
-
-  // State for analytics data
-  const [topProducts, setTopProducts] = React.useState<TopProduct[]>([]);
-  const [restockRecommendations, setRestockRecommendations] = React.useState<
-    RestockRecommendation[]
-  >([]);
-  const [chartData, setChartData] = React.useState<any[]>([]);
-  const [timeRange, setTimeRange] = React.useState("30d");
-  const [selectedBranch, setSelectedBranch] = React.useState<string | null>(
-    null
-  );
-  const [branches, setBranches] = React.useState<Branch[]>([]);
 
   const PYTHON_BACKEND_URL =
     import.meta.env.VITE_PYTHON_BACKEND_URL || "http://localhost:5001";
@@ -156,9 +158,23 @@ function Dashboard() {
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setTopProducts(result.data);
+        setAnalyticsServerAvailable(true);
       }
-    } catch (err) {
-      console.error("Error fetching top products:", err);
+    } catch (err: any) {
+      // Check if it's a connection error
+      const isConnectionError = err?.message?.includes("Failed to fetch") || 
+                                err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+                                err?.name === "TypeError";
+      
+      if (isConnectionError) {
+        setAnalyticsServerAvailable(false);
+        // Only log once per session to reduce console noise
+        if (analyticsServerAvailable === null) {
+          console.warn("Analytics server is not available. Please start the Python analytics server on port 5001.");
+        }
+      } else {
+        console.error("Error fetching top products:", err);
+      }
     }
   }, [
     timeRange,
@@ -166,6 +182,7 @@ function Dashboard() {
     selectedBranch,
     currentUser?.branch_id,
     PYTHON_BACKEND_URL,
+    analyticsServerAvailable,
   ]);
 
   // Fetch inventory analytics (restock recommendations)
@@ -205,9 +222,20 @@ function Dashboard() {
                 : "low",
           }));
         setRestockRecommendations(recommendations);
+        setAnalyticsServerAvailable(true);
       }
-    } catch (err) {
-      console.error("Error fetching restock recommendations:", err);
+    } catch (err: any) {
+      // Check if it's a connection error
+      const isConnectionError = err?.message?.includes("Failed to fetch") || 
+                                err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+                                err?.name === "TypeError";
+      
+      if (isConnectionError) {
+        setAnalyticsServerAvailable(false);
+        // Don't log again if we already logged it in fetchTopProducts
+      } else {
+        console.error("Error fetching restock recommendations:", err);
+      }
     }
   }, [
     timeRange,
@@ -668,6 +696,26 @@ function Dashboard() {
           </>
         )}
       </div>
+
+      {/* Analytics Server Status Banner */}
+      {analyticsServerAvailable === false && (
+        <div className="mt-6 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" size={20} />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                Analytics Server Unavailable
+              </h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                The analytics server is not running. To enable analytics features, start the Python analytics server:
+              </p>
+              <code className="mt-2 block text-xs bg-yellow-100 dark:bg-yellow-900/40 px-3 py-2 rounded border border-yellow-200 dark:border-yellow-800">
+                cd analytics && python -m flask --app analytics.app run --port 5001
+              </code>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Super Admin Analytics Section */}
       {isSuperAdmin() && (

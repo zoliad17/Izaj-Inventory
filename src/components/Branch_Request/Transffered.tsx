@@ -11,7 +11,7 @@ import {
   Package,
   Repeat,
 } from "lucide-react";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useErrorHandler } from "../../utils/errorHandler";
@@ -74,6 +74,24 @@ const Transferred = memo(() => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Mark notifications as read when page loads
+  useEffect(() => {
+    const markNotificationsRead = async () => {
+      if (!currentUser?.user_id) return;
+      try {
+        await fetch(`${API_BASE_URL}/api/notifications/mark-read`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ link: "/transferred", user_id: currentUser.user_id }),
+        });
+      } catch (err) {
+        console.error("Failed to mark transferred notifications as read:", err);
+      }
+    };
+    markNotificationsRead();
+  }, [currentUser?.user_id]);
 
   // Fetch transferred products
   const fetchTransferredProducts = useCallback(async () => {
@@ -213,6 +231,11 @@ const Transferred = memo(() => {
 
   const handleExport = useCallback(() => {
     try {
+      if (filteredProducts.length === 0) {
+        toast.error("No products to export");
+        return;
+      }
+
       const exportData = filteredProducts.map((product) => ({
         "Product ID": product.id,
         "Product Name": product.product_name,
@@ -257,11 +280,13 @@ const Transferred = memo(() => {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      toast.success("Products exported successfully");
     } catch (error) {
       const errorMessage = handleError(error, "Export transferred products");
       console.error("Export error:", errorMessage);
+      toast.error(errorMessage);
     }
-  }, [filteredProducts]);
+  }, [filteredProducts, handleError]);
 
   // Loading state
   if (isLoading) {

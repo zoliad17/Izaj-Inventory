@@ -232,13 +232,13 @@ const requestSizeLimiter = (limit = '10mb') => {
 // Lightweight authentication middleware
 const authenticateUser = async (req, res, next) => {
     try {
-        // Get user_id from body (POST/PUT) or query params (GET/DELETE)
-        const user_id = req.body?.user_id || req.query?.user_id;
+        // Get user_id from body (POST/PUT), query params (GET/DELETE), or URL params (route params)
+        const user_id = req.body?.user_id || req.query?.user_id || req.params?.userId || req.params?.user_id;
 
         if (!user_id) {
             return res.status(401).json({
                 error: 'Authentication required',
-                message: 'User ID is required in request body or query parameters'
+                message: 'User ID is required in request body, query parameters, or URL parameters'
             });
         }
 

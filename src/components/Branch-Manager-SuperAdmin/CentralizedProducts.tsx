@@ -358,6 +358,11 @@ function CentralizedProducts() {
   // Export products to Excel
   const exportToExcel = () => {
     try {
+      if (filteredProducts.length === 0) {
+        toast.error("No products to export");
+        return;
+      }
+
       // Prepare data for export
       const exportData = filteredProducts.map((product) => ({
         "Product ID": product.id,

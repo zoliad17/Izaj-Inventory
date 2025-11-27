@@ -78,6 +78,24 @@ export default function PendingRequest() {
     }
   }, [currentUser]);
 
+  // Mark notifications as read when page loads
+  useEffect(() => {
+    const markNotificationsRead = async () => {
+      if (!currentUser?.user_id) return;
+      try {
+        await fetch(`${API_BASE_URL}/api/notifications/mark-read`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ link: "/pending_request", user_id: currentUser.user_id }),
+        });
+      } catch (err) {
+        console.error("Failed to mark pending request notifications as read:", err);
+      }
+    };
+    markNotificationsRead();
+  }, [currentUser?.user_id]);
+
   const loadPendingRequests = async () => {
     if (!currentUser) {
       console.log("No current user, skipping loadPendingRequests");

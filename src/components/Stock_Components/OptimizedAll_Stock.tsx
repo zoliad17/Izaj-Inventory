@@ -18,7 +18,7 @@ import { useCategories } from "../../hooks/useOptimizedFetch";
 import { api } from "../../utils/apiClient";
 import { useErrorHandler } from "../../utils/errorHandler";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSidebar } from "../Sidebar/SidebarContext";
@@ -40,6 +40,7 @@ interface Product {
   transferTag?: string | null;
   transferTagAppliedAt?: string | null;
   quantityAdded?: number; // Quantity added during transfer
+  previousQuantity?: number; // Previous quantity before transfer
 }
 
 const STATUS_OPTIONS: ("In Stock" | "Out of Stock" | "Low Stock")[] = [
@@ -242,6 +243,7 @@ function OptimizedAllStock() {
   const { isCollapsed } = useSidebar();
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { handleError } = useErrorHandler();
   const { user: currentUser } = useAuth();
 
@@ -330,41 +332,94 @@ function OptimizedAllStock() {
       // Fetch audit logs to identify transferred products
       if (currentUser) {
         try {
-          const { data: auditLogs, error: auditError } =
-            await api.getUserAuditLogs(currentUser.user_id);
+          // Fetch audit logs with a high limit to get all transfer logs
+          const { data: auditLogsResponse, error: auditError } =
+            await api.getUserAuditLogs(currentUser.user_id, {
+              limit: 1000, // Get a large number of logs to ensure we capture all transfers
+              action: "INVENTORY_TRANSFER",
+            });
 
-          if (!auditError && auditLogs && Array.isArray(auditLogs)) {
-            // Find inventory transfer logs for this user
+          // Handle paginated response - extract logs array
+          const auditLogs =
+            (auditLogsResponse as any)?.logs ||
+            (Array.isArray(auditLogsResponse) ? auditLogsResponse : []);
+
+          if (
+            !auditError &&
+            auditLogs &&
+            Array.isArray(auditLogs) &&
+            auditLogs.length > 0
+          ) {
+            // Find inventory transfer logs for this branch
+            // Check for both entity types: "product_requisition" (mark as arrived) and "centralized_product" (approval)
             const transferLogs = auditLogs.filter(
               (log: any) =>
                 log.action === "INVENTORY_TRANSFER" &&
-                log.entity_type === "centralized_product" &&
-                log.metadata?.requester_branch_id === branchId
+                (log.entity_type === "product_requisition" ||
+                  log.entity_type === "centralized_product") &&
+                Number(log.metadata?.requester_branch_id) === Number(branchId)
+            );
+
+            console.log(
+              "Found transfer logs:",
+              transferLogs.length,
+              transferLogs
             );
 
             // Update products that were transferred
             const updatedProducts = mappedProducts.map((product: Product) => {
+              // Find the transfer log that contains this product
               const transferLog = transferLogs.find((log: any) => {
                 if (Array.isArray(log.metadata?.items_merged)) {
                   return log.metadata.items_merged.some(
-                    (merged: any) => merged.product_id === product.id
+                    (merged: any) =>
+                      Number(merged.product_id) === Number(product.id)
                   );
                 }
-                return log.metadata?.product_id === product.id;
+                return (
+                  log.metadata?.product_id &&
+                  Number(log.metadata.product_id) === Number(product.id)
+                );
               });
 
               if (transferLog) {
-                // Find the specific merged item to get quantity added
+                // Find the specific merged item to get quantity details
                 let quantityAdded = 0;
+                let previousQuantity = 0;
+
                 if (Array.isArray(transferLog.metadata?.items_merged)) {
                   const mergedItem = transferLog.metadata.items_merged.find(
                     (merged: any) =>
                       Number(merged.product_id) === Number(product.id)
                   );
-                  quantityAdded = mergedItem?.added_quantity || 0;
+                  if (mergedItem) {
+                    // Ensure we convert to numbers
+                    quantityAdded = Number(mergedItem.added_quantity) || 0;
+                    previousQuantity =
+                      Number(mergedItem.previous_quantity) || 0;
+                    console.log(`Product ${product.id} (${product.name}):`, {
+                      added_quantity: quantityAdded,
+                      previous_quantity: previousQuantity,
+                      mergedItem,
+                    });
+                  } else {
+                    console.warn(
+                      `No merged item found for product ${product.id} in transfer log`,
+                      {
+                        productId: product.id,
+                        productName: product.name,
+                        items_merged: transferLog.metadata?.items_merged,
+                      }
+                    );
+                  }
+                } else {
+                  // Fallback for older audit logs without items_merged
+                  quantityAdded = Number(transferLog.metadata?.quantity) || 0;
+                  previousQuantity =
+                    Number(transferLog.old_values?.quantity) || 0;
                 }
 
-                return {
+                const updatedProduct = {
                   ...product,
                   source: "Transferred" as const,
                   transferred_from:
@@ -372,8 +427,18 @@ function OptimizedAllStock() {
                     "Unknown Branch",
                   transferred_at: transferLog.timestamp,
                   request_id: transferLog.metadata?.request_id,
-                  quantityAdded: quantityAdded || undefined,
+                  quantityAdded: quantityAdded > 0 ? quantityAdded : undefined,
+                  previousQuantity:
+                    previousQuantity >= 0 ? previousQuantity : undefined,
                 };
+
+                console.log(`Setting product ${product.id} with:`, {
+                  quantityAdded: updatedProduct.quantityAdded,
+                  previousQuantity: updatedProduct.previousQuantity,
+                  productName: updatedProduct.name,
+                });
+
+                return updatedProduct;
               }
 
               return product;
@@ -409,6 +474,27 @@ function OptimizedAllStock() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Refetch products when navigating to this page (e.g., after marking items as arrived)
+  useEffect(() => {
+    if (location.pathname === "/all_stock" && branchId) {
+      fetchProducts();
+    }
+  }, [location.pathname, branchId, fetchProducts]);
+
+  // Refetch products when page becomes visible (user switches back to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && branchId) {
+        fetchProducts();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [branchId, fetchProducts]);
+
   // Refetch function for external use
   const refetchProducts = useCallback(() => {
     fetchProducts();
@@ -427,6 +513,9 @@ function OptimizedAllStock() {
   const [transferTypeFilter, setTransferTypeFilter] = useState<
     "All" | "New" | "Updated"
   >("All");
+  const [transferSortOrder, setTransferSortOrder] = useState<
+    "Latest" | "Oldest"
+  >("Latest");
 
   const getFormattedProductId = useCallback(
     (product: Product) => {
@@ -437,7 +526,7 @@ function OptimizedAllStock() {
   );
 
   const filteredTransferredProducts = useMemo(() => {
-    return transferredProducts.filter((product) => {
+    const filtered = transferredProducts.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(transferSearchTerm.toLowerCase()) ||
         String(product.id).includes(transferSearchTerm) ||
@@ -453,10 +542,29 @@ function OptimizedAllStock() {
 
       return matchesSearch && matchesType;
     });
+
+    // Sort by transfer date (latest first by default)
+    const sorted = [...filtered].sort((a, b) => {
+      const dateA = a.transferTagAppliedAt
+        ? new Date(a.transferTagAppliedAt).getTime()
+        : 0;
+      const dateB = b.transferTagAppliedAt
+        ? new Date(b.transferTagAppliedAt).getTime()
+        : 0;
+
+      if (transferSortOrder === "Latest") {
+        return dateB - dateA; // Newest first
+      } else {
+        return dateA - dateB; // Oldest first
+      }
+    });
+
+    return sorted;
   }, [
     transferredProducts,
     transferSearchTerm,
     transferTypeFilter,
+    transferSortOrder,
     getFormattedProductId,
   ]);
 
@@ -470,9 +578,7 @@ function OptimizedAllStock() {
       const matchesSearch =
         product.name.toLowerCase().includes(normalizedSearch) ||
         String(product.id).toLowerCase().includes(normalizedSearch) ||
-        getFormattedProductId(product)
-          .toLowerCase()
-          .includes(normalizedSearch);
+        getFormattedProductId(product).toLowerCase().includes(normalizedSearch);
       const matchesCategory =
         selectedCategory === 0 || product.category === selectedCategory;
       const matchesStatus =
@@ -944,6 +1050,11 @@ function OptimizedAllStock() {
 
   const handleExportExcel = useCallback(() => {
     try {
+      if (products.length === 0) {
+        toast.error("No products to export");
+        return;
+      }
+
       const exportData = products.map((product: Product) => ({
         "Product ID": product.id,
         "Product Name": product.name,
@@ -1366,161 +1477,211 @@ function OptimizedAllStock() {
                 <ArrowRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Updated Products From Transfer
               </h3>
-              <div className="flex flex-col gap-4 mb-4 sm:flex-row">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Search Products
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search by name or ID"
-                    value={transferSearchTerm}
-                    onChange={(e) => setTransferSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+
+              {/* Loading state for transfer table */}
+              {isLoading && (
+                <div className="flex items-center justify-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <div className="w-full sm:w-52">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Transfer Type
-                  </label>
-                  <select
-                    value={transferTypeFilter}
-                    onChange={(e) =>
-                      setTransferTypeFilter(e.target.value as
-                        | "All"
-                        | "New"
-                        | "Updated")
-                    }
-                    className="block w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="All">All Transfers</option>
-                    <option value="New">New Items</option>
-                    <option value="Updated">Updated Stock</option>
-                  </select>
-                </div>
-              </div>
-              <div className="w-full overflow-hidden">
-                <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto break-words">
-                  <thead>
-                    <tr className="bg-blue-50 dark:bg-blue-900/20 text-lg">
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        Product ID
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        Product Name
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        Old Quantity
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        Added Quantity
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        New / Updated Quantity
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+              )}
+
+              {!isLoading && (
+                <>
+                  <div className="flex flex-col gap-4 mb-4 sm:flex-row">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Search Products
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Search by name or ID"
+                        value={transferSearchTerm}
+                        onChange={(e) => setTransferSearchTerm(e.target.value)}
+                        className="w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="w-full sm:w-52">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Transfer Type
-                      </th>
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
-                        Arrival Date
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-lg text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-neutral-700">
-                    {filteredTransferredProducts.length > 0 ? (
-                      filteredTransferredProducts.map((product: Product) => {
-                      const categoryName =
-                        categories.find(
-                          (cat) => Number(cat.id) === product.category
-                        )?.category_name || "Unknown";
-                      const changeType =
-                        product.transferTag === "New Item from Transfer"
-                          ? "New Product"
-                          : "Stock Update";
-                      const changeTypeBadge =
-                        product.transferTag === "New Item from Transfer"
-                          ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200"
-                          : "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
-
-                      const addedQuantity =
-                        typeof product.quantityAdded === "number"
-                          ? product.quantityAdded
-                          : product.transferTag === "New Item from Transfer"
-                          ? product.stock
-                          : 0;
-
-                      const oldQuantity =
-                        product.transferTag === "New Item from Transfer"
-                          ? 0
-                          : Math.max(product.stock - addedQuantity, 0);
-
-                      const newQuantity = oldQuantity + addedQuantity;
-
-                        return (
-                        <tr
-                          key={product.id}
-                          className="hover:bg-gray-50 dark:hover:bg-neutral-700"
-                        >
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-mono">
-                            {`${
-                              product.branch_id || branchId || "N/A"
-                            }-${String(product.id).padStart(4, "0")}`}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {product.name}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {categoryName}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
-                            {oldQuantity} units
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
-                            +{addedQuantity} units
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
-                            {newQuantity} units
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${changeTypeBadge}`}
-                            >
-                              {changeType}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                            {product.transferTagAppliedAt
-                              ? new Date(
-                                  product.transferTagAppliedAt
-                                ).toLocaleString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "N/A"}
-                          </td>
+                      </label>
+                      <select
+                        value={transferTypeFilter}
+                        onChange={(e) =>
+                          setTransferTypeFilter(
+                            e.target.value as "All" | "New" | "Updated"
+                          )
+                        }
+                        className="block w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="All">All Transfers</option>
+                        <option value="New">New Items</option>
+                        <option value="Updated">Updated Stock</option>
+                      </select>
+                    </div>
+                    <div className="w-full sm:w-52">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Sort Order
+                      </label>
+                      <select
+                        value={transferSortOrder}
+                        onChange={(e) =>
+                          setTransferSortOrder(
+                            e.target.value as "Latest" | "Oldest"
+                          )
+                        }
+                        className="block w-full px-3 py-2 rounded-2xl bg-white dark:bg-gray-900/70 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Latest">Latest First</option>
+                        <option value="Oldest">Oldest First</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="w-full overflow-hidden">
+                    <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto break-words">
+                      <thead>
+                        <tr className="bg-blue-50 dark:bg-blue-900/20 text-lg">
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Product ID
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Product Name
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Old Quantity
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Added Quantity
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            New / Updated Quantity
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Transfer Type
+                          </th>
+                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                            Arrival Date
+                          </th>
                         </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-6 py-10 text-center text-base text-gray-500 dark:text-gray-400"
-                        >
-                          No transfers match your filters
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody className="text-lg text-gray-800 dark:text-gray-200 divide-y divide-gray-200 dark:divide-neutral-700">
+                        {filteredTransferredProducts.length > 0 ? (
+                          filteredTransferredProducts.map(
+                            (product: Product) => {
+                              const categoryName =
+                                categories.find(
+                                  (cat) => Number(cat.id) === product.category
+                                )?.category_name || "Unknown";
+                              const changeType =
+                                product.transferTag === "New Item from Transfer"
+                                  ? "New Product"
+                                  : "Stock Update";
+                              const changeTypeBadge =
+                                product.transferTag === "New Item from Transfer"
+                                  ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200"
+                                  : "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
+
+                              // Get added quantity from audit log metadata
+                              // Debug: Log the product to see what we have
+                              console.log(`Display - Product ${product.id}:`, {
+                                quantityAdded: product.quantityAdded,
+                                previousQuantity: product.previousQuantity,
+                                transferTag: product.transferTag,
+                                stock: product.stock,
+                              });
+
+                              const addedQuantity =
+                                typeof product.quantityAdded === "number" &&
+                                product.quantityAdded > 0
+                                  ? product.quantityAdded
+                                  : product.transferTag ===
+                                    "New Item from Transfer"
+                                  ? product.stock
+                                  : 0;
+
+                              console.log(
+                                `Display - Calculated addedQuantity:`,
+                                addedQuantity
+                              );
+
+                              // Get old quantity from audit log metadata (more accurate)
+                              const oldQuantity =
+                                product.transferTag === "New Item from Transfer"
+                                  ? 0
+                                  : typeof product.previousQuantity ===
+                                      "number" && product.previousQuantity >= 0
+                                  ? product.previousQuantity
+                                  : Math.max(product.stock - addedQuantity, 0);
+
+                              const newQuantity = oldQuantity + addedQuantity;
+
+                              return (
+                                <tr
+                                  key={product.id}
+                                  className="hover:bg-gray-50 dark:hover:bg-neutral-700"
+                                >
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-mono">
+                                    {`${
+                                      product.branch_id || branchId || "N/A"
+                                    }-${String(product.id).padStart(4, "0")}`}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">
+                                        {product.name}
+                                      </span>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {categoryName}
+                                      </span>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                    {oldQuantity} units
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                    +{addedQuantity} units
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                    {newQuantity} units
+                                  </td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <span
+                                      className={`px-3 py-1 rounded-full text-xs font-medium ${changeTypeBadge}`}
+                                    >
+                                      {changeType}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                    {product.transferTagAppliedAt
+                                      ? new Date(
+                                          product.transferTagAppliedAt
+                                        ).toLocaleString("en-US", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : "N/A"}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={7}
+                              className="px-6 py-10 text-center text-base text-gray-500 dark:text-gray-400"
+                            >
+                              No transfers match your filters
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

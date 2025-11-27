@@ -77,6 +77,30 @@ export default function Requested_Item() {
     }
   }, [currentUser]);
 
+  // Mark notifications as read when page loads
+  useEffect(() => {
+    const markNotificationsRead = async () => {
+      if (!currentUser?.user_id) return;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/notifications/mark-read`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ link: "/requested_item", user_id: currentUser.user_id }),
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to mark notifications as read: ${response.statusText}`);
+        }
+        console.log("Successfully marked requested_item notifications as read");
+      } catch (err) {
+        console.error("Failed to mark requested item notifications as read:", err);
+      }
+    };
+    if (currentUser?.user_id) {
+      markNotificationsRead();
+    }
+  }, [currentUser?.user_id]);
+
   const loadSentRequests = async () => {
     if (!currentUser) {
       console.log("No current user, skipping loadSentRequests");

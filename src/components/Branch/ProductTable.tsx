@@ -211,6 +211,11 @@ function ProductTable() {
   // Excel export function
   const mockExport = () => {
     try {
+      if (filteredProducts.length === 0) {
+        toast.error("No products to export");
+        return;
+      }
+
       const exportData = filteredProducts.map((product) => ({
         "Product ID": product.id,
         "Product Name": product.name,

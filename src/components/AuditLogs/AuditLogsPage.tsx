@@ -311,33 +311,43 @@ const AuditLogsPage = () => {
 
   // Handle Excel export
   const handleExportToExcel = () => {
-    // Transform logs data for Excel
-    const excelData = sortedLogs.map((log) => ({
-      Date: new Date(log.timestamp).toLocaleDateString(),
-      Time: new Date(log.timestamp).toLocaleTimeString(),
-      Action: log.action.replace(/_/g, " "),
-      Description: log.description,
-      Notes: log.notes || "",
-      "Entity Type": log.entity_type || "",
-      "Entity ID": log.entity_id || "",
-      User: log.user_name || "Unknown",
-      Email: log.user_email || log.user_id || "",
-      Role: log.role_name || "",
-      Branch: log.branch_location || "",
-      Severity: log.severity_level || "",
-      Category: log.action_category || "",
-    }));
+    try {
+      if (sortedLogs.length === 0) {
+        alert("No audit logs to export");
+        return;
+      }
 
-    // Create workbook and worksheet
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
+      // Transform logs data for Excel
+      const excelData = sortedLogs.map((log) => ({
+        Date: new Date(log.timestamp).toLocaleDateString(),
+        Time: new Date(log.timestamp).toLocaleTimeString(),
+        Action: log.action.replace(/_/g, " "),
+        Description: log.description,
+        Notes: log.notes || "",
+        "Entity Type": log.entity_type || "",
+        "Entity ID": log.entity_id || "",
+        User: log.user_name || "Unknown",
+        Email: log.user_email || log.user_id || "",
+        Role: log.role_name || "",
+        Branch: log.branch_location || "",
+        Severity: log.severity_level || "",
+        Category: log.action_category || "",
+      }));
 
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
 
-    // Generate Excel file
-    const today = new Date().toISOString().split("T")[0];
-    XLSX.writeFile(wb, `audit_logs_${today}.xlsx`);
+      // Add worksheet to workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
+
+      // Generate Excel file
+      const today = new Date().toISOString().split("T")[0];
+      XLSX.writeFile(wb, `audit_logs_${today}.xlsx`);
+    } catch (error) {
+      console.error("Error exporting audit logs:", error);
+      alert("Failed to export audit logs");
+    }
   };
 
   // Generate page numbers for pagination

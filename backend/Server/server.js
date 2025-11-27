@@ -3710,6 +3710,49 @@ app.get(
   }
 );
 
+// Get unread notifications count for the authenticated user (using /me endpoint)
+app.get(
+  "/api/notifications/unread/me",
+  authenticateUser,
+  async (req, res) => {
+    try {
+      // Derive user id from authenticated token to prevent forging
+      const userId = req.user?.user_id;
+      const { link } = req.query;
+
+      if (!userId) {
+        return res
+          .status(400)
+          .json({ error: "Authenticated user id not found" });
+      }
+
+      let query = supabase
+        .from("notifications")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+        .eq("read", false);
+
+      if (link) {
+        query = query.eq("link", link);
+      }
+
+      const { data, error, count } = await query;
+      if (error) {
+        console.error("Error fetching unread notifications:", error);
+        return res.status(500).json({ error: error.message });
+      }
+
+      // count will be provided when using { count: 'exact' }
+      res.json({
+        count: typeof count === "number" ? count : data ? data.length : 0,
+      });
+    } catch (err) {
+      console.error("Unexpected error in unread notifications route:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
 // List notifications for authenticated user (paged)
 app.get("/api/notifications", authenticateUser, async (req, res) => {
   try {

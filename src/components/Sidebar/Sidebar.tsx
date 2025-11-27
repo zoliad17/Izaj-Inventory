@@ -120,6 +120,7 @@ function Sidebar() {
   const { unreadCount: notificationsUnread } = useNotifications({
     pollInterval: 30000,
     realtime: true,
+    userId: user?.user_id || null,
   });
 
   // Local flag to clear the transferred badge when the user opens the Transferred tab
@@ -133,6 +134,7 @@ function Sidebar() {
 
   const [clearedRequested, setClearedRequested] = useState(false);
   const prevRequestedRef = useRef<number>(requestedCount);
+  const [unreadRequestedCount, setUnreadRequestedCount] = useState<number>(0);
 
   // Compute the parent Branch Request badge count based on individual sub-item counts
   // and cleared flags. This lets the parent badge hide immediately when sub-items
@@ -140,13 +142,13 @@ function Sidebar() {
   const displayedBranchBadge =
     (clearedPending ? 0 : pendingCount) +
     (clearedTransferred ? 0 : unreadTransferredCount) +
-    (clearedRequested ? 0 : requestedCount);
+    (clearedRequested ? 0 : unreadRequestedCount);
 
   const fetchUnreadTransferred = useCallback(async () => {
     if (!user?.user_id) return;
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/transferred`,
+        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/transferred&user_id=${encodeURIComponent(user.user_id)}`,
         { credentials: "include" }
       );
       if (!res.ok) {
@@ -156,6 +158,23 @@ function Sidebar() {
       setUnreadTransferredCount(json.count || 0);
     } catch (err) {
       console.error("Error fetching unread transferred notifications:", err);
+    }
+  }, [user?.user_id]);
+
+  const fetchUnreadRequested = useCallback(async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/requested_item&user_id=${encodeURIComponent(user.user_id)}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch unread requested notifications");
+      }
+      const json = await res.json();
+      setUnreadRequestedCount(json.count || 0);
+    } catch (err) {
+      console.error("Error fetching unread requested notifications:", err);
     }
   }, [user?.user_id]);
 
@@ -176,16 +195,25 @@ function Sidebar() {
   }, [pendingCount]);
 
   useEffect(() => {
-    if (requestedCount !== prevRequestedRef.current) {
+    if (unreadRequestedCount !== prevRequestedRef.current) {
       setClearedRequested(false);
-      prevRequestedRef.current = requestedCount;
+      prevRequestedRef.current = unreadRequestedCount;
     }
-  }, [requestedCount]);
+  }, [unreadRequestedCount]);
 
-  // Fetch unread transferred notifications on mount and when user changes
+  // Fetch unread transferred and requested notifications on mount and when user changes
   useEffect(() => {
     fetchUnreadTransferred();
-  }, [fetchUnreadTransferred]);
+    fetchUnreadRequested();
+    
+    // Set up periodic refresh for unread counts (every 30 seconds)
+    const interval = setInterval(() => {
+      fetchUnreadTransferred();
+      fetchUnreadRequested();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [fetchUnreadTransferred, fetchUnreadRequested]);
 
   const handleLogout = () => {
     logout();
@@ -204,7 +232,7 @@ function Sidebar() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ link }),
+        body: JSON.stringify({ link, user_id: user.user_id }),
       });
     } catch (err) {
       console.error(`Failed to mark notifications for ${link} as read`, err);
@@ -528,6 +556,7 @@ function Sidebar() {
                                             credentials: "include",
                                             body: JSON.stringify({
                                               link: "/transferred",
+                                              user_id: user?.user_id,
                                             }),
                                           }
                                         );
@@ -549,6 +578,10 @@ function Sidebar() {
                                           "/requested_item"
                                         );
                                         setClearedRequested(true);
+                                        // Clear the unread requested count locally
+                                        setUnreadRequestedCount(0);
+                                        // Refresh the count
+                                        fetchUnreadRequested();
                                       }
                                     } catch (err) {
                                       console.error(
@@ -595,11 +628,11 @@ function Sidebar() {
                                           {subItem.label === "Requested Item" &&
                                             (clearedRequested
                                               ? 0
-                                              : requestedCount) > 0 && (
+                                              : unreadRequestedCount) > 0 && (
                                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
                                                 {clearedRequested
                                                   ? 0
-                                                  : requestedCount}
+                                                  : unreadRequestedCount}
                                               </span>
                                             )}
                                         </>
@@ -635,11 +668,11 @@ function Sidebar() {
                                           {subItem.label === "Requested Item" &&
                                             (clearedRequested
                                               ? 0
-                                              : requestedCount) > 0 && (
+                                              : unreadRequestedCount) > 0 && (
                                               <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
                                                 {clearedRequested
                                                   ? 0
-                                                  : requestedCount}
+                                                  : unreadRequestedCount}
                                               </span>
                                             )}
                                         </>
