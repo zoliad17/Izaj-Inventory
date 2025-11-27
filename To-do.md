@@ -6,14 +6,15 @@
 - [x] Add Branch feature
 - [x] Make the password hashed
 - [x] Send the acount created by the superadmin through email of the user being created
-- [ ] CRUD Category
+- [x] CRUD Category
 - [x] Crud Branches and Update Database for input fields
-- [ ] Picture or Excel extractor to pass to supabase
+- [x] Picture or Excel extractor to pass to supabase
 - [x] Add a pending where it deducts the product temporarily then if its not approved its just goes back to the original value to avoid collision
 
 ## Product Request System Improvements
 
 ### Priority 1 (Critical)
+
 - [x] Fix schema issues: Rename `audit logs` table to `audit_logs` (remove space)
 - [ ] Add database indexes for frequently queried columns (user_id, branch_id, status, created_at)
 - [x] Add inventory transfer logic when requests are approved (move products between branches)
@@ -21,6 +22,7 @@
 - [x] Add proper constraints for status values (pending, approved, denied)
 
 ### Priority 2 (Important)
+
 - [x] Add bulk approve/deny functionality for multiple requests
 - [ ] Add request expiration system (auto-expire old pending requests)
 - [x] Improve error handling and input validation
@@ -28,6 +30,7 @@
 - [ ] Add request priorities (urgent, normal, low)
 
 ### Priority 3 (Nice to have)
+
 - [ ] Add request analytics and reporting (popular products, request patterns)
 - [ ] Add export functionality for request data (Excel/CSV)
 - [ ] Add real-time notifications for request updates
@@ -42,6 +45,7 @@
 ## Non-Functional Pages & Mock Data (Keep for now, remove later)
 
 ### Pages with Mock Data (Still Present but Not Functional)
+
 - [ ] **AuditLogsPage.tsx** - Uses mock audit log data, needs real API integration
 - [ ] **Sales.tsx** - Uses mock sales data and charts, needs real sales API
 - [x] **Transffered.tsx** - Uses mock transferred products data, needs real transfer API
@@ -49,6 +53,7 @@
 - [x] **ProductTable.tsx** - Has mock export functionality, needs real export API
 
 ### Mock Data to Remove Later
+
 - [ ] **AuditLogsPage.tsx** - Remove mockLogs array (lines 66-191), replace with real API call
 - [ ] **Sales.tsx** - Remove mock product data (lines 167-208), replace with real sales data
 - [x] **Transffered.tsx** - Remove mock products array (lines 22-86), replace with real transfer data
@@ -58,12 +63,12 @@
 - [ ] **UnifiedProductRequest.tsx** - Remove mockExport function (lines 275-278), implement real export
 
 ### Non-Functional Features (Keep UI, implement later)
+
 - [ ] **Export to Excel** - Multiple components have mock export buttons
 - [ ] **Import Excel** - All_Stock.tsx has import functionality stub
 - [ ] **Real-time notifications** - No WebSocket or polling implementation
 - [ ] **Sales analytics** - Sales.tsx has charts but no real data
 - [ ] **Transfer tracking** - Transffered.tsx shows mock transfer data
-
 
 🎯 Priority Action Plan
 Phase 1: Cleanup (Week 1)
@@ -89,4 +94,3 @@ Add unit tests for critical components
 Add integration tests for API flows
 Performance testing and optimization
 User acceptance testing
-
