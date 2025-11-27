@@ -168,8 +168,8 @@ const requestLogger = (req, res, next) => {
             timestamp: new Date().toISOString()
         };
 
-        // Log only errors and slow requests
-        if (res.statusCode >= 400 || duration > 1000) {
+        // Log only errors (removed slow request logging)
+        if (res.statusCode >= 400) {
             console.log('Request:', logData);
         }
     });

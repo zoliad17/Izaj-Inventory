@@ -2411,7 +2411,6 @@ app.get("/api/transfers/:branchId", async (req, res) => {
       }
     }
 
-    console.log(`Returning ${transformedItems.length} transformed items`);
     res.json(transformedItems);
   } catch (error) {
     console.error("Error in transfers endpoint:", error);
@@ -2771,7 +2770,6 @@ app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
     if (branchesError) throw branchesError;
 
     // Get total users count
-    console.log("Fetching users count...");
     let totalUsers = 0;
 
     try {
@@ -2795,17 +2793,11 @@ app.get("/api/dashboard/stats", rateLimits.dashboardStats, async (req, res) => {
         }
       } else {
         totalUsers = allUsers ? allUsers.length : 0;
-        console.log("Successfully fetched users count:", totalUsers);
-        if (allUsers && allUsers.length > 0) {
-          console.log("Sample users:", allUsers.slice(0, 3));
-        }
       }
     } catch (error) {
       console.error("Unexpected error fetching users:", error);
       totalUsers = 0;
     }
-
-    console.log("Final user count:", totalUsers);
 
     // Get low stock products count
     let lowStockQuery = supabase

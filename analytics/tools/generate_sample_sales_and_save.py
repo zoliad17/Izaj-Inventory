@@ -14,6 +14,7 @@ import os
 import random
 from datetime import datetime, timedelta
 import json
+import calendar
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -81,9 +82,13 @@ PRODUCTS = load_products_from_json(branch_id=3)
 
 PAYMENT_METHODS = ['cash', 'card', 'gcash', 'other']
 
-DAYS = 30
-END_DATE = datetime.utcnow().date()
-START_DATE = END_DATE - timedelta(days=DAYS-1)
+# Calculate current calendar month date range
+now = datetime.utcnow()
+START_DATE = datetime(now.year, now.month, 1).date()
+# Get last day of current month
+last_day = calendar.monthrange(now.year, now.month)[1]
+END_DATE = datetime(now.year, now.month, last_day).date()
+DAYS = (END_DATE - START_DATE).days + 1  # +1 to include both start and end dates
 
 
 def generate_sales_rows():
@@ -123,10 +128,9 @@ def generate_sales_rows():
             std_daily = pattern['std']
             sold = max(0, int(np.random.normal(mean_daily, std_daily)))
             
-            # Never exceed available inventory
+            # Never exceed available inventory - ensure sold never goes negative or exceeds available
             available = inventory_tracker[p['id']]
-            if sold > available:
-                sold = max(0, int(available * 0.3))  # Sell up to 30% of available stock on high days
+            sold = min(sold, available)  # Cap sold to available inventory
             
             if sold <= 0:
                 continue
@@ -138,7 +142,7 @@ def generate_sales_rows():
             total = sold * unit_price
             rows.append({
                 'product_id': p['id'],
-                'branch_id': p.get('branch_id', 2),
+                'branch_id': p.get('branch_id', 3),  # Default to 3 since we filter for branch_id=3
                 'quantity': sold,
                 'transaction_date': datetime.combine(d, datetime.min.time()).isoformat(),
                 'unit_price': unit_price,
@@ -175,13 +179,13 @@ def main():
     print(f"Loaded {len(PRODUCTS)} products from JSON (branch_id=3)")
 
     rows = generate_sales_rows()
-    print(f"Generated {len(rows)} sales rows for {DAYS} days")
+    print(f"Generated {len(rows)} sales rows for {DAYS} days ({START_DATE.strftime('%B %Y')})")
 
     df = generate_dataframe_from_rows(rows)
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
-    base_name = f"sample_sales_{START_DATE.isoformat()}_to_{(START_DATE+timedelta(days=DAYS-1)).isoformat()}"
+    base_name = f"sample_sales_{START_DATE.isoformat()}_to_{END_DATE.isoformat()}"
     if args.format in ('csv', 'both'):
         csv_path = outdir / f"{base_name}.csv"
         df.to_csv(csv_path, index=False)

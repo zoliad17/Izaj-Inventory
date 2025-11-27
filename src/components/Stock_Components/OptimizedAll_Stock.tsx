@@ -1559,6 +1559,9 @@ function OptimizedAllStock() {
                             Transfer Type
                           </th>
                           <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                            Requested From
+                          </th>
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Arrival Date
                           </th>
                         </tr>
@@ -1657,6 +1660,9 @@ function OptimizedAllStock() {
                                           : "Update"}
                                       </span>
                                     </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {product.transferred_from || "Unknown Branch"}
                                   </td>
                                   <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                                     <div className="hidden sm:block">
