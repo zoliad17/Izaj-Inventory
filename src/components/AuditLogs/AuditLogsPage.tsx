@@ -408,7 +408,8 @@ const AuditLogsPage = () => {
             >
               <ArrowLeft size={20} className="mr-1" />
             </button>
-            <h5 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <h5 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+              <Activity className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               Audit Logs
             </h5>
           </div>

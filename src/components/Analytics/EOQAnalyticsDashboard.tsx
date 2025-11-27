@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -13,6 +14,7 @@ import {
   ComposedChart,
 } from "recharts";
 import {
+  ArrowLeft,
   Package,
   FileUp,
   CheckCircle,
@@ -101,6 +103,7 @@ interface StockDeductionModalState {
 }
 
 const EOQAnalyticsDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
@@ -945,14 +948,23 @@ const EOQAnalyticsDashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-              EOQ Analytics Dashboard
-            </h1>
-            <p className="text-base text-slate-600 dark:text-gray-400 mt-1">
-              Predictive Analytics for Inventory Optimization
-            </p>
+        <div className="flex flex-row justify-between items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              <ArrowLeft size={26} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Calculator className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                EOQ Analytics Dashboard
+              </h1>
+              <p className="text-base text-slate-600 dark:text-gray-400 mt-1">
+                Predictive Analytics for Inventory Optimization
+              </p>
+            </div>
           </div>
         </div>
 
