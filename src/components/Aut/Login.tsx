@@ -180,13 +180,7 @@ function Login() {
                       }
                     />
                   </div>
-                  <div className="flex items-center justify-between mb-6">
-                    <button
-                      type="button"
-                      className="text-amber-300 hover:text-amber-100 text-sm font-bold drop-shadow-md"
-                    >
-                      Remember me
-                    </button>
+                  <div className="flex justify-center mb-6">
                     <button
                       type="button"
                       className="text-amber-300 hover:text-amber-100 text-sm font-bold drop-shadow-md"
