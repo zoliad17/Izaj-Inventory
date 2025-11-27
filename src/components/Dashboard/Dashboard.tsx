@@ -106,7 +106,7 @@ function Dashboard() {
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
-    branchId: isSuperAdmin() ? selectedBranch : currentUser?.branch_id,
+    branchId: isSuperAdmin() ? (selectedBranch || undefined) : (currentUser?.branch_id || undefined),
     refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
     enabled: true,
   });
