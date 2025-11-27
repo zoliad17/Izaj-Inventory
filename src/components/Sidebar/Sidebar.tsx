@@ -457,6 +457,43 @@ function Sidebar() {
                       isCollapsed ? "p-3 justify-center" : "p-3"
                     }`}
                     title={item.label}
+                    onClick={async () => {
+                      // Handle special case for Stock link - clear the transferred badge
+                      if (item.label === "Stock") {
+                        try {
+                          // Mark transferred notifications as read
+                          await fetch(
+                            `${API_BASE_URL}/api/notifications/mark-read`,
+                            {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              credentials: "include",
+                              body: JSON.stringify({
+                                link: "/transferred",
+                                user_id: user?.user_id,
+                              }),
+                            }
+                          );
+                          // Clear local badge until counts change
+                          setClearedTransferred(true);
+                          // Also clear the unread transferred count locally
+                          setUnreadTransferredCount(0);
+                        } catch (err) {
+                          console.error(
+                            "Failed to mark transferred notifications read on navigation",
+                            err
+                          );
+                        }
+                        // Trigger a refresh of counts if available
+                        try {
+                          refetch && refetch();
+                        } catch (e) {
+                          /* ignore */
+                        }
+                      }
+                    }}
                   >
                     <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
                     {isCollapsed &&

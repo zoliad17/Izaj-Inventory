@@ -1536,29 +1536,29 @@ function OptimizedAllStock() {
                       </select>
                     </div>
                   </div>
-                  <div className="w-full overflow-hidden">
-                    <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto break-words">
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full bg-white dark:bg-gray-900/70 shadow-lg rounded-xl overflow-hidden table-auto min-w-[500px] sm:min-w-[640px]">
                       <thead>
                         <tr className="bg-blue-50 dark:bg-blue-900/20 text-lg">
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Product ID
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Product Name
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Old Quantity
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Added Quantity
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             New / Updated Quantity
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Transfer Type
                           </th>
-                          <th className="px-4 py-3 text-left font-bold text-gray-900 dark:text-gray-100">
+                          <th className="px-3 py-2 text-left font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                             Arrival Date
                           </th>
                         </tr>
@@ -1619,49 +1619,69 @@ function OptimizedAllStock() {
                                   key={product.id}
                                   className="hover:bg-gray-50 dark:hover:bg-neutral-700"
                                 >
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-mono">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 font-mono">
                                     {`${
                                       product.branch_id || branchId || "N/A"
                                     }-${String(product.id).padStart(4, "0")}`}
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="flex flex-col max-w-[120px] sm:max-w-[200px] md:max-w-none">
+                                      <span className="font-medium truncate">
                                         {product.name}
                                       </span>
-                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                         {categoryName}
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 font-semibold">
                                     {oldQuantity} units
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 font-semibold">
                                     +{addedQuantity} units
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 font-semibold">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 font-semibold">
                                     {newQuantity} units
                                   </td>
-                                  <td className="px-4 py-3 text-sm">
+                                  <td className="px-3 py-2 text-sm">
                                     <span
-                                      className={`px-3 py-1 rounded-full text-xs font-medium ${changeTypeBadge}`}
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${changeTypeBadge} whitespace-nowrap`}
                                     >
-                                      {changeType}
+                                      <span className="hidden sm:inline">
+                                        {changeType}
+                                      </span>
+                                      <span className="sm:hidden">
+                                        {product.transferTag ===
+                                        "New Item from Transfer"
+                                          ? "New"
+                                          : "Update"}
+                                      </span>
                                     </span>
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                                    {product.transferTagAppliedAt
-                                      ? new Date(
-                                          product.transferTagAppliedAt
-                                        ).toLocaleString("en-US", {
-                                          year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })
-                                      : "N/A"}
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <div className="hidden sm:block">
+                                      {product.transferTagAppliedAt
+                                        ? new Date(
+                                            product.transferTagAppliedAt
+                                          ).toLocaleString("en-US", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })
+                                        : "N/A"}
+                                    </div>
+                                    <div className="sm:hidden">
+                                      {product.transferTagAppliedAt
+                                        ? new Date(
+                                            product.transferTagAppliedAt
+                                          ).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                          })
+                                        : "N/A"}
+                                    </div>
                                   </td>
                                 </tr>
                               );
