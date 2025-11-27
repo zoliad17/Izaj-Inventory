@@ -1210,13 +1210,29 @@ app.post(
         .eq("user_id", requestTo)
         .single();
 
+      // Fetch product details for email (reuse productIds from above)
+      const { data: productDetails } = await supabase
+        .from("centralized_product")
+        .select("id, product_name")
+        .in("id", productIds);
+
+      const emailProductMap = new Map(
+        (productDetails || []).map((p) => [p.id, p.product_name])
+      );
+
+      const emailItems = items.map((item) => ({
+        product_name: emailProductMap.get(item.product_id) || "Unknown Product",
+        quantity: item.quantity,
+      }));
+
       // Send email notification
       if (recipientData?.email) {
         const emailResult = await sendRequestNotificationEmail(
           recipientData.email,
           recipientData.name,
           requesterData?.name || "Unknown",
-          requestData.request_id
+          requestData.request_id,
+          emailItems
         );
         console.log("Request notification email result:", emailResult);
       }
@@ -1739,6 +1755,22 @@ app.put(
         .eq("user_id", reviewedBy)
         .single();
 
+      // Fetch product details for email
+      const emailProductIds = requestData.items.map((item) => item.product_id);
+      const { data: productDetails } = await supabase
+        .from("centralized_product")
+        .select("id, product_name")
+        .in("id", emailProductIds);
+
+      const emailProductMap = new Map(
+        (productDetails || []).map((p) => [p.id, p.product_name])
+      );
+
+      const emailItems = requestData.items.map((item) => ({
+        product_name: emailProductMap.get(item.product_id) || "Unknown Product",
+        quantity: item.quantity,
+      }));
+
       // Send email notification
       if (requesterData?.email) {
         const emailResult = await sendRequestStatusEmail(
@@ -1747,7 +1779,8 @@ app.put(
           action,
           requestId,
           reviewerData?.name || "Unknown",
-          notes
+          notes,
+          emailItems
         );
         console.log("Request status email result:", emailResult);
       }
