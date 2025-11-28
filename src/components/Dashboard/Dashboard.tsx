@@ -103,12 +103,15 @@ function Dashboard() {
     null
   );
   const [branches, setBranches] = React.useState<Branch[]>([]);
-  const [analyticsServerAvailable, setAnalyticsServerAvailable] = React.useState<boolean | null>(null);
+  const [analyticsServerAvailable, setAnalyticsServerAvailable] =
+    React.useState<boolean | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
 
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
-    branchId: isSuperAdmin() ? (selectedBranch || undefined) : (currentUser?.branch_id || undefined),
+    branchId: isSuperAdmin()
+      ? selectedBranch || undefined
+      : currentUser?.branch_id || undefined,
     refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
     enabled: true,
   });
@@ -164,15 +167,18 @@ function Dashboard() {
       }
     } catch (err: any) {
       // Check if it's a connection error
-      const isConnectionError = err?.message?.includes("Failed to fetch") || 
-                                err?.message?.includes("ERR_CONNECTION_REFUSED") ||
-                                err?.name === "TypeError";
-      
+      const isConnectionError =
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+        err?.name === "TypeError";
+
       if (isConnectionError) {
         setAnalyticsServerAvailable(false);
         // Only log once per session to reduce console noise
         if (analyticsServerAvailable === null) {
-          console.warn("Analytics server is not available. Please start the Python analytics server on port 5001.");
+          console.warn(
+            "Analytics server is not available. Please start the Python analytics server on port 5001."
+          );
         }
       } else {
         console.error("Error fetching top products:", err);
@@ -228,10 +234,11 @@ function Dashboard() {
       }
     } catch (err: any) {
       // Check if it's a connection error
-      const isConnectionError = err?.message?.includes("Failed to fetch") || 
-                                err?.message?.includes("ERR_CONNECTION_REFUSED") ||
-                                err?.name === "TypeError";
-      
+      const isConnectionError =
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+        err?.name === "TypeError";
+
       if (isConnectionError) {
         setAnalyticsServerAvailable(false);
         // Don't log again if we already logged it in fetchTopProducts
@@ -335,14 +342,14 @@ function Dashboard() {
       <div className="mt-2 mb-8">
         {/* Welcome Message */}
 
-        <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8">
+        {/* <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Welcome back, {User.name || "User"} 👋
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Here’s a quick overview of your dashboard today.
           </p>
-        </div>
+        </div> */}
         {isSuperAdmin() ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Branches Card */}
@@ -434,7 +441,7 @@ function Dashboard() {
             </div>
 
             {/* Categories Card - Super Admin Only */}
-            <div 
+            <div
               onClick={() => setIsCategoryModalOpen(true)}
               className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative cursor-pointer"
             >
@@ -709,16 +716,21 @@ function Dashboard() {
       {analyticsServerAvailable === false && (
         <div className="mt-6 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" size={20} />
+            <AlertCircle
+              className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0"
+              size={20}
+            />
             <div className="flex-1">
               <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
                 Analytics Server Unavailable
               </h4>
               <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                The analytics server is not running. To enable analytics features, start the Python analytics server:
+                The analytics server is not running. To enable analytics
+                features, start the Python analytics server:
               </p>
               <code className="mt-2 block text-xs bg-yellow-100 dark:bg-yellow-900/40 px-3 py-2 rounded border border-yellow-200 dark:border-yellow-800">
-                cd analytics && python -m flask --app analytics.app run --port 5001
+                cd analytics && python -m flask --app analytics.app run --port
+                5001
               </code>
             </div>
           </div>
