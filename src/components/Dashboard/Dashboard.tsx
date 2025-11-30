@@ -81,6 +81,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+
 function Dashboard() {
   const { isCollapsed } = useSidebar();
 
@@ -493,7 +494,13 @@ function Dashboard() {
                     </div>
 
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-center">
-                      <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                      <button
+                        className="text-sm cursor-pointer font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate("/notifications");
+                        }}
+                      >
                         View all notifications
                       </button>
                     </div>
