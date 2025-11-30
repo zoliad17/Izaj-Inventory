@@ -1,4 +1,5 @@
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { createPortal } from "react-dom";
 
 import {
   Package,
@@ -7,16 +8,17 @@ import {
   Clock,
   Plus,
   RefreshCw,
-  TrendingUp,
-  ClipboardList,
-  ArrowRight,
+  // TrendingUp,
+  // ClipboardList,
+  // ArrowRight,
   User,
   Building,
   Group,
+  Bell,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
-import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
@@ -107,6 +109,45 @@ function Dashboard() {
     React.useState<boolean | null>(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
 
+  // State for notification panel
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] =
+    React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  // Close notification panel when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationPanelOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Close notification panel when scrolling
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (isNotificationPanelOpen) {
+        setIsNotificationPanelOpen(false);
+      }
+    };
+
+    // Add scroll event listener to window
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      // Clean up event listener
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isNotificationPanelOpen]);
+
   // Fetch dashboard statistics
   const { stats, isLoading, error, refetch } = useDashboardStats({
     branchId: isSuperAdmin()
@@ -116,16 +157,16 @@ function Dashboard() {
     enabled: true,
   });
 
-  // Fetch pending requests count for Branch Manager and Admin
-  const {
-    count: pendingRequestsCount,
-    isLoading: isPendingLoading,
-    error: pendingError,
-  } = usePendingRequestsCount({
-    userId: currentUser?.user_id,
-    refreshInterval: 300000, // Refresh every 5 minutes
-    enabled: isAdmin(),
-  });
+  // Fetch pending requests count for Branch Manager and Admin (currently unused)
+  // const {
+  //   count: pendingRequestsCount,
+  //   isLoading: isPendingLoading,
+  //   error: pendingError,
+  // } = usePendingRequestsCount({
+  //   userId: currentUser?.user_id,
+  //   refreshInterval: 300000, // Refresh every 5 minutes
+  //   enabled: isAdmin(),
+  // });
 
   const PYTHON_BACKEND_URL =
     import.meta.env.VITE_PYTHON_BACKEND_URL || "http://localhost:5001";
@@ -342,14 +383,127 @@ function Dashboard() {
       <div className="mt-2 mb-8">
         {/* Welcome Message */}
 
-        {/* <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {User.name || "User"} 👋
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Here’s a quick overview of your dashboard today.
-          </p>
-        </div> */}
+        <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8 relative">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Welcome back, {currentUser?.name || "User"} 👋
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Here's a quick overview of your dashboard today.
+              </p>
+            </div>
+            {/* Notification Icon with Badge */}
+            <div className="relative">
+              <button
+                ref={buttonRef}
+                onClick={() =>
+                  setIsNotificationPanelOpen(!isNotificationPanelOpen)
+                }
+                className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                {/* Badge Indicator */}
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                  3
+                </span>
+              </button>
+              {/* Notification Popover Panel */}
+              {isNotificationPanelOpen &&
+                createPortal(
+                  <div className="fixed top-14 right-20 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                          Notifications
+                        </h3>
+                        <button
+                          onClick={() => setIsNotificationPanelOpen(false)}
+                          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto">
+                      {/* Static Notification Items */}
+                      <div className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              New product request approved
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Your request for 50 LED Bulbs has been approved
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              2 hours ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Stock transfer completed
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              200 units transferred to Main Branch
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              Yesterday
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Low stock alert
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              LED Bulbs stock is running low (15 units
+                              remaining)
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              2 days ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                      <button className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                        View all notifications
+                      </button>
+                    </div>
+                  </div>,
+                  document.body
+                )}
+            </div>
+          </div>
+        </div>
+
         {isSuperAdmin() ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Branches Card */}
@@ -471,7 +625,6 @@ function Dashboard() {
                       size={16}
                     />
                   </button>
-                  <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                 </div>
               </div>
               <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
@@ -489,7 +642,8 @@ function Dashboard() {
         ) : (
           <>
             {/* Row 1: Total Stock / Products / Pending Requests */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {isBranchManager() && (
                 <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                   <div className="flex items-center justify-between">
@@ -552,7 +706,7 @@ function Dashboard() {
                 </div>
               )}
 
-              {isBranchManager() && (
+              {/* {isBranchManager() && (
                 <div
                   onClick={() => navigate("/pending_request")}
                   className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
@@ -622,11 +776,63 @@ function Dashboard() {
                       : "No pending requests"}
                   </p>
                 </div>
+              )} */}
+
+              {(isAdmin() || isBranchManager()) && (
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-tr from-yellow-500/20 to-yellow-700/20 dark:from-yellow-800/30 dark:to-yellow-600/30">
+                      <AlertCircle
+                        className="text-yellow-600 dark:text-yellow-400"
+                        size={22}
+                      />
+                    </div>
+                    <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                      Low Stock
+                    </h5>
+                  </div>
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+                    {isLoading
+                      ? "..."
+                      : error
+                      ? "Error"
+                      : stats?.lowStockCount || "0"}
+                  </h6>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Products with less than 20 units
+                  </p>
+                </div>
+              )}
+
+              {(isAdmin() || isBranchManager()) && (
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-tr from-red-500/20 to-red-700/20 dark:from-red-800/30 dark:to-red-600/30">
+                      <AlertCircle
+                        className="text-red-600 dark:text-red-400"
+                        size={22}
+                      />
+                    </div>
+                    <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                      Out of Stock
+                    </h5>
+                  </div>
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+                    {isLoading
+                      ? "..."
+                      : error
+                      ? "Error"
+                      : stats?.outOfStockCount || "0"}
+                  </h6>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Products with zero units
+                  </p>
+                </div>
               )}
             </div>
 
             {/* Row 2: Low Stock / Out of Stock */}
-            {!isSuperAdmin() && (
+            {/* {!isSuperAdmin() && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
                 {(isAdmin() || isBranchManager()) && (
                   <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
@@ -680,9 +886,9 @@ function Dashboard() {
                   </div>
                 )}
               </div>
-            )}
+            )} */}
 
-            {/* Row 3: Recent Activity */}
+            {/* Row 3: Recent Activity
             <div className="grid grid-cols-1 gap-6 mt-6">
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                 <div className="flex items-center gap-3">
@@ -707,7 +913,7 @@ function Dashboard() {
                   Actions in the last 7 days
                 </p>
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </div>
@@ -1030,7 +1236,7 @@ function Dashboard() {
                 ? "Error loading data"
                 : stats?.lastUpdated
                 ? `Last updated ${new Date(
-                    stats.lastUpdated
+                    stats?.lastUpdated
                   ).toLocaleTimeString()}`
                 : "Last updated 3 mins ago"}
             </span>

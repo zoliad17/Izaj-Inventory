@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 import logo from "@/assets/image/logo.jpg";
 import {
@@ -14,6 +14,7 @@ import {
   Building2,
   Moon,
   Sun,
+  Clock,
   // ShoppingCart,
   Warehouse,
   Book,
@@ -64,13 +65,24 @@ const ROLE_LABELS: Record<number, string> = {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { hasRole } = useRole();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const { isDarkMode, toggleTheme } = useTheme();
+
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Branches will be fetched via API
 
@@ -399,8 +411,16 @@ function Sidebar() {
                   className="w-10 h-10 rounded-full object-cover"
                 />
               )}
-              <div className="ml-3">
-                <div className="text-xl font-bold ">IZAJ-LIGHTING</div>
+              <div className="ml-3 flex flex-col">
+                <div className="text-xl font-bold mb-1">
+                  {userBranch?.location || "IZAJ-LIGHTING"}
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-300" />
+                  <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs font-medium px-2 py-0.5 rounded-full">
+                    Branch Location
+                  </span>
+                </div>
               </div>
             </div>
           ) : (
@@ -453,9 +473,11 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`group flex items-center font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
-                      isCollapsed ? "p-3 justify-center" : "p-3"
-                    }`}
+                    className={`group flex items-center font-medium rounded-lg transition-all duration-300 ease-in-out ${
+                      location.pathname === item.path
+                        ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 shadow-md scale-[1.02] text-blue-700 dark:text-blue-300"
+                        : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] text-gray-700 dark:text-gray-300"
+                    } ${isCollapsed ? "p-3 justify-center" : "p-3"}`}
                     title={item.label}
                     onClick={async () => {
                       // Handle special case for Stock link - clear the transferred badge
@@ -495,7 +517,13 @@ function Sidebar() {
                       }
                     }}
                   >
-                    <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                    <item.icon
+                      className={`h-6 w-6 transition-colors duration-300 ${
+                        location.pathname === item.path
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                      }`}
+                    />
                     {isCollapsed &&
                       item.label === "Notifications" &&
                       notificationsUnread > 0 && (
@@ -504,8 +532,14 @@ function Sidebar() {
                         </span>
                       )}
                     {!isCollapsed && (
-                      <span className="ml-3 whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
-                        <span>{item.label}</span>
+                      <span className="ml-3 whitespace-nowrap transition-colors duration-300 flex items-center">
+                        <span
+                          className={
+                            location.pathname === item.path ? "font-bold" : ""
+                          }
+                        >
+                          {item.label}
+                        </span>
                         {item.label === "Notifications" &&
                           notificationsUnread > 0 && (
                             <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
@@ -644,10 +678,20 @@ function Sidebar() {
                                       /* ignore */
                                     }
                                   }}
-                                  className="group flex items-center px-3 py-2 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] rounded-lg transition-all duration-300 ease-in-out relative"
+                                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out relative ${
+                                    location.pathname === subItem.path
+                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 shadow-sm scale-[1.01] text-blue-700 dark:text-blue-300"
+                                      : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] text-gray-700 dark:text-gray-300"
+                                  }`}
                                 >
                                   <div className="relative flex items-center">
-                                    <subItem.icon className="h-5 w-5 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                                    <subItem.icon
+                                      className={`h-5 w-5 mr-3 transition-colors duration-300 ${
+                                        location.pathname === subItem.path
+                                          ? "text-blue-600 dark:text-blue-400"
+                                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                      }`}
+                                    />
                                     {/* For collapsed state, show badge overlaid on top-right of icon */}
                                     {isCollapsed &&
                                       item.label === "Branch Request" && (
@@ -677,7 +721,13 @@ function Sidebar() {
                                       )}
                                   </div>
                                   {!isCollapsed && (
-                                    <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
+                                    <span
+                                      className={`transition-colors duration-300 flex items-center ${
+                                        location.pathname === subItem.path
+                                          ? "text-blue-600 dark:text-blue-400 font-bold"
+                                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                      }`}
+                                    >
                                       {subItem.label}
                                       {/* Individual count badges for Branch Request sub-items - positioned beside the nav text */}
                                       {item.label === "Branch Request" && (
@@ -752,10 +802,20 @@ function Sidebar() {
                         {user.status || "Active"}
                       </span>
                     </div>
-                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
+                    {/* <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
                       <MapPin className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                       <span className="truncate">
                         {userBranch?.location || "Unknown Branch"}
+                      </span>
+                    </div> */}
+                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400 mt-1">
+                      <Clock className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
+                      <span className="truncate">
+                        {currentTime.toLocaleDateString()}{" "}
+                        {currentTime.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
                   </div>

@@ -112,7 +112,7 @@ function Login() {
               Professional Inventory Management Solution
             </p>
 
-            <div className="mt-6 p-4 bg-white/10 dark:bg-gray-700/20 rounded-xl backdrop-blur-sm border border-white/20 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.1)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.3),inset_-2px_-2px_5px_rgba(60,60,60,0.1)]">
+            {/* <div className="mt-6 p-4 bg-white/10 dark:bg-gray-700/20 rounded-xl backdrop-blur-sm border border-white/20 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.1)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.3),inset_-2px_-2px_5px_rgba(60,60,60,0.1)]">
               <p className="text-white/90 dark:text-gray-100 text-center italic text-sm">
                 "Efficiency is doing things right; effectiveness is doing the
                 right things."
@@ -120,7 +120,7 @@ function Login() {
               <p className="text-amber-300 text-center text-xs mt-2">
                 - Peter Drucker
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
 
