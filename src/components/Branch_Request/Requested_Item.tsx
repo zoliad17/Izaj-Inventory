@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -84,18 +85,29 @@ export default function Requested_Item() {
     const markNotificationsRead = async () => {
       if (!currentUser?.user_id) return;
       try {
-        const response = await fetch(`${API_BASE_URL}/api/notifications/mark-read`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ link: "/requested_item", user_id: currentUser.user_id }),
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/notifications/mark-read`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              link: "/requested_item",
+              user_id: currentUser.user_id,
+            }),
+          }
+        );
         if (!response.ok) {
-          throw new Error(`Failed to mark notifications as read: ${response.statusText}`);
+          throw new Error(
+            `Failed to mark notifications as read: ${response.statusText}`
+          );
         }
         console.log("Successfully marked requested_item notifications as read");
       } catch (err) {
-        console.error("Failed to mark requested item notifications as read:", err);
+        console.error(
+          "Failed to mark requested item notifications as read:",
+          err
+        );
       }
     };
     if (currentUser?.user_id) {
@@ -464,6 +476,18 @@ export default function Requested_Item() {
                               <Eye className="h-5 w-5" />
                               View Details
                             </button>
+
+                            <button
+                              className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-transparent text-base font-bold
+                                 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                                 dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                                 hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                                 dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                                 text-red-600 dark:text-red-400 transition-all duration-300"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                              Delete Request
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -714,7 +738,7 @@ export default function Requested_Item() {
                   <button
                     onClick={async () => {
                       if (isMarkingArrived) return; // Prevent multiple clicks
-                      
+
                       try {
                         setIsMarkingArrived(true);
                         const response = await fetch(

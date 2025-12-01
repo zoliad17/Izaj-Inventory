@@ -263,7 +263,7 @@ function Sidebar() {
       path: "/dashboard",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
-    // Notifications page removed — we rely on the sidebar badge instead
+
     {
       icon: MapPin,
       label: "Branch",
