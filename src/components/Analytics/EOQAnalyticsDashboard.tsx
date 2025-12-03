@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -13,6 +14,7 @@ import {
   ComposedChart,
 } from "recharts";
 import {
+  ArrowLeft,
   Package,
   FileUp,
   CheckCircle,
@@ -101,6 +103,7 @@ interface StockDeductionModalState {
 }
 
 const EOQAnalyticsDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { isCollapsed } = useSidebar();
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
@@ -271,11 +274,21 @@ const EOQAnalyticsDashboard: React.FC = () => {
           await new Promise((resolve) => setTimeout(resolve, 800));
           await calculateEOQWithData(result.metrics.annual_demand);
         } else {
+          // Check if this is a negative stock error
+          const isNegativeStockError =
+            result.error &&
+            result.error.includes("Failed analyzing and importing sales data");
           setModal({
             isOpen: true,
             status: "error",
-            message: "Failed to import sales data",
-            details: result.error || "Unknown error occurred",
+            message: isNegativeStockError
+              ? "Stock Validation Failed ⚠️"
+              : "Failed to import sales data",
+            details: isNegativeStockError
+              ? `Cannot import sales data: ${
+                  result.details || result.error
+                }\n\nPlease verify that your sales quantities do not exceed current inventory levels.`
+              : result.error || "Unknown error occurred",
           });
         }
       } catch (error) {
@@ -759,12 +772,14 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                     <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
                   </div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white text-center">
                     {modal.message}
                   </h2>
-                  <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
-                    {modal.details}
-                  </p>
+                  <div className="w-full max-h-48 overflow-y-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <p className="text-sm text-slate-600 dark:text-gray-300 whitespace-pre-wrap break-words">
+                      {modal.details}
+                    </p>
+                  </div>
                   <button
                     onClick={() =>
                       setModal((prev) => ({ ...prev, isOpen: false }))
@@ -933,14 +948,23 @@ const EOQAnalyticsDashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
-              EOQ Analytics Dashboard
-            </h1>
-            <p className="text-base text-slate-600 dark:text-gray-400 mt-1">
-              Predictive Analytics for Inventory Optimization
-            </p>
+        <div className="flex flex-row justify-between items-center gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+            >
+              <ArrowLeft size={26} />
+            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Calculator className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                EOQ Analytics Dashboard
+              </h1>
+              <p className="text-base text-slate-600 dark:text-gray-400 mt-1">
+                Predictive Analytics for Inventory Optimization
+              </p>
+            </div>
           </div>
         </div>
 

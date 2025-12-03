@@ -65,6 +65,9 @@ def deduct_stock_from_sales(tuples: list, conn):
     
     tuples: list of tuples in format (product_id, branch_id, quantity_sold, ...)
     conn: psycopg2 connection object
+    
+    Validates that no product's quantity would go negative before making any updates.
+    Raises ValueError if any deduction would result in negative stock.
     """
     if not tuples:
         return
@@ -87,6 +90,46 @@ def deduct_stock_from_sales(tuples: list, conn):
             if key not in stock_deductions:
                 stock_deductions[key] = 0
             stock_deductions[key] += quantity_sold
+        
+        # VALIDATION: Check that no product would go negative
+        negative_products = []
+        for (product_id, branch_id), total_qty in stock_deductions.items():
+            check_sql = '''
+            SELECT quantity FROM public.centralized_product
+            WHERE id = %s AND branch_id = %s
+            '''
+            cur.execute(check_sql, (product_id, branch_id))
+            result = cur.fetchone()
+            
+            if result:
+                current_qty = result[0]
+                if current_qty - total_qty < 0:
+                    negative_products.append({
+                        'product_id': product_id,
+                        'branch_id': branch_id,
+                        'current_quantity': current_qty,
+                        'quantity_to_deduct': total_qty,
+                        'would_result_in': current_qty - total_qty
+                    })
+            else:
+                # Product not found
+                negative_products.append({
+                    'product_id': product_id,
+                    'branch_id': branch_id,
+                    'current_quantity': 0,
+                    'quantity_to_deduct': total_qty,
+                    'would_result_in': -total_qty,
+                    'error': 'Product not found'
+                })
+        
+        if negative_products:
+            error_msg = f'Stock deduction would result in negative quantities for {len(negative_products)} product(s): '
+            details = []
+            for p in negative_products:
+                details.append(f"Product {p['product_id']} (Branch {p['branch_id']}): {p['current_quantity']} - {p['quantity_to_deduct']} = {p['would_result_in']}")
+            error_msg += '; '.join(details)
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
         # Update stock for each product/branch combination
         for (product_id, branch_id), total_qty in stock_deductions.items():
@@ -212,17 +255,62 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                             stock_deductions[key] = 0
                         stock_deductions[key] += quantity_sold
                     
-                    # Update stock via Supabase using RPC or direct SQL update
+                    # VALIDATION: Check that no product would go negative before updating
+                    negative_products = []
                     for (product_id, branch_id), total_qty in stock_deductions.items():
                         try:
-                            # Try using Supabase's raw SQL execution or direct update
-                            # First, get current quantity
+                            resp = _supabase_client.table('centralized_product').select('quantity').eq('id', product_id).eq('branch_id', branch_id).execute()
+                            if resp.data:
+                                current_qty = resp.data[0].get('quantity', 0)
+                                if current_qty - total_qty < 0:
+                                    negative_products.append({
+                                        'product_id': product_id,
+                                        'branch_id': branch_id,
+                                        'current_quantity': current_qty,
+                                        'quantity_to_deduct': total_qty,
+                                        'would_result_in': current_qty - total_qty
+                                    })
+                            else:
+                                # Product not found - also invalid
+                                negative_products.append({
+                                    'product_id': product_id,
+                                    'branch_id': branch_id,
+                                    'current_quantity': 0,
+                                    'quantity_to_deduct': total_qty,
+                                    'would_result_in': -total_qty,
+                                    'error': 'Product not found'
+                                })
+                        except Exception as e:
+                            logger.error(f'Error checking stock for product {product_id} branch {branch_id}: {str(e)}')
+                            raise
+                    
+                    if negative_products:
+                        error_msg = f'Stock deduction would result in negative quantities for {len(negative_products)} product(s): '
+                        details = []
+                        for p in negative_products:
+                            details.append(f"Product {p['product_id']} (Branch {p['branch_id']}): {p['current_quantity']} - {p['quantity_to_deduct']} = {p['would_result_in']}")
+                        error_msg += '; '.join(details)
+                        logger.error(error_msg)
+                        # Delete the inserted sales rows since we can't deduct stock
+                        try:
+                            for item in payload:
+                                product_id = item.get('product_id')
+                                branch_id = item.get('branch_id')
+                                quantity_sold = item.get('quantity_sold')
+                                transaction_date = item.get('transaction_date')
+                                if product_id and quantity_sold and transaction_date:
+                                    _supabase_client.table('sales').delete().eq('product_id', product_id).eq('branch_id', branch_id).eq('quantity_sold', quantity_sold).eq('transaction_date', transaction_date).execute()
+                        except Exception as e:
+                            logger.error(f'Error cleaning up inserted sales: {str(e)}')
+                        raise ValueError(error_msg)
+                    
+                    # Update stock via Supabase - all validations passed
+                    for (product_id, branch_id), total_qty in stock_deductions.items():
+                        try:
                             resp = _supabase_client.table('centralized_product').select('quantity').eq('id', product_id).eq('branch_id', branch_id).execute()
                             if resp.data:
                                 current_qty = resp.data[0].get('quantity', 0)
                                 new_qty = current_qty - total_qty
-                                # Ensure we don't go negative
-                                new_qty = max(0, new_qty)
                                 
                                 # Update via Supabase
                                 update_resp = _supabase_client.table('centralized_product').update({
@@ -235,9 +323,10 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                                 logger.warning(f'Product {product_id} branch {branch_id} not found in centralized_product')
                         except Exception as e:
                             logger.error(f'Error deducting stock for product {product_id} branch {branch_id}: {str(e)}')
-                            # Continue with other deductions
+                            raise
                 except Exception as e:
                     logger.error(f'Error in stock deduction batch: {str(e)}', exc_info=True)
+                    raise
             
             return inserted
         except Exception:

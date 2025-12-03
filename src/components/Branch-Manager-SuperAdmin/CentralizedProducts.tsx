@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Package,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -358,6 +359,11 @@ function CentralizedProducts() {
   // Export products to Excel
   const exportToExcel = () => {
     try {
+      if (filteredProducts.length === 0) {
+        toast.error("No products to export");
+        return;
+      }
+
       // Prepare data for export
       const exportData = filteredProducts.map((product) => ({
         "Product ID": product.id,
@@ -433,7 +439,8 @@ function CentralizedProducts() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h5 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h5 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             Centralized Products
           </h5>
         </div>

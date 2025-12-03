@@ -31,7 +31,7 @@ import UnifiedProductRequest from "./components/Branch/UnifiedProductRequest";
 import ProductTable from "./components/Branch/ProductTable";
 import AddCategoryPage from "./components/Branch-Manager-SuperAdmin/AddCategoryPage";
 import AuditLogsPage from "./components/AuditLogs/AuditLogsPage";
-import UserAuditLogsPage from "./components/AuditLogs/UserAuditLogsPage";
+// import UserAuditLogsPage from "./components/AuditLogs/UserAuditLogsPage";
 import SessionWarning from "./components/SessionWarning";
 import {
   ThemeProvider,
@@ -41,6 +41,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { RouteRoles } from "./types";
 import UserAuditLogsDetailView from "./components/AuditLogs/UserAuditLogsDetailView";
 import EOQAnalyticsDashboard from "./components/Analytics/EOQAnalyticsDashboard";
+import NotificationsPage from "./components/Notifications/NotificationsPage";
 
 // Define props for Layout component
 interface LayoutProps {
@@ -53,7 +54,7 @@ const routeRoles: RouteRoles = {
   branchLocation: ["Admin", "Branch Manager", "Super Admin"],
   branchProducts: ["Admin", "Branch Manager", "Super Admin"],
   branchCategory: ["Admin", "Branch Manager", "Super Admin"],
-  add_category: ["Admin", "Branch Manager", "Super Admin"],
+  add_category: ["Super Admin"],
   add_branch: ["Admin", "Super Admin"],
   view_product: ["Admin", "Branch Manager", "Super Admin"],
   send_request: ["Admin", "Branch Manager", "Super Admin"],
@@ -70,6 +71,7 @@ const routeRoles: RouteRoles = {
   auditlogs: ["Super Admin", "Branch Manager"],
   UserAuditLogDetails: ["Admin", "Branch Manager", "Super Admin"],
   analytics: ["Admin", "Branch Manager", "Super Admin"],
+  notifications: ["Admin", "Branch Manager", "Super Admin"],
 };
 
 // Layout component that includes the Sidebar
@@ -308,6 +310,18 @@ const App: React.FC = () => {
                 }
               />
 
+              {/* Notifications Page */}
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute allowedRoles={routeRoles.notifications}>
+                    <Layout>
+                      <NotificationsPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Analytics */}
               <Route
                 path="/analytics"
@@ -319,8 +333,6 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
-
-              {/* Notifications page removed — notifications are surfaced via sidebar badges */}
 
               {/* Public Route: Unauthorized Page */}
               <Route path="/unauthorized" element={<Unauthorized />} />

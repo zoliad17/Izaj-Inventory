@@ -67,6 +67,44 @@ const createEmailTemplate = (
   `;
 };
 
+// --- HTML Email Template Without Button (for displaying all info) ---
+const createEmailTemplateNoButton = (
+  title,
+  userName,
+  content,
+  details = ""
+) => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+        <h1 style="color: #333; margin: 0;">${title}</h1>
+      </div>
+      
+      <div style="padding: 20px; background-color: white;">
+        <h2 style="color: #333;">Hello ${userName},</h2>
+        
+        <div style="color: #666; line-height: 1.6;">
+          ${content}
+        </div>
+        
+        ${details ? `<div style="margin-top: 20px;">${details}</div>` : ""}
+        
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        
+        <p style="color: #999; font-size: 12px;">
+          You can view more details in your Izaj Inventory application.
+        </p>
+      </div>
+      
+      <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+        <p style="color: #666; margin: 0; font-size: 12px;">
+          © 2024 Izaj Inventory. All rights reserved.
+        </p>
+      </div>
+    </div>
+  `;
+};
+
 // --- Frontend link builder (supports custom schemes) ---
 const FRONTEND_BASE =
   process.env.FRONTEND_URL ||
@@ -149,17 +187,54 @@ const sendRequestNotificationEmail = async (
   userEmail,
   userName,
   requesterName,
-  requestId
+  requestId,
+  items = []
 ) => {
   try {
-    const html = createEmailTemplate(
+    let itemsDetails = "";
+    if (items && items.length > 0) {
+      const itemsList = items
+        .map(
+          (item) => `
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.product_name || "Unknown Product"}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 0}</td>
+          </tr>`
+        )
+        .join("");
+      
+      itemsDetails = `
+        <div style="margin-top: 20px;">
+          <h3 style="color: #333; margin-bottom: 10px;">Requested Items:</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f8f9fa;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product Name</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+          <p style="margin-top: 10px; color: #666; font-weight: bold;">
+            Total Items: ${items.length} | Total Quantity: ${items.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+          </p>
+        </div>
+      `;
+    }
+
+    const content = `
+      <p><strong>${requesterName}</strong> has sent you a new product request.</p>
+      <p><strong>Request ID:</strong> ${requestId}</p>
+      <p style="margin-top: 15px;">Please review and respond to this request in your inventory system as soon as possible to maintain efficient inventory management.</p>
+    `;
+
+    const html = createEmailTemplateNoButton(
       "New Product Request",
       userName,
-      `${requesterName} has sent you a new product request (Request ID: ${requestId}). Please review and respond to this request in your inventory system.`,
-      "View Request",
-      buildFrontendLink("/pending_request"),
-      "#28a745",
-      "Please respond to this request as soon as possible to maintain efficient inventory management."
+      content,
+      itemsDetails
     );
 
     return await sendEmail(
@@ -179,27 +254,68 @@ const sendRequestStatusEmail = async (
   status,
   requestId,
   reviewerName,
-  notes
+  notes,
+  items = []
 ) => {
   try {
     const isApproved = status === "approved";
     const statusText = isApproved ? "approved" : "denied";
-    const buttonColor = isApproved ? "#28a745" : "#dc3545";
+    const statusColor = isApproved ? "#28a745" : "#dc3545";
 
-    const html = createEmailTemplate(
+    let itemsDetails = "";
+    if (items && items.length > 0) {
+      const itemsList = items
+        .map(
+          (item) => `
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.product_name || "Unknown Product"}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity || 0}</td>
+          </tr>`
+        )
+        .join("");
+      
+      itemsDetails = `
+        <div style="margin-top: 20px;">
+          <h3 style="color: #333; margin-bottom: 10px;">Requested Items:</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f8f9fa;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product Name</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Quantity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsList}
+            </tbody>
+          </table>
+          <p style="margin-top: 10px; color: #666; font-weight: bold;">
+            Total Items: ${items.length} | Total Quantity: ${items.reduce((sum, item) => sum + (item.quantity || 0), 0)}
+          </p>
+        </div>
+      `;
+    }
+
+    const content = `
+      <p>Your product request has been <strong style="color: ${statusColor};">${statusText.toUpperCase()}</strong>.</p>
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        <p style="margin: 5px 0;"><strong>Request ID:</strong> ${requestId}</p>
+        <p style="margin: 5px 0;"><strong>Reviewed By:</strong> ${reviewerName}</p>
+        ${notes ? `<p style="margin: 5px 0;"><strong>Notes:</strong> ${notes}</p>` : ""}
+      </div>
+      <p style="margin-top: 15px;">
+        ${isApproved
+          ? "The requested products will be processed for transfer."
+          : "You may submit a new request if needed."}
+      </p>
+    `;
+
+    const html = createEmailTemplateNoButton(
       `Product Request ${
         statusText.charAt(0).toUpperCase() + statusText.slice(1)
       }`,
       userName,
-      `Your product request (Request ID: ${requestId}) has been ${statusText} by ${reviewerName}.${
-        notes ? ` Notes: ${notes}` : ""
-      }`,
-      "View Request",
-      buildFrontendLink("/requested_item"),
-      buttonColor,
-      isApproved
-        ? "The requested products will be processed for transfer."
-        : "You may submit a new request if needed."
+      content,
+      itemsDetails
     );
 
     return await sendEmail(
@@ -223,28 +339,60 @@ const sendTransferArrivalEmail = async (
   changes = []
 ) => {
   try {
-    const changeDetails =
-      changes.length > 0
-        ? `<ul style="color: #666; line-height: 1.6; padding-left: 20px;">
-            ${changes
-              .map(
-                (change) => `
-                <li>
-                  <strong>${change.product_name}</strong> - ${change.tag} (+${change.added_quantity})
-                </li>`
-              )
-              .join("")}
-          </ul>`
-        : "";
+    let changeDetails = "";
+    if (changes && changes.length > 0) {
+      const changesList = changes
+        .map(
+          (change) => `
+          <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${change.product_name || "Unknown Product"}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee;">${change.tag || "N/A"}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${change.previous_quantity || 0}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; color: #28a745; font-weight: bold;">+${change.added_quantity || 0}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold;">${change.new_quantity || 0}</td>
+          </tr>`
+        )
+        .join("");
+      
+      changeDetails = `
+        <div style="margin-top: 20px;">
+          <h3 style="color: #333; margin-bottom: 10px;">Inventory Changes:</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background-color: #f8f9fa;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Product Name</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Previous Qty</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Added</th>
+                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">New Qty</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${changesList}
+            </tbody>
+          </table>
+          <p style="margin-top: 10px; color: #666; font-weight: bold;">
+            Total Items Transferred: ${changes.length} | Total Quantity: ${changes.reduce((sum, change) => sum + (change.added_quantity || 0), 0)}
+          </p>
+        </div>
+      `;
+    }
 
-    const html = createEmailTemplate(
+    const content = `
+      <p>Branch <strong>${receivingBranch}</strong> has confirmed that request #${requestId} arrived and has been merged into their local inventory.</p>
+      <div style="background-color: #f0fdf4; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #0d9488;">
+        <p style="margin: 5px 0;"><strong>Request ID:</strong> ${requestId}</p>
+        <p style="margin: 5px 0;"><strong>Receiving Branch:</strong> ${receivingBranch}</p>
+        <p style="margin: 5px 0;"><strong>Status:</strong> Transfer Completed</p>
+      </div>
+      <p style="margin-top: 15px;">You can review the updated request details anytime inside the application.</p>
+    `;
+
+    const html = createEmailTemplateNoButton(
       "Transfer Received",
       userName,
-      `Branch ${receivingBranch} has confirmed that request #${requestId} arrived and has been merged into their local inventory.${changeDetails}`,
-      "View Request",
-      buildFrontendLink("/pending_request"),
-      "#0d9488",
-      "You can review the updated request details anytime inside the application."
+      content,
+      changeDetails
     );
 
     return await sendEmail(

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "./SidebarContext";
 import logo from "@/assets/image/logo.jpg";
 import {
@@ -14,11 +14,12 @@ import {
   Building2,
   Moon,
   Sun,
+  Clock,
   // ShoppingCart,
   Warehouse,
   Book,
   // Coins,
-  Rotate3D,
+  // Rotate3D,
   Building2Icon,
   BarChart3,
 } from "lucide-react";
@@ -64,13 +65,24 @@ const ROLE_LABELS: Record<number, string> = {
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { hasRole } = useRole();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoHovered, setIsLogoHovered] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const { isDarkMode, toggleTheme } = useTheme();
+
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Branches will be fetched via API
 
@@ -120,6 +132,7 @@ function Sidebar() {
   const { unreadCount: notificationsUnread } = useNotifications({
     pollInterval: 30000,
     realtime: true,
+    userId: user?.user_id || null,
   });
 
   // Local flag to clear the transferred badge when the user opens the Transferred tab
@@ -133,6 +146,7 @@ function Sidebar() {
 
   const [clearedRequested, setClearedRequested] = useState(false);
   const prevRequestedRef = useRef<number>(requestedCount);
+  const [unreadRequestedCount, setUnreadRequestedCount] = useState<number>(0);
 
   // Compute the parent Branch Request badge count based on individual sub-item counts
   // and cleared flags. This lets the parent badge hide immediately when sub-items
@@ -140,13 +154,15 @@ function Sidebar() {
   const displayedBranchBadge =
     (clearedPending ? 0 : pendingCount) +
     (clearedTransferred ? 0 : unreadTransferredCount) +
-    (clearedRequested ? 0 : requestedCount);
+    (clearedRequested ? 0 : unreadRequestedCount);
 
   const fetchUnreadTransferred = useCallback(async () => {
     if (!user?.user_id) return;
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications/unread/${user.user_id}?link=/transferred`,
+        `${API_BASE_URL}/api/notifications/unread/${
+          user.user_id
+        }?link=/transferred&user_id=${encodeURIComponent(user.user_id)}`,
         { credentials: "include" }
       );
       if (!res.ok) {
@@ -156,6 +172,25 @@ function Sidebar() {
       setUnreadTransferredCount(json.count || 0);
     } catch (err) {
       console.error("Error fetching unread transferred notifications:", err);
+    }
+  }, [user?.user_id]);
+
+  const fetchUnreadRequested = useCallback(async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/notifications/unread/${
+          user.user_id
+        }?link=/requested_item&user_id=${encodeURIComponent(user.user_id)}`,
+        { credentials: "include" }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch unread requested notifications");
+      }
+      const json = await res.json();
+      setUnreadRequestedCount(json.count || 0);
+    } catch (err) {
+      console.error("Error fetching unread requested notifications:", err);
     }
   }, [user?.user_id]);
 
@@ -176,16 +211,25 @@ function Sidebar() {
   }, [pendingCount]);
 
   useEffect(() => {
-    if (requestedCount !== prevRequestedRef.current) {
+    if (unreadRequestedCount !== prevRequestedRef.current) {
       setClearedRequested(false);
-      prevRequestedRef.current = requestedCount;
+      prevRequestedRef.current = unreadRequestedCount;
     }
-  }, [requestedCount]);
+  }, [unreadRequestedCount]);
 
-  // Fetch unread transferred notifications on mount and when user changes
+  // Fetch unread transferred and requested notifications on mount and when user changes
   useEffect(() => {
     fetchUnreadTransferred();
-  }, [fetchUnreadTransferred]);
+    fetchUnreadRequested();
+
+    // Set up periodic refresh for unread counts (every 30 seconds)
+    const interval = setInterval(() => {
+      fetchUnreadTransferred();
+      fetchUnreadRequested();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchUnreadTransferred, fetchUnreadRequested]);
 
   const handleLogout = () => {
     logout();
@@ -204,7 +248,7 @@ function Sidebar() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ link }),
+        body: JSON.stringify({ link, user_id: user.user_id }),
       });
     } catch (err) {
       console.error(`Failed to mark notifications for ${link} as read`, err);
@@ -219,7 +263,7 @@ function Sidebar() {
       path: "/dashboard",
       allowedRoles: ["Admin", "Branch Manager", "Super Admin"],
     },
-    // Notifications page removed — we rely on the sidebar badge instead
+
     {
       icon: MapPin,
       label: "Branch",
@@ -239,12 +283,12 @@ function Sidebar() {
           path: "/pending_request",
           allowedRoles: ["Branch Manager"],
         },
-        {
-          icon: Rotate3D,
-          label: "Transferred",
-          path: "/transferred",
-          allowedRoles: ["Admin", "Branch Manager"],
-        },
+        // {
+        //   icon: Rotate3D,
+        //   label: "Transferred",
+        //   path: "/transferred",
+        //   allowedRoles: ["Admin", "Branch Manager"],
+        // },
         {
           icon: ArrowRightLeft,
           label: "Requested Item",
@@ -367,8 +411,16 @@ function Sidebar() {
                   className="w-10 h-10 rounded-full object-cover"
                 />
               )}
-              <div className="ml-3">
-                <div className="text-xl font-bold ">IZAJ-LIGHTING</div>
+              <div className="ml-3 flex flex-col">
+                <div className="text-xl font-bold mb-1">
+                  {userBranch?.location || "IZAJ-LIGHTING"}
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-300" />
+                  <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs font-medium px-2 py-0.5 rounded-full">
+                    Branch Location
+                  </span>
+                </div>
               </div>
             </div>
           ) : (
@@ -421,12 +473,57 @@ function Sidebar() {
                   // Regular navigation item
                   <Link
                     to={item.path}
-                    className={`group flex items-center font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] rounded-lg transition-all duration-300 ease-in-out ${
-                      isCollapsed ? "p-3 justify-center" : "p-3"
-                    }`}
+                    className={`group flex items-center font-medium rounded-lg transition-all duration-300 ease-in-out ${
+                      location.pathname === item.path
+                        ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 shadow-md scale-[1.02] text-blue-700 dark:text-blue-300"
+                        : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-md hover:scale-[1.02] text-gray-700 dark:text-gray-300"
+                    } ${isCollapsed ? "p-3 justify-center" : "p-3"}`}
                     title={item.label}
+                    onClick={async () => {
+                      // Handle special case for Stock link - clear the transferred badge
+                      if (item.label === "Stock") {
+                        try {
+                          // Mark transferred notifications as read
+                          await fetch(
+                            `${API_BASE_URL}/api/notifications/mark-read`,
+                            {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              credentials: "include",
+                              body: JSON.stringify({
+                                link: "/transferred",
+                                user_id: user?.user_id,
+                              }),
+                            }
+                          );
+                          // Clear local badge until counts change
+                          setClearedTransferred(true);
+                          // Also clear the unread transferred count locally
+                          setUnreadTransferredCount(0);
+                        } catch (err) {
+                          console.error(
+                            "Failed to mark transferred notifications read on navigation",
+                            err
+                          );
+                        }
+                        // Trigger a refresh of counts if available
+                        try {
+                          refetch && refetch();
+                        } catch (e) {
+                          /* ignore */
+                        }
+                      }
+                    }}
                   >
-                    <item.icon className="h-6 w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                    <item.icon
+                      className={`h-6 w-6 transition-colors duration-300 ${
+                        location.pathname === item.path
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                      }`}
+                    />
                     {isCollapsed &&
                       item.label === "Notifications" &&
                       notificationsUnread > 0 && (
@@ -435,12 +532,25 @@ function Sidebar() {
                         </span>
                       )}
                     {!isCollapsed && (
-                      <span className="ml-3 whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
-                        <span>{item.label}</span>
+                      <span className="ml-3 whitespace-nowrap transition-colors duration-300 flex items-center">
+                        <span
+                          className={
+                            location.pathname === item.path ? "font-bold" : ""
+                          }
+                        >
+                          {item.label}
+                        </span>
                         {item.label === "Notifications" &&
                           notificationsUnread > 0 && (
                             <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
                               {notificationsUnread}
+                            </span>
+                          )}
+                        {item.label === "Stock" &&
+                          (clearedTransferred ? 0 : unreadTransferredCount) >
+                            0 && (
+                            <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
+                              {clearedTransferred ? 0 : unreadTransferredCount}
                             </span>
                           )}
                       </span>
@@ -528,6 +638,7 @@ function Sidebar() {
                                             credentials: "include",
                                             body: JSON.stringify({
                                               link: "/transferred",
+                                              user_id: user?.user_id,
                                             }),
                                           }
                                         );
@@ -549,6 +660,10 @@ function Sidebar() {
                                           "/requested_item"
                                         );
                                         setClearedRequested(true);
+                                        // Clear the unread requested count locally
+                                        setUnreadRequestedCount(0);
+                                        // Refresh the count
+                                        fetchUnreadRequested();
                                       }
                                     } catch (err) {
                                       console.error(
@@ -563,10 +678,20 @@ function Sidebar() {
                                       /* ignore */
                                     }
                                   }}
-                                  className="group flex items-center px-3 py-2 text-sm font-medium hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] rounded-lg transition-all duration-300 ease-in-out relative"
+                                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ease-in-out relative ${
+                                    location.pathname === subItem.path
+                                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 shadow-sm scale-[1.01] text-blue-700 dark:text-blue-300"
+                                      : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 hover:shadow-sm hover:scale-[1.01] text-gray-700 dark:text-gray-300"
+                                  }`}
                                 >
                                   <div className="relative flex items-center">
-                                    <subItem.icon className="h-5 w-5 mr-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300" />
+                                    <subItem.icon
+                                      className={`h-5 w-5 mr-3 transition-colors duration-300 ${
+                                        location.pathname === subItem.path
+                                          ? "text-blue-600 dark:text-blue-400"
+                                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                      }`}
+                                    />
                                     {/* For collapsed state, show badge overlaid on top-right of icon */}
                                     {isCollapsed &&
                                       item.label === "Branch Request" && (
@@ -582,31 +707,27 @@ function Sidebar() {
                                                   : pendingCount}
                                               </span>
                                             )}
-                                          {subItem.label === "Transferred" &&
-                                            (clearedTransferred
-                                              ? 0
-                                              : unreadTransferredCount) > 0 && (
-                                              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                                                {clearedTransferred
-                                                  ? 0
-                                                  : unreadTransferredCount}
-                                              </span>
-                                            )}
                                           {subItem.label === "Requested Item" &&
                                             (clearedRequested
                                               ? 0
-                                              : requestedCount) > 0 && (
+                                              : unreadRequestedCount) > 0 && (
                                               <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
                                                 {clearedRequested
                                                   ? 0
-                                                  : requestedCount}
+                                                  : unreadRequestedCount}
                                               </span>
                                             )}
                                         </>
                                       )}
                                   </div>
                                   {!isCollapsed && (
-                                    <span className="group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 flex items-center">
+                                    <span
+                                      className={`transition-colors duration-300 flex items-center ${
+                                        location.pathname === subItem.path
+                                          ? "text-blue-600 dark:text-blue-400 font-bold"
+                                          : "group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                      }`}
+                                    >
                                       {subItem.label}
                                       {/* Individual count badges for Branch Request sub-items - positioned beside the nav text */}
                                       {item.label === "Branch Request" && (
@@ -622,24 +743,14 @@ function Sidebar() {
                                                   : pendingCount}
                                               </span>
                                             )}
-                                          {subItem.label === "Transferred" &&
-                                            (clearedTransferred
-                                              ? 0
-                                              : unreadTransferredCount) > 0 && (
-                                              <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
-                                                {clearedTransferred
-                                                  ? 0
-                                                  : unreadTransferredCount}
-                                              </span>
-                                            )}
                                           {subItem.label === "Requested Item" &&
                                             (clearedRequested
                                               ? 0
-                                              : requestedCount) > 0 && (
+                                              : unreadRequestedCount) > 0 && (
                                               <span className="ml-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)] flex-shrink-0">
                                                 {clearedRequested
                                                   ? 0
-                                                  : requestedCount}
+                                                  : unreadRequestedCount}
                                               </span>
                                             )}
                                         </>
@@ -691,10 +802,20 @@ function Sidebar() {
                         {user.status || "Active"}
                       </span>
                     </div>
-                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
+                    {/* <div className="flex items-center text-base text-gray-600 dark:text-gray-400">
                       <MapPin className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
                       <span className="truncate">
                         {userBranch?.location || "Unknown Branch"}
+                      </span>
+                    </div> */}
+                    <div className="flex items-center text-base text-gray-600 dark:text-gray-400 mt-1">
+                      <Clock className="w-3 h-3 mr-2 text-gray-400 dark:text-gray-500" />
+                      <span className="truncate">
+                        {currentTime.toLocaleDateString()}{" "}
+                        {currentTime.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
                   </div>

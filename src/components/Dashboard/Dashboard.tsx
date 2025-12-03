@@ -1,4 +1,5 @@
 import { useSidebar } from "../Sidebar/SidebarContext";
+import { createPortal } from "react-dom";
 
 import {
   Package,
@@ -7,19 +8,21 @@ import {
   Clock,
   Plus,
   RefreshCw,
-  TrendingUp,
-  ClipboardList,
-  ArrowRight,
+  // TrendingUp,
+  // ClipboardList,
+  // ArrowRight,
   User,
   Building,
   Group,
+  Bell,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
-import { usePendingRequestsCount } from "../../hooks/usePendingRequestsCount";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
+import CategoryListModal from "./CategoryListModal";
 
 // Types for analytics data
 interface TopProduct {
@@ -78,6 +81,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+
 function Dashboard() {
   const { isCollapsed } = useSidebar();
 
@@ -91,24 +95,7 @@ function Dashboard() {
   // const isBranchManager = userRole === "Branch Manager" || isSuperAdmin;
   // const isAdmin = userRole === "Admin" || isBranchManager;
 
-  // Fetch dashboard statistics
-  const { stats, isLoading, error, refetch } = useDashboardStats({
-    refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
-    enabled: true,
-  });
-
-  // Fetch pending requests count for Branch Manager and Admin
-  const {
-    count: pendingRequestsCount,
-    isLoading: isPendingLoading,
-    error: pendingError,
-  } = usePendingRequestsCount({
-    userId: currentUser?.user_id,
-    refreshInterval: 300000, // Refresh every 5 minutes
-    enabled: isAdmin(),
-  });
-
-  // State for analytics data
+  // State for analytics data - must be declared before hooks that use them
   const [topProducts, setTopProducts] = React.useState<TopProduct[]>([]);
   const [restockRecommendations, setRestockRecommendations] = React.useState<
     RestockRecommendation[]
@@ -119,6 +106,51 @@ function Dashboard() {
     null
   );
   const [branches, setBranches] = React.useState<Branch[]>([]);
+  const [analyticsServerAvailable, setAnalyticsServerAvailable] =
+    React.useState<boolean | null>(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = React.useState(false);
+
+  // State for notification panel
+  const [isNotificationPanelOpen, setIsNotificationPanelOpen] =
+    React.useState(false);
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  // Close notification panel when scrolling
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (isNotificationPanelOpen) {
+        setIsNotificationPanelOpen(false);
+      }
+    };
+
+    // Add scroll event listener to window
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      // Clean up event listener
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isNotificationPanelOpen]);
+
+  // Fetch dashboard statistics
+  const { stats, isLoading, error, refetch } = useDashboardStats({
+    branchId: isSuperAdmin()
+      ? selectedBranch || undefined
+      : currentUser?.branch_id || undefined,
+    refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
+    enabled: true,
+  });
+
+  // Fetch pending requests count for Branch Manager and Admin (currently unused)
+  // const {
+  //   count: pendingRequestsCount,
+  //   isLoading: isPendingLoading,
+  //   error: pendingError,
+  // } = usePendingRequestsCount({
+  //   userId: currentUser?.user_id,
+  //   refreshInterval: 300000, // Refresh every 5 minutes
+  //   enabled: isAdmin(),
+  // });
 
   const PYTHON_BACKEND_URL =
     import.meta.env.VITE_PYTHON_BACKEND_URL || "http://localhost:5001";
@@ -156,9 +188,26 @@ function Dashboard() {
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setTopProducts(result.data);
+        setAnalyticsServerAvailable(true);
       }
-    } catch (err) {
-      console.error("Error fetching top products:", err);
+    } catch (err: any) {
+      // Check if it's a connection error
+      const isConnectionError =
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+        err?.name === "TypeError";
+
+      if (isConnectionError) {
+        setAnalyticsServerAvailable(false);
+        // Only log once per session to reduce console noise
+        if (analyticsServerAvailable === null) {
+          console.warn(
+            "Analytics server is not available. Please start the Python analytics server on port 5001."
+          );
+        }
+      } else {
+        console.error("Error fetching top products:", err);
+      }
     }
   }, [
     timeRange,
@@ -166,6 +215,7 @@ function Dashboard() {
     selectedBranch,
     currentUser?.branch_id,
     PYTHON_BACKEND_URL,
+    analyticsServerAvailable,
   ]);
 
   // Fetch inventory analytics (restock recommendations)
@@ -205,9 +255,21 @@ function Dashboard() {
                 : "low",
           }));
         setRestockRecommendations(recommendations);
+        setAnalyticsServerAvailable(true);
       }
-    } catch (err) {
-      console.error("Error fetching restock recommendations:", err);
+    } catch (err: any) {
+      // Check if it's a connection error
+      const isConnectionError =
+        err?.message?.includes("Failed to fetch") ||
+        err?.message?.includes("ERR_CONNECTION_REFUSED") ||
+        err?.name === "TypeError";
+
+      if (isConnectionError) {
+        setAnalyticsServerAvailable(false);
+        // Don't log again if we already logged it in fetchTopProducts
+      } else {
+        console.error("Error fetching restock recommendations:", err);
+      }
     }
   }, [
     timeRange,
@@ -305,16 +367,327 @@ function Dashboard() {
       <div className="mt-2 mb-8">
         {/* Welcome Message */}
 
-        <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Welcome back, {User.name || "User"} 👋
-          </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Here’s a quick overview of your dashboard today.
-          </p>
+        <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md p-6 mb-8 relative">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Welcome back, {currentUser?.name || "User"} 👋
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Here's a quick overview of your dashboard today.
+              </p>
+            </div>
+            {/* Notification Icon with Badge */}
+            <div className="relative">
+              <button
+                ref={buttonRef}
+                onClick={() =>
+                  setIsNotificationPanelOpen(!isNotificationPanelOpen)
+                }
+                className="p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative"
+                aria-label="Notifications"
+              >
+                <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                {/* Badge Indicator */}
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                  3
+                </span>
+              </button>
+              {/* Notification Popover Panel */}
+              {isNotificationPanelOpen &&
+                createPortal(
+                  <div className="fixed top-14 right-20 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                          Notifications
+                        </h3>
+                        <button
+                          onClick={() => setIsNotificationPanelOpen(false)}
+                          className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="max-h-96 overflow-y-auto">
+                      {/* Static Notification Items */}
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/requested_item")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              New product request approved
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Your request for 50 LED Bulbs has been approved
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              2 hours ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/transferred")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Stock transfer completed
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              200 units transferred to Main Branch
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              Yesterday
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/all_stock")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Low stock alert
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              LED Bulbs stock is running low (15 units
+                              remaining)
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              2 days ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Additional Notification Items */}
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/all_stock")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              New shipment received
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              500 units of Smart Bulbs have arrived at your
+                              branch
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              3 days ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/all_stock")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Critical stock level
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Motion Sensor Lights are out of stock
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              1 week ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/transferred")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Branch transfer initiated
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              150 units scheduled for transfer to East Branch
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              1 week ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/requested_item")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Product restock ordered
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Purchase order #1234 created for 300 LED Bulbs
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              10 days ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/auditlogs")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Inventory adjustment required
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Discrepancy detected in Motion Sensor Lights count
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              12 days ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/centralized-products")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              New product category added
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Smart Home Devices category is now available
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              2 weeks ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/branch-management")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              New branch opened
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Downtown Branch is now operational
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              3 weeks ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                        onClick={() => navigate("/analytics")}
+                      >
+                        <div className="flex items-start">
+                          <div className="flex-shrink-0 mt-1">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                          </div>
+                          <div className="ml-3 flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Quarterly inventory report
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Review your branch's inventory performance
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                              1 month ago
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Footer with View All button */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
+                      <button
+                        onClick={() => navigate("/notifications")}
+                        className="w-full py-2 cursor-pointer text-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors duration-200"
+                      >
+                        View All Notifications
+                      </button>
+                    </div>
+                  </div>,
+                  document.body
+                )}
+            </div>
+          </div>
         </div>
+
         {isSuperAdmin() ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Branches Card */}
             <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
@@ -370,7 +743,7 @@ function Dashboard() {
               </p>
             </div>
 
-            {/* Recent Activity Card */}
+            {/* All Products Card */}
             <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -402,11 +775,57 @@ function Dashboard() {
                 <p className="text-sm text-red-500 mt-2">Failed to load data</p>
               )}
             </div>
+
+            {/* Categories Card - Super Admin Only */}
+            <div
+              onClick={() => setIsCategoryModalOpen(true)}
+              className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative cursor-pointer"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
+                    <Group
+                      className="text-green-600 dark:text-green-400"
+                      size={22}
+                    />
+                  </div>
+                  <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                    Categories
+                  </h5>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate("/categories/add");
+                    }}
+                    className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
+                    title="Add Category"
+                  >
+                    <Plus
+                      className="text-green-600 dark:text-green-400"
+                      size={16}
+                    />
+                  </button>
+                </div>
+              </div>
+              <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+                {isLoading
+                  ? "..."
+                  : error
+                  ? "Error"
+                  : stats?.totalCategories || "0"}
+              </h6>
+              <p className="text-sm text-gray-500 mt-1">
+                Total product categories
+              </p>
+            </div>
           </div>
         ) : (
           <>
-            {/* Row 1: Stock / Products / Categories */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Row 1: Total Stock / Products / Pending Requests */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {isBranchManager() && (
                 <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                   <div className="flex items-center justify-between">
@@ -469,122 +888,134 @@ function Dashboard() {
                 </div>
               )}
 
-              {isBranchManager() && (
-                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+              {/* {isBranchManager() && (
+                <div
+                  onClick={() => navigate("/pending_request")}
+                  className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
+                    pendingRequestsCount > 0
+                      ? "bg-white/80 dark:bg-gray-900/70 border-gray-200 dark:border-gray-700"
+                      : "bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-600"
+                  }`}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-3 rounded-xl bg-gradient-to-tr from-green-500/20 to-green-700/20 dark:from-green-800/30 dark:to-green-600/30">
-                        <Group
-                          className="text-green-600 dark:text-green-400"
+                      <div
+                        className={`p-3 rounded-xl ${
+                          pendingRequestsCount > 0
+                            ? "bg-gradient-to-tr from-orange-500/20 to-orange-700/20 dark:from-orange-800/30 dark:to-orange-600/30"
+                            : "bg-gray-100 dark:bg-gray-700"
+                        }`}
+                      >
+                        <ClipboardList
+                          className={`${
+                            pendingRequestsCount > 0
+                              ? "text-orange-600 dark:text-orange-400"
+                              : "text-gray-400 dark:text-gray-500"
+                          }`}
                           size={22}
                         />
                       </div>
-                      <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
-                        Categories
+                      <h5
+                        className={`font-bold text-lg md:text-xl ${
+                          pendingRequestsCount > 0
+                            ? "text-gray-900 dark:text-gray-100"
+                            : "text-gray-400 dark:text-gray-500"
+                        }`}
+                      >
+                        Pending Requests
                       </h5>
                     </div>
-                    {isBranchManager() && (
-                      <button
-                        onClick={() => navigate("/categories/add")}
-                        className="p-2 rounded-full bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-800 transition-colors"
-                        title="Add Category"
-                      >
-                        <Plus
-                          className="text-green-600 dark:text-green-400"
-                          size={16}
-                        />
-                      </button>
-                    )}
+                    <ArrowRight
+                      className={`w-5 h-5 transition-colors ${
+                        pendingRequestsCount > 0
+                          ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                    />
+                  </div>
+                  <h6
+                    className={`text-2xl font-bold mt-3 ${
+                      pendingRequestsCount > 0
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-400 dark:text-gray-500"
+                    }`}
+                  >
+                    {isPendingLoading
+                      ? "..."
+                      : pendingError
+                      ? "Error"
+                      : pendingRequestsCount || "0"}
+                  </h6>
+                  <p
+                    className={`text-sm mt-1 ${
+                      pendingRequestsCount > 0
+                        ? "text-gray-500 dark:text-gray-400"
+                        : "text-gray-400 dark:text-gray-500"
+                    }`}
+                  >
+                    {pendingRequestsCount > 0
+                      ? "Awaiting your review"
+                      : "No pending requests"}
+                  </p>
+                </div>
+              )} */}
+
+              {(isAdmin() || isBranchManager()) && (
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-tr from-yellow-500/20 to-yellow-700/20 dark:from-yellow-800/30 dark:to-yellow-600/30">
+                      <AlertCircle
+                        className="text-yellow-600 dark:text-yellow-400"
+                        size={22}
+                      />
+                    </div>
+                    <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                      Low Stock
+                    </h5>
                   </div>
                   <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
                     {isLoading
                       ? "..."
                       : error
                       ? "Error"
-                      : stats?.totalCategories || "0"}
+                      : stats?.lowStockCount || "0"}
                   </h6>
                   <p className="text-sm text-gray-500 mt-1">
-                    Total product categories
+                    Products with less than 20 units
+                  </p>
+                </div>
+              )}
+
+              {(isAdmin() || isBranchManager()) && (
+                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-gradient-to-tr from-red-500/20 to-red-700/20 dark:from-red-800/30 dark:to-red-600/30">
+                      <AlertCircle
+                        className="text-red-600 dark:text-red-400"
+                        size={22}
+                      />
+                    </div>
+                    <h5 className="font-bold text-lg md:text-xl text-gray-900 dark:text-gray-100">
+                      Out of Stock
+                    </h5>
+                  </div>
+                  <h6 className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
+                    {isLoading
+                      ? "..."
+                      : error
+                      ? "Error"
+                      : stats?.outOfStockCount || "0"}
+                  </h6>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Products with zero units
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Row 2: Requests / Low Stock / Out of Stock */}
-            {!isSuperAdmin() && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {isBranchManager() && (
-                  <div
-                    onClick={() => navigate("/pending_request")}
-                    className={`cursor-pointer group rounded-2xl shadow-md border p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-md ${
-                      pendingRequestsCount > 0
-                        ? "bg-white/80 dark:bg-gray-900/70 border-gray-200 dark:border-gray-700"
-                        : "bg-gray-50 dark:bg-gray-900/60 border-gray-200 dark:border-gray-600"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`p-3 rounded-xl ${
-                            pendingRequestsCount > 0
-                              ? "bg-gradient-to-tr from-orange-500/20 to-orange-700/20 dark:from-orange-800/30 dark:to-orange-600/30"
-                              : "bg-gray-100 dark:bg-gray-700"
-                          }`}
-                        >
-                          <ClipboardList
-                            className={`${
-                              pendingRequestsCount > 0
-                                ? "text-orange-600 dark:text-orange-400"
-                                : "text-gray-400 dark:text-gray-500"
-                            }`}
-                            size={22}
-                          />
-                        </div>
-                        <h5
-                          className={`font-bold text-lg md:text-xl ${
-                            pendingRequestsCount > 0
-                              ? "text-gray-900 dark:text-gray-100"
-                              : "text-gray-400 dark:text-gray-500"
-                          }`}
-                        >
-                          Pending Requests
-                        </h5>
-                      </div>
-                      <ArrowRight
-                        className={`w-5 h-5 transition-colors ${
-                          pendingRequestsCount > 0
-                            ? "text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400"
-                            : "text-gray-300 dark:text-gray-600"
-                        }`}
-                      />
-                    </div>
-                    <h6
-                      className={`text-2xl font-bold mt-3 ${
-                        pendingRequestsCount > 0
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {isPendingLoading
-                        ? "..."
-                        : pendingError
-                        ? "Error"
-                        : pendingRequestsCount || "0"}
-                    </h6>
-                    <p
-                      className={`text-sm mt-1 ${
-                        pendingRequestsCount > 0
-                          ? "text-gray-500 dark:text-gray-400"
-                          : "text-gray-400 dark:text-gray-500"
-                      }`}
-                    >
-                      {pendingRequestsCount > 0
-                        ? "Awaiting your review"
-                        : "No pending requests"}
-                    </p>
-                  </div>
-                )}
-
+            {/* Row 2: Low Stock / Out of Stock */}
+            {/* {!isSuperAdmin() && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
                 {(isAdmin() || isBranchManager()) && (
                   <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                     <div className="flex items-center gap-3">
@@ -637,9 +1068,9 @@ function Dashboard() {
                   </div>
                 )}
               </div>
-            )}
+            )} */}
 
-            {/* Row 3: Recent Activity */}
+            {/* Row 3: Recent Activity
             <div className="grid grid-cols-1 gap-6 mt-6">
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
                 <div className="flex items-center gap-3">
@@ -664,10 +1095,35 @@ function Dashboard() {
                   Actions in the last 7 days
                 </p>
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </div>
+
+      {/* Analytics Server Status Banner */}
+      {analyticsServerAvailable === false && (
+        <div className="mt-6 mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle
+              className="text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0"
+              size={20}
+            />
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                Analytics Server Unavailable
+              </h4>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                The analytics server is not running. To enable analytics
+                features, start the Python analytics server:
+              </p>
+              <code className="mt-2 block text-xs bg-yellow-100 dark:bg-yellow-900/40 px-3 py-2 rounded border border-yellow-200 dark:border-yellow-800">
+                cd analytics && python -m flask --app analytics.app run --port
+                5001
+              </code>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Super Admin Analytics Section */}
       {isSuperAdmin() && (
@@ -962,7 +1418,7 @@ function Dashboard() {
                 ? "Error loading data"
                 : stats?.lastUpdated
                 ? `Last updated ${new Date(
-                    stats.lastUpdated
+                    stats?.lastUpdated
                   ).toLocaleTimeString()}`
                 : "Last updated 3 mins ago"}
             </span>
@@ -1058,6 +1514,12 @@ function Dashboard() {
           </div>
         </Card>
       )}
+
+      {/* Category List Modal */}
+      <CategoryListModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+      />
     </div>
   );
 }

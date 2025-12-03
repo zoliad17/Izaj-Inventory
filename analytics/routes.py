@@ -436,6 +436,19 @@ def import_sales_data():
 
             try:
                 inserted_count = db_module.insert_sales_rows(rows)
+            except ValueError as e:
+                # Negative stock validation error - check if it's the specific error we're looking for
+                error_msg = str(e)
+                if 'Stock deduction would result in negative quantities' in error_msg:
+                    logger.error(f'Stock validation failed: {error_msg}')
+                    # Return error without inserting any data
+                    return jsonify({
+                        'success': False,
+                        'error': 'Failed analyzing and importing sales data',
+                        'details': error_msg
+                    }), 400
+                else:
+                    db_warning = error_msg
             except Exception as e:
                 db_warning = str(e)
 

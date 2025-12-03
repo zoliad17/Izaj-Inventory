@@ -5,8 +5,6 @@ import {
   Activity,
   Package,
   Clock,
-  Monitor,
-  Globe,
   FileText,
   ChevronDown,
   ChevronUp,
@@ -88,8 +86,6 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
     metadata: false,
     oldValues: false,
     newValues: false,
-    technical: false,
-    changes: false,
   });
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -689,128 +685,6 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
                 </div>
               </div>
             )}
-
-            {/* Technical Information */}
-            <div
-              className="rounded-2xl bg-gradient-to-tr from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950
-              shadow-[8px_8px_16px_rgba(0,0,0,0.15),-8px_-8px_16px_rgba(255,255,255,0.7)]
-              dark:shadow-[8px_8px_16px_rgba(0,0,0,0.7),-8px_-8px_16px_rgba(40,40,40,0.6)]
-              transition-all duration-300 p-6"
-            >
-              <button
-                onClick={() => toggleSection("technical")}
-                className="flex items-center justify-between w-full text-left"
-              >
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                  <Monitor className="w-5 h-5 mr-2" />
-                  Technical Information
-                </h3>
-                {expandedSections.technical ? (
-                  <ChevronUp className="w-5 h-5" />
-                ) : (
-                  <ChevronDown className="w-5 h-5" />
-                )}
-              </button>
-
-              {expandedSections.technical && (
-                <div className="mt-4 space-y-6">
-                  {/* Connection Info */}
-                  <div className="space-y-4">
-                    {log.ip_address && (
-                      <div className="flex items-center space-x-3">
-                        <Globe className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                            IP Address
-                          </p>
-                          <p className="text-gray-900 dark:text-white font-mono">
-                            {log.ip_address}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {log.user_agent && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          User Agent
-                        </p>
-                        <p className="text-gray-900 dark:text-white text-sm break-all">
-                          {log.user_agent}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Changes Comparison */}
-                  {(log.old_values || log.new_values) && (
-                    <div>
-                      <button
-                        onClick={() => toggleSection("changes")}
-                        className="w-full flex justify-between items-center text-md font-medium text-gray-700 dark:text-gray-300 mb-3"
-                      >
-                        <span>Changes Made</span>
-                        {expandedSections.changes ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )}
-                      </button>
-
-                      {expandedSections.changes && (
-                        <div
-                          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4
-                          shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.5)]
-                          dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.5),inset_-4px_-4px_8px_rgba(60,60,60,0.2)]
-                          space-y-4"
-                        >
-                          {Object.keys({
-                            ...log.old_values,
-                            ...log.new_values,
-                          }).map((key) => (
-                            <div
-                              key={key}
-                              className="py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
-                            >
-                              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                <span className="flex-1">
-                                  {key
-                                    .split("_")
-                                    .map(
-                                      (word) =>
-                                        word.charAt(0).toUpperCase() +
-                                        word.slice(1)
-                                    )
-                                    .join(" ")}
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
-                                  <span className="text-xs font-medium text-red-700 dark:text-red-400 block mb-2">
-                                    Previous Value
-                                  </span>
-                                  <div className="text-sm text-red-900 dark:text-red-100 break-words">
-                                    {formatValue(log.old_values?.[key])}
-                                  </div>
-                                </div>
-                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                                  <span className="text-xs font-medium text-green-700 dark:text-green-400 block mb-2">
-                                    New Value
-                                  </span>
-                                  <div className="text-sm text-green-900 dark:text-green-100 break-words">
-                                    {formatValue(log.new_values?.[key])}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* Notes */}
             {log.notes && (

@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Users,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -93,7 +94,10 @@ function UserManagement() {
 
       // Join user data with branch and role information
       const usersWithInfo = data.map((user: User) => {
-        const branch = branchesData.find((b: any) => b.id === user.branch_id);
+        // Convert both to string for comparison to handle type mismatches
+        const branch = branchesData.find(
+          (b: any) => String(b.id) === String(user.branch_id)
+        );
         const role = rolesData.find((r: any) => r.id === user.role_id);
 
         return {
@@ -183,8 +187,10 @@ function UserManagement() {
             value.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
+        // Convert both to string for comparison to handle type mismatches
         const matchesBranch =
-          branchFilter === "All" || user.branch_id === branchFilter;
+          branchFilter === "All" ||
+          String(user.branch_id) === String(branchFilter);
 
         return matchesSearch && matchesBranch;
       });
@@ -396,6 +402,11 @@ function UserManagement() {
   // Export users to Excel
   const exportToExcel = () => {
     try {
+      if (filteredUsers.length === 0) {
+        toast.error("No users to export");
+        return;
+      }
+
       // Prepare data for export
       const exportData = filteredUsers.map((user) => ({
         Name: user.name,
@@ -515,7 +526,8 @@ function UserManagement() {
             >
               <ArrowLeft size={20} className="mr-1" />
             </button>
-            <h5 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <h5 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               User Management
             </h5>
           </div>

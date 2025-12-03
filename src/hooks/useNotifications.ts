@@ -18,6 +18,8 @@ interface UseNotificationsOptions {
   enabled?: boolean;
   // If your app uses Bearer tokens instead of cookie-based auth, pass getToken to return the token string
   getToken?: () => string | null;
+  // User ID for authentication (required for backend authentication)
+  userId?: string | null;
   // If true and SUPABASE env vars are present, the hook will attempt to subscribe to realtime updates
   realtime?: boolean;
 }
@@ -27,6 +29,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     pollInterval = 30000,
     enabled = true,
     getToken,
+    userId,
     realtime = true,
   } = options;
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -36,6 +39,8 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   const mounted = useRef(true);
 
   const fetchUnread = useCallback(async () => {
+    if (!userId) return; // Skip if no user ID provided
+    
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -46,9 +51,9 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
         ? { headers: { Authorization: `Bearer ${token}`, ...headers } }
         : { credentials: "include", headers };
 
-      // Call the unread endpoint; server will use authenticated user if using cookies, or token if provided
+      // Call the unread endpoint with user_id as query parameter for authentication
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications/unread/me`,
+        `${API_BASE_URL}/api/notifications/unread/me?user_id=${encodeURIComponent(userId)}`,
         fetchOptions as RequestInit
       );
       if (!res.ok) throw new Error("Failed to fetch unread count");
@@ -60,9 +65,11 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
       if (!mounted.current) return;
       setError(err.message || String(err));
     }
-  }, [getToken]);
+  }, [getToken, userId]);
 
   const fetchList = useCallback(async (limit = 20, offset = 0) => {
+    if (!userId) return; // Skip if no user ID provided
+    
     setIsLoading(true);
     try {
       const headers: Record<string, string> = {
@@ -74,7 +81,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
         : { credentials: "include", headers };
 
       const res = await fetch(
-        `${API_BASE_URL}/api/notifications?limit=${limit}&offset=${offset}`,
+        `${API_BASE_URL}/api/notifications?limit=${limit}&offset=${offset}&user_id=${encodeURIComponent(userId)}`,
         fetchOptions
       );
       if (!res.ok) throw new Error("Failed to fetch notifications");
@@ -88,12 +95,14 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     } finally {
       if (mounted.current) setIsLoading(false);
     }
-  }, []);
+  }, [getToken, userId]);
 
   const markRead = useCallback(
     async (ids?: string[], link?: string) => {
+      if (!userId) return; // Skip if no user ID provided
+      
       try {
-        const body: any = {};
+        const body: any = { user_id: userId };
         if (link) body.link = link;
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
@@ -161,26 +170,32 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
             return;
           }
 
-          // derive user id via api/whoami if using bearer token or cookies
-          let currentUserId: string | null = null;
-          try {
-            const headers: Record<string, string> = {
-              "Content-Type": "application/json",
-            };
-            const token = getToken ? getToken() : null;
-            const fetchOptions: RequestInit = token
-              ? { headers: { Authorization: `Bearer ${token}`, ...headers } }
-              : { credentials: "include", headers };
-            const whoami = await fetch(
-              `${API_BASE_URL}/api/whoami`,
-              fetchOptions as RequestInit
-            );
-            if (whoami.ok) {
-              const json = await whoami.json();
-              currentUserId = json.user_id || null;
+          // Use userId from options if provided, otherwise derive via api/whoami
+          let currentUserId: string | null = userId || null;
+          if (!currentUserId) {
+            try {
+              const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+              };
+              const token = getToken ? getToken() : null;
+              const fetchOptions: RequestInit = token
+                ? { headers: { Authorization: `Bearer ${token}`, ...headers } }
+                : { credentials: "include", headers };
+              // Note: whoami endpoint requires user_id in query params for authentication
+              // If userId is not provided in options, we can't authenticate, so skip realtime
+              if (userId) {
+                const whoami = await fetch(
+                  `${API_BASE_URL}/api/whoami?user_id=${encodeURIComponent(userId)}`,
+                  fetchOptions as RequestInit
+                );
+                if (whoami.ok) {
+                  const json = await whoami.json();
+                  currentUserId = json.user_id || null;
+                }
+              }
+            } catch (e) {
+              // ignore — we may still subscribe via RLS or public channels
             }
-          } catch (e) {
-            // ignore — we may still subscribe via RLS or public channels
           }
 
           if (!currentUserId) {

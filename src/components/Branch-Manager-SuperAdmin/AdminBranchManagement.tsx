@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/outline";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { Branch, BranchFormData } from "../../types";
 import SimpleGoogleMapPicker from "../ui/SimpleGoogleMapPicker";
@@ -389,9 +389,10 @@ function AdminBranchManagement() {
               </button>
 
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                <h5 className="text-2xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   Branch Management
-                </h1>
+                </h5>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
                   Manage all branch locations and their details
                 </p>

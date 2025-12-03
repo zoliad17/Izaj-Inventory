@@ -166,34 +166,30 @@ function BranchLocation() {
         isCollapsed ? "ml-5" : "ml-1"
       } dark:bg-gray-900/70 min-h-screen p-2 sm:p-4`}
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div className="flex items-center gap-3 mb-3 mt-2">
+      <div className="flex flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 p-2 rounded-xl
-         "
+            className="flex items-center cursor-pointer gap-2 text-gray-800 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
           >
             <ArrowLeft size={26} />
           </button>
-
-          {/* Title with icon */}
           <div className="flex items-center gap-3">
             <Building2
-              size={32}
+              size={26}
               className="text-blue-600 dark:text-blue-400 drop-shadow-md"
             />
             <div>
-              <h5 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 Active Branch
-              </h5>
-              <p className="text-lg text-gray-600 dark:text-gray-400 mt-1">
-                Select a branch to browse and request products from their
-                inventory
-              </p>
+              </h1>
             </div>
           </div>
         </div>
       </div>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+        Select a branch to browse and request products from their inventory
+      </p>
 
       {/* Loading State */}
       {isLoading ? (
