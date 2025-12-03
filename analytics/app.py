@@ -7,7 +7,11 @@ import pandas as pd
 from io import BytesIO
 import logging
 
-from .eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
+# Handle both relative and absolute imports
+try:
+    from .eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
+except ImportError:
+    from eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +31,10 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
     
     # Register blueprints
-    from .routes import analytics_bp
+    try:
+        from .routes import analytics_bp
+    except ImportError:
+        from routes import analytics_bp
     app.register_blueprint(analytics_bp)
     
     # Health check endpoint

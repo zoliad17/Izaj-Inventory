@@ -4,8 +4,13 @@ import logging
 import pandas as pd
 from io import BytesIO
 
-from .eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
-from . import db as db_module
+# Handle both relative and absolute imports
+try:
+    from .eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
+    from . import db as db_module
+except ImportError:
+    from eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
+    import db as db_module
 
 logger = logging.getLogger(__name__)
 
