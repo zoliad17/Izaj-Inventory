@@ -18,7 +18,7 @@ import { useCategories } from "../../hooks/useOptimizedFetch";
 import { api } from "../../utils/apiClient";
 import { useErrorHandler } from "../../utils/errorHandler";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSidebar } from "../Sidebar/SidebarContext";
@@ -244,6 +244,7 @@ function OptimizedAllStock() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { handleError } = useErrorHandler();
   const { user: currentUser } = useAuth();
 
@@ -260,9 +261,23 @@ function OptimizedAllStock() {
   // Filters and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(0);
-  const [selectedStatus, setSelectedStatus] = useState<string>("All");
+  // Initialize status from URL parameter, fallback to "All"
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    searchParams.get("status") || "All"
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Update status filter when URL parameter changes
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam && ["Low Stock", "Out of Stock", "In Stock"].includes(statusParam)) {
+      setSelectedStatus(statusParam);
+    } else if (!statusParam) {
+      // If status param is removed, reset to "All"
+      setSelectedStatus("All");
+    }
+  }, [searchParams]);
 
   // Get branch ID from current user's profile
   useEffect(() => {
@@ -301,14 +316,16 @@ function OptimizedAllStock() {
       setProductsError(null);
 
       // Fetch products from the user's branch
+      // Use getProducts instead of getBranchProducts to include products with quantity = 0
       const { data: branchProducts, error: branchError } =
-        await api.getBranchProducts(branchId);
+        await api.getProducts(branchId);
 
       if (branchError) {
         throw new Error(branchError);
       }
 
       // Map branch products (these are all products currently in the user's branch)
+      // Note: getProducts endpoint doesn't include transfer_tag fields, but we'll get them from audit logs
       const mappedProducts = (branchProducts as any[]).map((product: any) => ({
         id: product.id,
         branch_id: branchId, // Use the branchId from the API call since it's not in the response
@@ -319,14 +336,12 @@ function OptimizedAllStock() {
         stock: product.quantity,
         status: product.status, // Use status from database instead of calculating
         detailsPage: `/product/${product.id}`,
-        source: product.transfer_tag
-          ? ("Transferred" as const)
-          : ("Local" as const),
+        source: (product.transfer_tag ? "Transferred" : "Local") as const,
         transferred_from: undefined,
         transferred_at: undefined,
         request_id: undefined,
-        transferTag: product.transfer_tag,
-        transferTagAppliedAt: product.transfer_tag_set_at,
+        transferTag: product.transfer_tag || null, // May be undefined from /api/products endpoint
+        transferTagAppliedAt: product.transfer_tag_set_at || null, // May be undefined from /api/products endpoint
       }));
 
       // Fetch audit logs to identify transferred products
@@ -570,7 +585,7 @@ function OptimizedAllStock() {
 
   // Memoized filtered products (ALL products for main table - final state)
   const filteredProducts = useMemo(() => {
-    return products.filter((product: Product) => {
+    const filtered = products.filter((product: Product) => {
       // First filter: Only show products from the current user's branch
       const matchesBranch = branchId ? product.branch_id === branchId : true;
 
@@ -581,13 +596,34 @@ function OptimizedAllStock() {
         getFormattedProductId(product).toLowerCase().includes(normalizedSearch);
       const matchesCategory =
         selectedCategory === 0 || product.category === selectedCategory;
-      const matchesStatus =
-        selectedStatus === "All" || product.status === selectedStatus;
+      
+      // Enhanced status matching: Check both status field and actual quantity
+      // This ensures consistency with dashboard counts which are based on quantity
+      let matchesStatus = true;
+      if (selectedStatus !== "All") {
+        // Ensure stock is a number (handle string, null, undefined)
+        const stock = Number(product.stock) || 0;
+        if (selectedStatus === "Out of Stock") {
+          // Match if status is "Out of Stock" OR quantity is 0
+          matchesStatus = product.status === "Out of Stock" || stock === 0;
+        } else if (selectedStatus === "Low Stock") {
+          // Match if status is "Low Stock" OR (quantity > 0 AND quantity < 20)
+          matchesStatus = product.status === "Low Stock" || (stock > 0 && stock < 20);
+        } else if (selectedStatus === "In Stock") {
+          // Match if status is "In Stock" OR quantity >= 20
+          matchesStatus = product.status === "In Stock" || stock >= 20;
+        } else {
+          // Fallback to exact status match for any other status values
+          matchesStatus = product.status === selectedStatus;
+        }
+      }
 
       return matchesBranch && matchesSearch && matchesCategory && matchesStatus;
     });
+
+    return filtered;
   }, [
-    localProducts,
+    products,
     branchId,
     searchTerm,
     selectedCategory,
@@ -969,12 +1005,6 @@ function OptimizedAllStock() {
             branch_id: branchId,
           });
 
-          // Log zero quantity products for debugging
-          if (quantity === 0) {
-            console.log(
-              `Processing zero quantity product: ${row["Product Name"]} - will be marked as "Out of Stock"`
-            );
-          }
         }
 
         if (errors.length > 0) {
@@ -1081,65 +1111,6 @@ function OptimizedAllStock() {
     }
   }, [products, categories, handleError]);
 
-  // Download Excel Template
-  // const handleDownloadTemplate = useCallback(() => {
-  //   try {
-  //     if (categories.length === 0) {
-  //       toast.error("Categories not loaded yet. Please try again in a moment.");
-  //       return;
-  //     }
-
-  //     // Create template with sample data using actual categories
-  //     const templateData = [
-  //       {
-  //         "Product Name": "LED Bulb 10W",
-  //         Category: categories[0]?.category_name || "Sample Category",
-  //         Price: 299.99,
-  //         Quantity: 100,
-  //         Status: "In Stock",
-  //       },
-  //       {
-  //         "Product Name": "Smart Light Strip",
-  //         Category:
-  //           categories[1]?.category_name ||
-  //           categories[0]?.category_name ||
-  //           "Sample Category",
-  //         Price: 1299.99,
-  //         Quantity: 50,
-  //         Status: "In Stock",
-  //       },
-  //       {
-  //         "Product Name": "Chandelier",
-  //         Category:
-  //           categories[2]?.category_name ||
-  //           categories[0]?.category_name ||
-  //           "Sample Category",
-  //         Price: 4999.99,
-  //         Quantity: 5,
-  //         Status: "Low Stock",
-  //       },
-  //       {
-  //         "Product Name": "Discontinued Lamp",
-  //         Category: categories[0]?.category_name || "Sample Category",
-  //         Price: 199.99,
-  //         Quantity: 0,
-  //         Status: "Out of Stock",
-  //       },
-  //     ];
-
-  //     // Create workbook and worksheet
-  //     const worksheet = XLSX.utils.json_to_sheet(templateData);
-  //     const workbook = XLSX.utils.book_new();
-  //     XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
-
-  //     // Download template file
-  //     XLSX.writeFile(workbook, "product_import_template.xlsx");
-  //     toast.success("Template downloaded successfully");
-  //   } catch (error) {
-  //     const errorMessage = handleError(error, "Download Template");
-  //     toast.error(errorMessage);
-  //   }
-  // }, [categories, handleError]);
 
   // Show loading while user data is being fetched
   if (!currentUser) {
@@ -1369,7 +1340,17 @@ function OptimizedAllStock() {
                  dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]
                  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  onChange={(e) => {
+                    const newStatus = e.target.value;
+                    setSelectedStatus(newStatus);
+                    // Update URL parameter
+                    if (newStatus === "All") {
+                      searchParams.delete("status");
+                    } else {
+                      searchParams.set("status", newStatus);
+                    }
+                    setSearchParams(searchParams, { replace: true });
+                  }}
                 >
                   <option value="All">All Status</option>
                   {STATUS_OPTIONS.map((status) => (

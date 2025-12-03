@@ -22,14 +22,13 @@ function View_product() {
   // Static product data with proper typing
   const initialProduct: Product = {
     id: "001",
-    name: "LED Bulb",
-    category: "Bulbs",
-    price: "Php 599.99",
-    stock: 100,
+    name: "Product",
+    category: "Category",
+    price: "Php 0.00",
+    stock: 0,
     status: "In Stock",
     imageUrl: light1,
-    description:
-      "This is a detailed description of the LED Bulb This is a detailed description of the LED Bulb This is a detailed description of the LED Bulb This is a detailed description of the LED Bulb .",
+    description: "Product description will be displayed here.",
   };
 
   // State to manage form data

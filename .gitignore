@@ -29,3 +29,9 @@ To-do.md
 *.njsproj
 *.sln
 *.sw?
+
+
+# python
+__pycache__/
+*.py[cod]
+*.pyo

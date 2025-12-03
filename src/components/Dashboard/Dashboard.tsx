@@ -23,6 +23,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
 import CategoryListModal from "./CategoryListModal";
+import { useNotifications, NotificationItem } from "../../hooks/useNotifications";
 
 // Types for analytics data
 interface TopProduct {
@@ -139,6 +140,19 @@ function Dashboard() {
       : currentUser?.branch_id || undefined,
     refreshInterval: 300000, // Refresh every 5 minutes (300 seconds)
     enabled: true,
+  });
+
+  // Fetch notifications for the current user (only when user is logged in)
+  const {
+    unreadCount,
+    notifications,
+    isLoading: isNotificationsLoading,
+    markRead,
+  } = useNotifications({
+    pollInterval: 30000, // Poll every 30 seconds
+    enabled: !!currentUser?.user_id, // Only enable when user is logged in
+    userId: currentUser?.user_id || null,
+    realtime: true,
   });
 
   // Fetch pending requests count for Branch Manager and Admin (currently unused)
@@ -316,6 +330,84 @@ function Dashboard() {
     generateChartData();
   }, [generateChartData]);
 
+  // Helper function to format time ago
+  const formatTimeAgo = (dateString: string | undefined): string => {
+    if (!dateString) return "Unknown time";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    }
+    if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+    }
+    if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} ${days === 1 ? "day" : "days"} ago`;
+    }
+    if (diffInSeconds < 2592000) {
+      const weeks = Math.floor(diffInSeconds / 604800);
+      return `${weeks} ${weeks === 1 ? "week" : "weeks"} ago`;
+    }
+    const months = Math.floor(diffInSeconds / 2592000);
+    return `${months} ${months === 1 ? "month" : "months"} ago`;
+  };
+
+  // Helper function to get icon and styling based on notification type
+  const getNotificationIcon = (type: string | undefined) => {
+    switch (type?.toLowerCase()) {
+      case "product":
+        return {
+          icon: Package,
+          bgClass: "bg-blue-100 dark:bg-blue-900/30",
+          colorClass: "text-blue-600 dark:text-blue-400",
+        };
+      case "transfer":
+        return {
+          icon: Building,
+          bgClass: "bg-green-100 dark:bg-green-900/30",
+          colorClass: "text-green-600 dark:text-green-400",
+        };
+      case "alert":
+        return {
+          icon: AlertCircle,
+          bgClass: "bg-amber-100 dark:bg-amber-900/30",
+          colorClass: "text-amber-600 dark:text-amber-400",
+        };
+      default:
+        return {
+          icon: Bell,
+          bgClass: "bg-gray-100 dark:bg-gray-900/30",
+          colorClass: "text-gray-600 dark:text-gray-400",
+        };
+    }
+  };
+
+  // Handle notification click - navigate and mark as read
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    // Mark as read if unread
+    if (!notification.read) {
+      // If link exists, mark by link (more reliable with backend)
+      // Otherwise mark by ID (local state update)
+      if (notification.link) {
+        await markRead(undefined, notification.link);
+      } else if (notification.id) {
+        await markRead([notification.id]);
+      }
+    }
+
+    // Navigate to the link if provided
+    if (notification.link) {
+      navigate(notification.link);
+      setIsNotificationPanelOpen(false);
+    }
+  };
+
   // Fetch branches for Super Admin on mount
   React.useEffect(() => {
     if (isSuperAdmin()) {
@@ -388,10 +480,12 @@ function Dashboard() {
                 aria-label="Notifications"
               >
                 <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                {/* Badge Indicator */}
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
-                  3
-                </span>
+                {/* Badge Indicator - Dynamic unread count */}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2),_inset_-2px_-2px_4px_rgba(255,255,255,0.1)]">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </button>
               {/* Notification Popover Panel */}
               {isNotificationPanelOpen &&
@@ -412,263 +506,74 @@ function Dashboard() {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                      {/* Static Notification Items */}
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/requested_item")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              New product request approved
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Your request for 50 LED Bulbs has been approved
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              2 hours ago
-                            </p>
-                          </div>
+                      {/* Dynamic Notification Items */}
+                      {isNotificationsLoading ? (
+                        <div className="p-8 text-center">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Loading notifications...
+                          </p>
                         </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/transferred")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      ) : notifications.length > 0 ? (
+                        notifications.slice(0, 10).map((notification) => {
+                          const iconConfig = getNotificationIcon(
+                            notification.type
+                          );
+                          const IconComponent = iconConfig.icon;
+                          const isUnread = !notification.read;
+
+                          return (
+                            <div
+                              key={notification.id}
+                              className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors ${
+                                isUnread
+                                  ? "bg-blue-50/50 dark:bg-blue-900/10"
+                                  : ""
+                              }`}
+                              onClick={() => handleNotificationClick(notification)}
+                            >
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0 mt-1">
+                                  <div
+                                    className={`w-8 h-8 rounded-full ${iconConfig.bgClass} flex items-center justify-center`}
+                                  >
+                                    <IconComponent
+                                      className={`w-4 h-4 ${iconConfig.colorClass}`}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="ml-3 flex-1">
+                                  <div className="flex items-start justify-between">
+                                    <p
+                                      className={`text-sm font-medium ${
+                                        isUnread
+                                          ? "text-gray-900 dark:text-white font-semibold"
+                                          : "text-gray-900 dark:text-white"
+                                      }`}
+                                    >
+                                      {notification.title || "Notification"}
+                                    </p>
+                                    {isUnread && (
+                                      <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    {notification.message || "No message"}
+                                  </p>
+                                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    {formatTimeAgo(notification.created_at)}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Stock transfer completed
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              200 units transferred to Main Branch
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              Yesterday
-                            </p>
-                          </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-8 text-center">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            No notifications available
+                          </p>
                         </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/all_stock")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Low stock alert
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              LED Bulbs stock is running low (15 units
-                              remaining)
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              2 days ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Additional Notification Items */}
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/all_stock")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              New shipment received
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              500 units of Smart Bulbs have arrived at your
-                              branch
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              3 days ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/all_stock")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Critical stock level
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Motion Sensor Lights are out of stock
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              1 week ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/transferred")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Branch transfer initiated
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              150 units scheduled for transfer to East Branch
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              1 week ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/requested_item")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Product restock ordered
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Purchase order #1234 created for 300 LED Bulbs
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              10 days ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/auditlogs")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Inventory adjustment required
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Discrepancy detected in Motion Sensor Lights count
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              12 days ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/centralized-products")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              New product category added
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Smart Home Devices category is now available
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              2 weeks ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/branch-management")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                              <Building className="w-4 h-4 text-green-600 dark:text-green-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              New branch opened
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Downtown Branch is now operational
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              3 weeks ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                        onClick={() => navigate("/analytics")}
-                      >
-                        <div className="flex items-start">
-                          <div className="flex-shrink-0 mt-1">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                          </div>
-                          <div className="ml-3 flex-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white">
-                              Quarterly inventory report
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              Review your branch's inventory performance
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              1 month ago
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                     {/* Footer with View All button */}
                     <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50">
@@ -961,7 +866,10 @@ function Dashboard() {
               )} */}
 
               {(isAdmin() || isBranchManager()) && (
-                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <div
+                  onClick={() => navigate("/all_stock?status=Low Stock")}
+                  className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-3 rounded-xl bg-gradient-to-tr from-yellow-500/20 to-yellow-700/20 dark:from-yellow-800/30 dark:to-yellow-600/30">
                       <AlertCircle
@@ -987,7 +895,10 @@ function Dashboard() {
               )}
 
               {(isAdmin() || isBranchManager()) && (
-                <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300">
+                <div
+                  onClick={() => navigate("/all_stock?status=Out of Stock")}
+                  className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-3 rounded-xl bg-gradient-to-tr from-red-500/20 to-red-700/20 dark:from-red-800/30 dark:to-red-600/30">
                       <AlertCircle
