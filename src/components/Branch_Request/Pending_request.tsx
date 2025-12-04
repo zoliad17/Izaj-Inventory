@@ -87,10 +87,16 @@ export default function PendingRequest() {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ link: "/pending_request", user_id: currentUser.user_id }),
+          body: JSON.stringify({
+            link: "/pending_request",
+            user_id: currentUser.user_id,
+          }),
         });
       } catch (err) {
-        console.error("Failed to mark pending request notifications as read:", err);
+        console.error(
+          "Failed to mark pending request notifications as read:",
+          err
+        );
       }
     };
     markNotificationsRead();
@@ -572,7 +578,7 @@ export default function PendingRequest() {
         {/* Review Modal */}
         {showReviewModal && selectedRequest && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
-            <div className="bg-white dark:bg-gray-900/70 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="bg-white dark:bg-gray-800/90 rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center gap-2 mb-4">
                 {reviewAction === "approved" ? (
                   <CheckCircle2 className="h-6 w-6 text-green-600" />

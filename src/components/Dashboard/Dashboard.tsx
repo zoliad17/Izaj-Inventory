@@ -23,7 +23,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
 import CategoryListModal from "./CategoryListModal";
-import { useNotifications, NotificationItem } from "../../hooks/useNotifications";
+import {
+  useNotifications,
+  NotificationItem,
+} from "../../hooks/useNotifications";
 
 // Types for analytics data
 interface TopProduct {
@@ -529,7 +532,9 @@ function Dashboard() {
                                   ? "bg-blue-50/50 dark:bg-blue-900/10"
                                   : ""
                               }`}
-                              onClick={() => handleNotificationClick(notification)}
+                              onClick={() =>
+                                handleNotificationClick(notification)
+                              }
                             >
                               <div className="flex items-start">
                                 <div className="flex-shrink-0 mt-1">
@@ -546,8 +551,8 @@ function Dashboard() {
                                     <p
                                       className={`text-sm font-medium ${
                                         isUnread
-                                          ? "text-gray-900 dark:text-white font-semibold"
-                                          : "text-gray-900 dark:text-white"
+                                          ? "text-blue-700 dark:text-blue-300 font-semibold"
+                                          : "text-gray-600 dark:text-gray-400"
                                       }`}
                                     >
                                       {notification.title || "Notification"}
