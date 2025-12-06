@@ -163,21 +163,21 @@ PRICE_RANGES = {
 
 # Quantity ranges by category (min, max)
 QUANTITY_RANGES = {
-    "Chandelier": (0, 50),
+    "Chandelier": (0, 500),
     "Bulb": (0, 500),
-    "Pendant Light": (0, 200),
-    "Ceiling Light": (0, 300),
-    "Wall Lamp": (0, 250),
-    "Table Lamp": (0, 300),
-    "Floor Lamp": (0, 150),
-    "Track Lighting": (0, 200),
-    "Recessed Lighting": (0, 400),
-    "Outdoor Lighting": (0, 300),
-    "Smart Lighting": (0, 250),
-    "LED Strip": (0, 400),
-    "Lantern": (0, 200),
-    "Spotlight": (0, 300),
-    "Emergency Light": (0, 200),
+    "Pendant Light": (0, 500),
+    "Ceiling Light": (0, 500),
+    "Wall Lamp": (0, 500),
+    "Table Lamp": (0, 500),
+    "Floor Lamp": (0, 500),
+    "Track Lighting": (0, 500),
+    "Recessed Lighting": (0, 500),
+    "Outdoor Lighting": (0, 500),
+    "Smart Lighting": (0, 500),
+    "LED Strip": (0, 500),
+    "Lantern": (0, 500),
+    "Spotlight": (0, 500),
+    "Emergency Light": (0, 500),
 }
 
 
@@ -220,12 +220,8 @@ def generate_product_name(category):
 
 def determine_status(quantity):
     """Determine status based on quantity"""
-    if quantity == 0:
-        return "Out of Stock"
-    elif quantity < 20:
-        return "Low Stock"
-    else:
-        return "In Stock"
+    # All products will be in stock as per requirement
+    return "In Stock"
 
 
 def generate_products(num_products=50):
@@ -249,16 +245,10 @@ def generate_products(num_products=50):
         price_min, price_max = PRICE_RANGES[category]
         price = round(random.uniform(price_min, price_max), 2)
         
-        # Generate quantity (some products will be out of stock or low stock)
-        qty_min, qty_max = QUANTITY_RANGES[category]
-        if random.random() < 0.1:  # 10% chance of out of stock
-            quantity = 0
-        elif random.random() < 0.2:  # 20% chance of low stock
-            quantity = random.randint(1, 19)
-        else:
-            quantity = random.randint(qty_min, qty_max)
+        # Set quantity to 500 for all products as per requirement
+        quantity = 500
         
-        # Determine status
+        # Determine status (all products will be in stock)
         status = determine_status(quantity)
         
         products.append({
@@ -306,4 +296,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

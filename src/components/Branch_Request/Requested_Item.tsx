@@ -60,6 +60,11 @@ export default function Requested_Item() {
   );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isMarkingArrived, setIsMarkingArrived] = useState(false);
+  // State for delete confirmation modal
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<SentRequest | null>(
+    null
+  );
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -143,6 +148,48 @@ export default function Requested_Item() {
   const handleViewDetails = (request: SentRequest) => {
     setSelectedRequest(request);
     setShowDetailsModal(true);
+  };
+
+  // Handle delete request action
+  const handleDeleteRequest = (request: SentRequest) => {
+    setRequestToDelete(request);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Confirm delete action
+  const confirmDeleteRequest = async () => {
+    if (!requestToDelete || !currentUser) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/product-requests/${requestToDelete.request_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: currentUser.user_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete request");
+      }
+
+      // Remove the deleted request from the state
+      setRequests(
+        requests.filter((req) => req.request_id !== requestToDelete.request_id)
+      );
+
+      toast.success("Request deleted successfully");
+      setShowDeleteConfirmModal(false);
+      setRequestToDelete(null);
+    } catch (error) {
+      console.error("Error deleting request:", error);
+      toast.error("Failed to delete request");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -478,6 +525,7 @@ export default function Requested_Item() {
                             </button>
 
                             <button
+                              onClick={() => handleDeleteRequest(request)}
                               className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-transparent text-base font-bold
                                  shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
                                  dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
@@ -796,6 +844,77 @@ export default function Requested_Item() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 dark:bg-black/70 z-50">
+          <div className="bg-white dark:bg-gray-900/90 rounded-lg p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-neutral-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Confirm Deletion
+              </h3>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setRequestToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">
+                Are you sure you want to delete this request? This action cannot
+                be undone.
+              </p>
+              {requestToDelete && (
+                <div className="mt-4 p-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                  <p className="text-gray-900 dark:text-gray-100 font-medium">
+                    Request #{requestToDelete.request_id}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    To: {requestToDelete.recipient.name} (
+                    {requestToDelete.recipient_branch})
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                    Items: {requestToDelete.items.length}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setRequestToDelete(null);
+                }}
+                className="px-4 py-2 rounded-2xl bg-transparent text-base font-bold
+                   shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                   dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                   hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                   dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                   text-gray-600 dark:text-gray-400 transition-all duration-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteRequest}
+                className="px-4 py-2 rounded-2xl bg-transparent text-base font-bold
+                   shadow-[inset_4px_4px_8px_rgba(0,0,0,0.05),inset_-4px_-4px_8px_rgba(255,255,255,0.6)]
+                   dark:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.6),inset_-4px_-4px_8px_rgba(60,60,60,0.4)]
+                   hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,0.5)]
+                   dark:hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.7),inset_-6px_-6px_12px_rgba(40,40,40,0.5)]
+                   text-red-600 dark:text-red-400 transition-all duration-300"
+              >
+                Confirm Delete
+              </button>
             </div>
           </div>
         </div>

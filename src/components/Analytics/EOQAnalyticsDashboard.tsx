@@ -1240,12 +1240,16 @@ const EOQAnalyticsDashboard: React.FC = () => {
               </div>
 
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
-                <DollarSign className="absolute top-4 right-4 w-6 h-6 text-green-600 dark:text-green-400" />
+                <Coins className="absolute top-4 right-4 w-6 h-6 text-green-600 dark:text-green-400" />
                 <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
                   Annual Total Cost
                 </p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  ₱{Math.round(eoqData.total_annual_cost).toLocaleString()}
+                  PHP{" "}
+                  {Math.round(eoqData.total_annual_cost).toLocaleString(
+                    "en-US",
+                    { minimumFractionDigits: 2 }
+                  )}
                 </p>
                 <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
                   Estimated yearly holding + ordering
@@ -1273,7 +1277,11 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   Annual Holding Cost
                 </h3>
                 <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  ₱{Math.round(eoqData.annual_holding_cost)}
+                  PHP{" "}
+                  {Math.round(eoqData.annual_holding_cost).toLocaleString(
+                    "en-US",
+                    { minimumFractionDigits: 2 }
+                  )}
                 </p>
                 <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                   Cost to store inventory
