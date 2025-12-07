@@ -24,7 +24,6 @@ import {
   AlertCircle,
   Calculator,
   RefreshCw,
-  DollarSign,
   Shield,
   Coins,
   ChevronUp,

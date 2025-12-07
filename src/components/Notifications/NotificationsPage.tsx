@@ -112,7 +112,14 @@ function NotificationsPage() {
 
   // Update local notifications when hook data changes
   useEffect(() => {
-    setLocalNotifications(notifications);
+    if (notifications && Array.isArray(notifications)) {
+      setLocalNotifications(
+        (notifications as NotificationItem[]).map((n) => ({
+          ...n,
+          title: n.title || "",
+        }))
+      );
+    }
   }, [notifications]);
 
   // Handle delete notification

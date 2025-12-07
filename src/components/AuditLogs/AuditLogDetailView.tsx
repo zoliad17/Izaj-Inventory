@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   X,
   User,
@@ -6,8 +6,6 @@ import {
   Package,
   Clock,
   FileText,
-  ChevronDown,
-  ChevronUp,
   AlertTriangle,
   Info,
   CheckCircle,
@@ -82,106 +80,6 @@ const AuditLogDetailView: React.FC<AuditLogDetailViewProps> = ({
   log,
   onClose,
 }) => {
-  const [expandedSections, setExpandedSections] = useState({
-    metadata: false,
-    oldValues: false,
-    newValues: false,
-  });
-
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
-
-  // Helper function to format values for display
-  const formatValue = (value: any): React.ReactNode => {
-    if (value === null || value === undefined) {
-      return "—";
-    }
-
-    if (typeof value === "boolean") {
-      return value ? "Yes" : "No";
-    }
-
-    if (typeof value === "string" || typeof value === "number") {
-      return String(value);
-    }
-
-    if (Array.isArray(value)) {
-      // Handle arrays of items
-      if (value.length === 0) {
-        return "[]";
-      }
-
-      // If it's an array of objects with common fields, display as table
-      if (
-        value.length > 0 &&
-        typeof value[0] === "object" &&
-        value[0] !== null
-      ) {
-        return (
-          <div className="mt-2 space-y-2">
-            {value.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs border border-gray-200 dark:border-gray-600"
-              >
-                {typeof item === "object" ? (
-                  <div className="space-y-1">
-                    {Object.entries(item).map(([k, v]) => (
-                      <div key={k} className="flex justify-between">
-                        <span className="font-medium text-gray-600 dark:text-gray-300">
-                          {k}:
-                        </span>
-                        <span className="text-gray-900 dark:text-gray-100">
-                          {typeof v === "object"
-                            ? JSON.stringify(v)
-                            : String(v)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  String(item)
-                )}
-              </div>
-            ))}
-          </div>
-        );
-      }
-
-      // Simple array of primitives
-      return value.join(", ");
-    }
-
-    if (typeof value === "object") {
-      // Display object as key-value pairs
-      const entries = Object.entries(value);
-      if (entries.length === 0) {
-        return "{}";
-      }
-
-      return (
-        <div className="mt-2 bg-gray-50 dark:bg-gray-700 p-2 rounded text-xs space-y-1 border border-gray-200 dark:border-gray-600">
-          {entries.map(([k, v]) => (
-            <div key={k} className="flex justify-between">
-              <span className="font-medium text-gray-600 dark:text-gray-300">
-                {k}:
-              </span>
-              <span className="text-gray-900 dark:text-gray-100 ml-2">
-                {typeof v === "object" ? JSON.stringify(v) : String(v)}
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    return String(value);
-  };
-
   const getSeverityIcon = (level: string) => {
     switch (level?.toLowerCase()) {
       case "high":

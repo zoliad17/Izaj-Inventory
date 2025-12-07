@@ -13,7 +13,7 @@ function AddCategoryPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (isLoading) return; // Prevent multiple submissions
 
     const formData = new FormData(e.currentTarget);
@@ -26,7 +26,7 @@ function AddCategoryPage() {
 
     try {
       setIsLoading(true);
-      const { data, error } = await api.createCategory({
+      const { error } = await api.createCategory({
         category_name: categoryName.trim(),
       });
 
@@ -38,8 +38,7 @@ function AddCategoryPage() {
       navigate("/dashboard"); // Redirect back to dashboard after adding
     } catch (error: any) {
       console.error("Error adding category:", error);
-      const errorMessage =
-        error?.message || error || "Failed to add category";
+      const errorMessage = error?.message || error || "Failed to add category";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -67,7 +66,12 @@ function AddCategoryPage() {
           Add New Lighting Category
         </h1>
 
-        <form onSubmit={handleSubmit} action="#" method="post" className="space-y-6 p-6">
+        <form
+          onSubmit={handleSubmit}
+          action="#"
+          method="post"
+          className="space-y-6 p-6"
+        >
           {/* Basic Information Section */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b pb-2 border-gray-200 dark:border-gray-700">
@@ -109,7 +113,6 @@ function AddCategoryPage() {
               </div>
             </div>
           </div>
-
 
           <div className="flex justify-end space-x-4 pt-4">
             <button

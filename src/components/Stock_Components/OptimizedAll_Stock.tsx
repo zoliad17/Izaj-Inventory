@@ -271,7 +271,10 @@ function OptimizedAllStock() {
   // Update status filter when URL parameter changes
   useEffect(() => {
     const statusParam = searchParams.get("status");
-    if (statusParam && ["Low Stock", "Out of Stock", "In Stock"].includes(statusParam)) {
+    if (
+      statusParam &&
+      ["Low Stock", "Out of Stock", "In Stock"].includes(statusParam)
+    ) {
       setSelectedStatus(statusParam);
     } else if (!statusParam) {
       // If status param is removed, reset to "All"
@@ -328,21 +331,23 @@ function OptimizedAllStock() {
       // Note: getProducts endpoint doesn't include transfer_tag fields, but we'll get them from audit logs
       const mappedProducts = (branchProducts as any[]).map((product: any) => ({
         id: product.id,
-        branch_id: branchId, // Use the branchId from the API call since it's not in the response
+        branch_id: branchId,
         name: product.product_name,
         category: product.category_id,
         category_name: product.category_name,
         price: Number(product.price).toFixed(2),
         stock: product.quantity,
-        status: product.status, // Use status from database instead of calculating
+        status: product.status,
         detailsPage: `/product/${product.id}`,
-        source: (product.transfer_tag ? "Transferred" : "Local") as const,
+        source: (product.transfer_tag ? "Transferred" : "Local") as
+          | "Local"
+          | "Transferred",
         transferred_from: undefined,
         transferred_at: undefined,
         request_id: undefined,
-        transferTag: product.transfer_tag || null, // May be undefined from /api/products endpoint
-        transferTagAppliedAt: product.transfer_tag_set_at || null, // May be undefined from /api/products endpoint
-      }));
+        transferTag: product.transfer_tag || null,
+        transferTagAppliedAt: product.transfer_tag_set_at || null,
+      })) as Product[];
 
       // Fetch audit logs to identify transferred products
       if (currentUser) {
@@ -382,7 +387,7 @@ function OptimizedAllStock() {
             );
 
             // Update products that were transferred
-            const updatedProducts = mappedProducts.map((product: Product) => {
+            const updatedProducts = mappedProducts.map((product) => {
               // Find the transfer log that contains this product
               const transferLog = transferLogs.find((log: any) => {
                 if (Array.isArray(log.metadata?.items_merged)) {
@@ -434,9 +439,9 @@ function OptimizedAllStock() {
                     Number(transferLog.old_values?.quantity) || 0;
                 }
 
-                const updatedProduct = {
+                const updatedProduct: Product = {
                   ...product,
-                  source: "Transferred" as const,
+                  source: "Transferred",
                   transferred_from:
                     transferLog.metadata?.source_branch_name ||
                     "Unknown Branch",
@@ -596,7 +601,7 @@ function OptimizedAllStock() {
         getFormattedProductId(product).toLowerCase().includes(normalizedSearch);
       const matchesCategory =
         selectedCategory === 0 || product.category === selectedCategory;
-      
+
       // Enhanced status matching: Check both status field and actual quantity
       // This ensures consistency with dashboard counts which are based on quantity
       let matchesStatus = true;
@@ -608,7 +613,8 @@ function OptimizedAllStock() {
           matchesStatus = product.status === "Out of Stock" || stock === 0;
         } else if (selectedStatus === "Low Stock") {
           // Match if status is "Low Stock" OR (quantity > 0 AND quantity < 20)
-          matchesStatus = product.status === "Low Stock" || (stock > 0 && stock < 20);
+          matchesStatus =
+            product.status === "Low Stock" || (stock > 0 && stock < 20);
         } else if (selectedStatus === "In Stock") {
           // Match if status is "In Stock" OR quantity >= 20
           matchesStatus = product.status === "In Stock" || stock >= 20;
@@ -1004,7 +1010,6 @@ function OptimizedAllStock() {
             status: row["Status"],
             branch_id: branchId,
           });
-
         }
 
         if (errors.length > 0) {
@@ -1110,7 +1115,6 @@ function OptimizedAllStock() {
       toast.error(errorMessage);
     }
   }, [products, categories, handleError]);
-
 
   // Show loading while user data is being fetched
   if (!currentUser) {
@@ -1643,7 +1647,8 @@ function OptimizedAllStock() {
                                     </span>
                                   </td>
                                   <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                                    {product.transferred_from || "Unknown Branch"}
+                                    {product.transferred_from ||
+                                      "Unknown Branch"}
                                   </td>
                                   <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                                     <div className="hidden sm:block">
