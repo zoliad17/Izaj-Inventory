@@ -4104,6 +4104,110 @@ app.put("/api/notifications/mark-read", authenticateUser, async (req, res) => {
   }
 });
 
+// Delete a single notification
+app.delete("/api/notifications/:notificationId", authenticateUser, async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    const { notificationId } = req.params;
+
+    if (!user_id) {
+      return res.status(400).json({ error: "Authenticated user id not found" });
+    }
+
+    if (!notificationId) {
+      return res.status(400).json({ error: "Notification ID is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .delete()
+      .eq("id", notificationId)
+      .eq("user_id", user_id);
+
+    if (error) {
+      console.error("Error deleting notification:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ deleted: data?.length || 0 });
+  } catch (err) {
+    console.error("Unexpected error in delete notification route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Delete all notifications for the authenticated user
+app.delete("/api/notifications", authenticateUser, async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    const { read_status } = req.query; // Optional: 'read', 'unread', or omit for all
+
+    if (!user_id) {
+      return res.status(400).json({ error: "Authenticated user id not found" });
+    }
+
+    let query = supabase.from("notifications").delete().eq("user_id", user_id);
+
+    if (read_status === "read") {
+      query = query.eq("read", true);
+    } else if (read_status === "unread") {
+      query = query.eq("read", false);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error deleting notifications:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json({ deleted: data?.length || 0 });
+  } catch (err) {
+    console.error("Unexpected error in delete notifications route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Create a notification (admin/system use)
+app.post("/api/notifications/create", authenticateUser, async (req, res) => {
+  try {
+    const { user_id, title, message, link, type, metadata } = req.body;
+    const currentUser = req.user?.user_id;
+
+    if (!user_id) {
+      return res.status(400).json({ error: "user_id is required" });
+    }
+
+    if (!title) {
+      return res.status(400).json({ error: "title is required" });
+    }
+
+    // Note: In a real app, you'd check if currentUser has permission to create notifications for user_id
+    const { data, error } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          user_id,
+          title,
+          message: message || null,
+          link: link || null,
+          type: type || "general",
+          metadata: metadata || null,
+          read: false,
+        },
+      ]);
+
+    if (error) {
+      console.error("Error creating notification:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.status(201).json({ notification: data?.[0] || {} });
+  } catch (err) {
+    console.error("Unexpected error in create notification route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // 404 handler (must be after all routes)
 app.use("*", (req, res) => {
   res.status(404).json({

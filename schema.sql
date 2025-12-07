@@ -114,6 +114,21 @@ CREATE TABLE IF NOT EXISTS public.user (
   CONSTRAINT user_branch_id_fkey FOREIGN KEY (branch_id) REFERENCES public.branch(id)
 );
 
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  message text,
+  link text,
+  type text DEFAULT 'general'::text,
+  read boolean DEFAULT false,
+  metadata jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_pkey PRIMARY KEY (id),
+  CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.user(user_id) ON DELETE CASCADE
+);
+
 -- =============================================
 -- PERFORMANCE INDEXES
 -- =============================================
@@ -173,6 +188,12 @@ CREATE INDEX IF NOT EXISTS idx_centralized_product_branch_status ON public.centr
 CREATE INDEX IF NOT EXISTS idx_centralized_product_branch_category ON public.centralized_product(branch_id, category_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_timestamp ON public.audit_logs(user_id, timestamp);
 CREATE INDEX IF NOT EXISTS idx_product_requisition_to_status ON public.product_requisition(request_to, status);
+
+-- Notification indexes
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON public.notifications(read);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_read_created ON public.notifications(user_id, read, created_at DESC);
 
 -- Partial indexes for better performance on filtered queries
 CREATE INDEX IF NOT EXISTS idx_centralized_product_low_stock ON public.centralized_product(branch_id, quantity) 
