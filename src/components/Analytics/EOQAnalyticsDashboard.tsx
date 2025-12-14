@@ -84,6 +84,7 @@ interface ModalState {
   status: "loading" | "success" | "error";
   message: string;
   details?: string;
+  progress?: number; // Progress percentage (0-100)
 }
 
 interface StockDeductionItem {
@@ -122,6 +123,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
     isOpen: false,
     status: "loading",
     message: "",
+    progress: 0,
   });
   const [stockDeductionModal, setStockDeductionModal] =
     useState<StockDeductionModalState>({
@@ -212,6 +214,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
         isOpen: true,
         status: "loading",
         message: "Uploading file...",
+        progress: 0,
       });
 
       try {
@@ -224,18 +227,69 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
         console.log("Uploading file:", file.name, "Size:", file.size);
 
-        // Send directly to Python backend for file uploads
-        // This bypasses the Node.js proxy to avoid multipart handling issues
-        const response = await fetch(
-          `${PYTHON_BACKEND_URL}/api/analytics/sales-data/import`,
-          {
-            method: "POST",
-            body: formData,
+        // Use XMLHttpRequest to track upload progress
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable && e.total > 0) {
+            const uploadProgress = Math.round((e.loaded / e.total) * 50); // First 50% for upload
+            setModal((prev) => ({
+              ...prev,
+              progress: Math.max(prev.progress || 0, uploadProgress), // Don't go backwards
+              message: "Uploading file...",
+            }));
           }
-        );
+        });
 
-        const result = await response.json();
+        // Promise wrapper for XMLHttpRequest
+        const uploadPromise = new Promise<any>((resolve, reject) => {
+          xhr.addEventListener("load", () => {
+            // Update progress to 50% when upload completes
+            setModal((prev) => ({
+              ...prev,
+              progress: 50,
+              message: "Processing file...",
+            }));
+            
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const result = JSON.parse(xhr.responseText);
+                resolve(result);
+              } catch (e) {
+                reject(new Error("Failed to parse response"));
+              }
+            } else {
+              try {
+                const errorResult = JSON.parse(xhr.responseText);
+                reject(errorResult);
+              } catch (e) {
+                reject(new Error(`Upload failed: ${xhr.statusText}`));
+              }
+            }
+          });
+
+          xhr.addEventListener("error", () => {
+            reject(new Error("Network error during upload"));
+          });
+
+          xhr.addEventListener("abort", () => {
+            reject(new Error("Upload aborted"));
+          });
+
+          xhr.open("POST", `${PYTHON_BACKEND_URL}/api/analytics/sales-data/import`);
+          xhr.send(formData);
+        });
+
+        const result = await uploadPromise;
         console.log("Upload response:", result);
+
+        // Update progress to 60% when processing
+        setModal((prev) => ({
+          ...prev,
+          progress: 60,
+          message: "Analyzing sales data...",
+        }));
 
         if (result.success) {
           setSalesMetrics(result.metrics);
@@ -248,10 +302,24 @@ const EOQAnalyticsDashboard: React.FC = () => {
             )
           );
 
+          // Update progress to 70% when fetching stock details
+          setModal((prev) => ({
+            ...prev,
+            progress: 70,
+            message: "Updating inventory...",
+          }));
+
           // Fetch and display stock deduction details
           if (user?.branch_id) {
             await fetchStockDeductionDetails(user.branch_id);
           }
+
+          // Update progress to 80% when refreshing analytics
+          setModal((prev) => ({
+            ...prev,
+            progress: 80,
+            message: "Refreshing analytics...",
+          }));
 
           // Refresh persisted sales summary and EOQ calculations from backend
           try {
@@ -264,14 +332,30 @@ const EOQAnalyticsDashboard: React.FC = () => {
             );
           }
 
+          // Update progress to 90% when calculating EOQ
           setModal({
             isOpen: true,
             status: "loading",
             message: "Calculating EOQ with imported data...",
+            progress: 90,
           });
 
-          await new Promise((resolve) => setTimeout(resolve, 800));
-          await calculateEOQWithData(result.metrics.annual_demand);
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          
+          // Complete progress - show completion message
+          // This will stay open until user clicks Close button
+          setModal({
+            isOpen: true,
+            status: "success",
+            message: "Sales data imported successfully!",
+            details: `Imported ${result.metrics?.total_sales || 0} sales records. Click Close to view EOQ calculations.`,
+            progress: 100,
+          });
+
+          // Calculate EOQ in the background (don't await, let it complete)
+          calculateEOQWithData(result.metrics.annual_demand).catch((err) => {
+            console.error("EOQ calculation error:", err);
+          });
         } else {
           // Check if this is a negative stock error
           const isNegativeStockError =
@@ -288,6 +372,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   result.details || result.error
                 }\n\nPlease verify that your sales quantities do not exceed current inventory levels.`
               : result.error || "Unknown error occurred",
+            progress: 0,
           });
         }
       } catch (error) {
@@ -298,13 +383,14 @@ const EOQAnalyticsDashboard: React.FC = () => {
           message: "Failed to import sales data",
           details:
             error instanceof Error ? error.message : "Unknown error occurred",
+          progress: 0,
         });
       } finally {
         setUploading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       }
     },
-    []
+    [user?.branch_id]
   );
 
   // Fetch persisted EOQ calculations from backend
@@ -454,19 +540,35 @@ const EOQAnalyticsDashboard: React.FC = () => {
               err
             );
           }
-          setModal({
-            isOpen: true,
-            status: "success",
-            message: "EOQ Calculation Complete!",
-            details: `EOQ: ${Math.round(
-              result.data.eoq_quantity
-            )} units | Reorder Point: ${Math.round(
-              result.data.reorder_point
-            )} units`,
+          // Update the existing modal with EOQ results if it's still open
+          // Otherwise, show a new modal with EOQ info
+          setModal((prev) => {
+            // If modal is still open and in success state (import completion), update it with EOQ info
+            if (prev.isOpen && prev.status === "success") {
+              return {
+                ...prev,
+                message: "Sales data imported and EOQ calculated!",
+                details: `${prev.details?.split('.')[0] || 'Import complete'}. EOQ: ${Math.round(
+                  result.data.eoq_quantity
+                )} units | Reorder Point: ${Math.round(
+                  result.data.reorder_point
+                )} units`,
+                progress: 100,
+              };
+            }
+            // If modal was closed, show new EOQ modal
+            return {
+              isOpen: true,
+              status: "success",
+              message: "EOQ Calculation Complete!",
+              details: `EOQ: ${Math.round(
+                result.data.eoq_quantity
+              )} units | Reorder Point: ${Math.round(
+                result.data.reorder_point
+              )} units`,
+              progress: 100,
+            };
           });
-          setTimeout(() => {
-            setModal((prev) => ({ ...prev, isOpen: false }));
-          }, 3000);
         } else {
           setModal({
             isOpen: true,
@@ -738,31 +840,75 @@ const EOQAnalyticsDashboard: React.FC = () => {
           <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full mx-4 p-8">
               {modal.status === "loading" && (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative w-16 h-16">
-                    <div className="absolute inset-0 rounded-full border-4 border-blue-200 dark:border-blue-900"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 dark:border-t-blue-400 dark:border-r-blue-400 animate-spin"></div>
-                  </div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <div className="flex flex-col items-center gap-4 w-full">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white text-center">
                     {modal.message}
                   </h2>
-                  <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
-                    {modal.details}
-                  </p>
+                  
+                  {/* Progress Bar */}
+                  <div className="w-full">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-500 h-3 rounded-full transition-all duration-300 ease-out flex items-center justify-end pr-1"
+                        style={{ width: `${modal.progress || 0}%` }}
+                      >
+                        {modal.progress && modal.progress > 10 && (
+                          <span className="text-xs text-white font-semibold">
+                            {Math.round(modal.progress)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2 text-center">
+                      <span className="text-sm text-slate-600 dark:text-gray-300 font-medium">
+                        {modal.progress || 0}% Complete
+                      </span>
+                    </div>
+                  </div>
+
+                  {modal.details && (
+                    <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
+                      {modal.details}
+                    </p>
+                  )}
                 </div>
               )}
 
               {modal.status === "success" && (
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4 w-full">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                     <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                   </div>
-                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white text-center">
                     {modal.message}
                   </h2>
-                  <p className="text-sm text-slate-600 dark:text-gray-300 text-center">
+                  
+                  {/* Progress Bar at 100% for success */}
+                  {modal.progress !== undefined && (
+                    <div className="w-full">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                        <div className="bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-500 h-3 rounded-full flex items-center justify-end pr-1">
+                          <span className="text-xs text-white font-semibold">
+                            100%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-slate-600 dark:text-gray-300 text-center whitespace-pre-wrap">
                     {modal.details}
                   </p>
+                  
+                  {/* Close button for manual dismissal */}
+                  <button
+                    onClick={() =>
+                      setModal((prev) => ({ ...prev, isOpen: false }))
+                    }
+                    className="mt-2 px-6 py-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               )}
 
