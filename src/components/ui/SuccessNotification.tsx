@@ -114,7 +114,7 @@ export default function SuccessNotification({
                   Estimated Value
                 </p>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
-                  ₱{totalValue.toFixed(2)}
+                  PHP {totalValue.toFixed(2)}
                 </p>
               </div>
             </div>

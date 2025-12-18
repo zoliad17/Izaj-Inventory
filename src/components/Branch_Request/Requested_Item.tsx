@@ -193,13 +193,20 @@ export default function Requested_Item() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    // Add period after abbreviated months like Dec, Jan, etc.
+    return formattedDate.replace(
+      /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g,
+      "$1."
+    );
   };
 
   const getStatusColor = (status: string) => {
@@ -387,7 +394,7 @@ export default function Requested_Item() {
                                   Request #{request.request_id}
                                 </h3>
                                 <span
-                                  className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
+                                  className={`px-3 py-1 rounded-full text-base font-medium flex items-center gap-1 ${getStatusColor(
                                     request.status
                                   )}`}
                                 >
@@ -396,42 +403,63 @@ export default function Requested_Item() {
                                 </span>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xl text-gray-600 dark:text-gray-400">
                                 <div className="flex items-center gap-2">
                                   <User className="h-5 w-5" />
-                                  <span>
-                                    <strong>To:</strong>{" "}
-                                    {request.recipient.name}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    To: {request.recipient.name}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="h-5 w-5" />
-                                  <span>
-                                    <strong>Branch:</strong>{" "}
-                                    {request.recipient_branch}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    Branch: {request.recipient_branch}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-5 w-5" />
-                                  <span>
-                                    <strong>Sent:</strong>{" "}
-                                    {formatDate(request.created_at)}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    Sent: {formatDate(request.created_at)}
                                   </span>
                                 </div>
                               </div>
 
                               {request.reviewed_at && (
-                                <div className="mt-2 text-base text-gray-600 dark:text-gray-400">
-                                  <span>
-                                    <strong>Reviewed:</strong>{" "}
-                                    {formatDate(request.reviewed_at)}
-                                  </span>
-                                  {request.reviewer_name && (
-                                    <span className="ml-4">
-                                      <strong>By:</strong>{" "}
-                                      {request.reviewer_name}
+                                <div
+                                  className={`mt-2 text-base p-3 rounded-xl ${
+                                    request.status === "approved"
+                                      ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }`}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-900/30
+                    shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)]
+                    dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]
+                    text-green-700 dark:text-green-400"
+                                    >
+                                      <strong>Reviewed:</strong>{" "}
+                                      {formatDate(request.reviewed_at)}
                                     </span>
-                                  )}
+                                    {request.reviewer_name && (
+                                      <span
+                                        className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-900/30
+                    shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)]
+                    dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)]
+                    text-green-700 dark:text-green-400"
+                                      >
+                                        <strong>By:</strong>{" "}
+                                        {request.reviewer_name}
+                                      </span>
+                                    )}
+                                    {/* {request.status === "approved" && (
+                                      <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-bold bg-green-500 text-white shadow-md">
+                                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                                        APPROVED
+                                      </span>
+                                    )} */}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -468,7 +496,7 @@ export default function Requested_Item() {
                                   Total Value:
                                 </span>
                                 <p className="text-gray-600 dark:text-gray-400">
-                                  ₱{getTotalValue(request.items).toFixed(2)}
+                                  PHP {getTotalValue(request.items).toFixed(2)}
                                 </p>
                               </div>
                               <div>
@@ -643,30 +671,30 @@ export default function Requested_Item() {
             </div>
 
             {/* Request Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-base leading-relaxed">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-base leading-relaxed mt-2 p-2 rounded-md bg-green-50 dark:bg-green-900/30 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.05),inset_-2px_-2px_4px_rgba(255,255,255,0.6)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.6),inset_-2px_-2px_4px_rgba(60,60,60,0.3)] text-white-100">
               <div className="space-y-4">
                 <div>
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     Recipient:
                   </span>
-                  <p className="text-gray-900 dark:text-gray-100">
+                  <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                     {selectedRequest.recipient.name}
-                  </p>
+                  </span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     Branch:
                   </span>
-                  <p className="text-gray-900 dark:text-gray-100">
+                  <span className="ml-2 inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                     {selectedRequest.recipient_branch}
-                  </p>
+                  </span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     Status:
                   </span>
                   <span
-                    className={`ml-2 px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                    className={`ml-2 px-2 py-1 rounded-full text-base font-medium ${getStatusColor(
                       selectedRequest.status
                     )}`}
                   >
@@ -679,18 +707,18 @@ export default function Requested_Item() {
                   <span className="font-medium text-gray-700 dark:text-gray-300">
                     Sent Date:
                   </span>
-                  <p className="text-gray-900 dark:text-gray-100">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
                     {formatDate(selectedRequest.created_at)}
-                  </p>
+                  </span>
                 </div>
                 {selectedRequest.reviewed_at && (
                   <div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">
                       Reviewed Date:
                     </span>
-                    <p className="text-gray-900 dark:text-gray-100">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
                       {formatDate(selectedRequest.reviewed_at)}
-                    </p>
+                    </span>
                   </div>
                 )}
                 {selectedRequest.reviewer_name && (
@@ -698,9 +726,9 @@ export default function Requested_Item() {
                     <span className="font-medium text-gray-700 dark:text-gray-300">
                       Reviewed By:
                     </span>
-                    <p className="text-gray-900 dark:text-gray-100">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100">
                       {selectedRequest.reviewer_name}
-                    </p>
+                    </span>
                   </div>
                 )}
               </div>
@@ -745,10 +773,10 @@ export default function Requested_Item() {
                           {item.quantity}
                         </td>
                         <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
-                          ₱{item.price.toFixed(2)}
+                          PHP {item.price.toFixed(2)}
                         </td>
                         <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
-                          ₱{(item.price * item.quantity).toFixed(2)}
+                          PHP {(item.price * item.quantity).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -762,7 +790,7 @@ export default function Requested_Item() {
                         Total Value:
                       </td>
                       <td className="px-4 py-2 font-semibold text-gray-900 dark:text-gray-100">
-                        ₱{getTotalValue(selectedRequest.items).toFixed(2)}
+                        PHP {getTotalValue(selectedRequest.items).toFixed(2)}
                       </td>
                     </tr>
                   </tfoot>

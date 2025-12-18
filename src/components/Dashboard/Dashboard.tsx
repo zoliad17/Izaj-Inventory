@@ -23,6 +23,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/config";
 import CategoryListModal from "./CategoryListModal";
+import { CustomBarChart } from "./CustomBarChart";
 import {
   useNotifications,
   NotificationItem,
@@ -1241,6 +1242,11 @@ function Dashboard() {
             </ChartContainer>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Bar Chart Section */}
+      <div className="mt-6">
+        <CustomBarChart topProducts={topProducts.slice(0, 5)} />
       </div>
 
       {/* Bottom Row - Products Table */}

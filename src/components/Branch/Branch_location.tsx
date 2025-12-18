@@ -1,9 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { LocationMarkerIcon } from "@heroicons/react/outline";
 import { useSidebar } from "../Sidebar/SidebarContext";
 import { useEffect, useState } from "react";
 import { api } from "../../utils/apiClient";
-import { ArrowLeft, Building2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Building2, MapPin, ShoppingCart } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Define interface for Branch data
@@ -251,9 +250,12 @@ function BranchLocation() {
                   {branch.name || branch.location}
                 </h5>
 
-                <div className="flex items-center text-gray-700 dark:text-gray-400 text-base">
-                  <LocationMarkerIcon className="h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" />
-                  <span>{branch.address}</span>
+                <div
+                  className="flex items-center cursor-pointer text-gray-700 dark:text-gray-400 text-base"
+                  title={branch.address}
+                >
+                  <MapPin className="flex-shrink-0 h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" />
+                  <span className="truncate">{branch.address}</span>
                 </div>
               </div>
 
@@ -278,7 +280,7 @@ function BranchLocation() {
                   </span>
                 </button>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 text-center">
+                <p className="text-sm text-green-500 dark:text-green-400 mt-3 text-center">
                   ✓ Branch has registered users
                 </p>
               </div>

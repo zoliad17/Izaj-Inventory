@@ -514,11 +514,7 @@ export default function UnifiedProductRequest() {
               <span className="text-orange-600 dark:text-orange-400 ml-2">
                 Reserved
               </span>{" "}
-              = Pending approval,
-              <span className="text-blue-600 dark:text-blue-400 ml-2">
-                Total
-              </span>{" "}
-              = Complete inventory
+              = Pending approval
             </div>
           </div>
         </div>
@@ -646,7 +642,7 @@ export default function UnifiedProductRequest() {
                       "Name",
                       "Category",
                       "Price",
-                      "Available",
+                      "Available ",
                       "Reserved",
                       "Total",
                       "Status",
@@ -675,23 +671,29 @@ export default function UnifiedProductRequest() {
                           <td className="px-3 py-2 whitespace-nowrap text-sm md:text-base font-medium text-gray-900 dark:text-gray-100">
                             {product.id}
                           </td>
-                          <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate max-w-[120px]">
+                          <td
+                            className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate cursor-pointer font-bold max-w-[120px]"
+                            title={product.product_name}
+                          >
                             {product.product_name}
                           </td>
-                          <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate max-w-[100px]">
+                          <td
+                            className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300 truncate max-w-[100px]"
+                            title={product.category_name}
+                          >
                             {product.category_name}
                           </td>
                           <td className="px-3 py-2 text-sm md:text-base text-gray-500 dark:text-gray-300">
-                            ₱{product.price.toFixed(2)}
+                            PHP {product.price.toFixed(2)}
                           </td>
                           <td className="px-3 py-2 text-sm md:text-base text-green-600 dark:text-green-400 font-medium">
-                            {product.quantity}
+                            {product.quantity} Units
                           </td>
                           <td className="px-3 py-2 text-sm md:text-base text-orange-600 dark:text-orange-400 font-medium">
-                            {product.reserved_quantity || 0}
+                            {product.reserved_quantity || 0} Units
                           </td>
-                          <td className="px-3 py-2 text-sm md:text-base text-blue-600 dark:text-blue-400 font-medium">
-                            {product.total_quantity || product.quantity}
+                          <td className="px-3 py-2 text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium">
+                            {product.total_quantity || product.quantity} Units
                           </td>
                           <td className="px-3 py-2 text-sm md:text-base">
                             <span
@@ -860,7 +862,7 @@ export default function UnifiedProductRequest() {
                           {item.category_name}
                         </p>
                         <p className="text-gray-600 dark:text-gray-300">
-                          ₱{item.price.toFixed(2)} each
+                          PHP {item.price.toFixed(2)} each
                         </p>
                       </div>
                       <div className="flex items-center gap-4">
@@ -907,7 +909,7 @@ export default function UnifiedProductRequest() {
                       </div>
                     </div>
                     <div className="mt-2 text-gray-600 dark:text-gray-300 text-base">
-                      Available: {item.available_quantity} | Total: ₱
+                      Available: {item.available_quantity} Units | Total: PHP{" "}
                       {(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
@@ -962,7 +964,7 @@ export default function UnifiedProductRequest() {
                     Estimated Value:
                   </span>
                   <p className="text-gray-600 dark:text-gray-300 font-semibold">
-                    ₱
+                    PHP{" "}
                     {requestItems
                       .reduce(
                         (sum, item) => sum + item.price * item.quantity,

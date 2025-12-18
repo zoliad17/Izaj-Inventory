@@ -114,7 +114,7 @@ const ProductRow = memo(
           {categoryName}
         </td>
         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
-          Php {product.price}
+          PHP {product.price}
         </td>
         <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
           {product.stock}
@@ -1240,13 +1240,14 @@ function OptimizedAllStock() {
               {[
                 {
                   label: "Import",
-                  icon: Upload,
+                  icon: Download,
                   handler: handleImportExcel,
                   bg: "green",
                 },
                 {
                   label: "Export",
-                  icon: Download,
+
+                  icon: Upload,
                   handler: handleExportExcel,
                   bg: "blue",
                 },

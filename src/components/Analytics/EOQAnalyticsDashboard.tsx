@@ -229,7 +229,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
         // Use XMLHttpRequest to track upload progress
         const xhr = new XMLHttpRequest();
-        
+
         // Track upload progress
         xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable && e.total > 0) {
@@ -251,7 +251,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
               progress: 50,
               message: "Processing file...",
             }));
-            
+
             if (xhr.status >= 200 && xhr.status < 300) {
               try {
                 const result = JSON.parse(xhr.responseText);
@@ -277,7 +277,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
             reject(new Error("Upload aborted"));
           });
 
-          xhr.open("POST", `${PYTHON_BACKEND_URL}/api/analytics/sales-data/import`);
+          xhr.open(
+            "POST",
+            `${PYTHON_BACKEND_URL}/api/analytics/sales-data/import`
+          );
           xhr.send(formData);
         });
 
@@ -341,14 +344,16 @@ const EOQAnalyticsDashboard: React.FC = () => {
           });
 
           await new Promise((resolve) => setTimeout(resolve, 300));
-          
+
           // Complete progress - show completion message
           // This will stay open until user clicks Close button
           setModal({
             isOpen: true,
             status: "success",
             message: "Sales data imported successfully!",
-            details: `Imported ${result.metrics?.total_sales || 0} sales records. Click Close to view EOQ calculations.`,
+            details: `Imported ${
+              result.metrics?.total_sales || 0
+            } sales records. Click Close to view EOQ calculations.`,
             progress: 100,
           });
 
@@ -548,7 +553,9 @@ const EOQAnalyticsDashboard: React.FC = () => {
               return {
                 ...prev,
                 message: "Sales data imported and EOQ calculated!",
-                details: `${prev.details?.split('.')[0] || 'Import complete'}. EOQ: ${Math.round(
+                details: `${
+                  prev.details?.split(".")[0] || "Import complete"
+                }. EOQ: ${Math.round(
                   result.data.eoq_quantity
                 )} units | Reorder Point: ${Math.round(
                   result.data.reorder_point
@@ -844,7 +851,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-white text-center">
                     {modal.message}
                   </h2>
-                  
+
                   {/* Progress Bar */}
                   <div className="w-full">
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
@@ -882,7 +889,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   <h2 className="text-lg font-semibold text-slate-900 dark:text-white text-center">
                     {modal.message}
                   </h2>
-                  
+
                   {/* Progress Bar at 100% for success */}
                   {modal.progress !== undefined && (
                     <div className="w-full">
@@ -895,11 +902,11 @@ const EOQAnalyticsDashboard: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <p className="text-sm text-slate-600 dark:text-gray-300 text-center whitespace-pre-wrap">
                     {modal.details}
                   </p>
-                  
+
                   {/* Close button for manual dismissal */}
                   <button
                     onClick={() =>
@@ -1206,11 +1213,16 @@ const EOQAnalyticsDashboard: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <Calendar className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-1">
                               Days of Data
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {salesMetrics.days_of_data}
+                              <span className="text-blue-600 dark:text-blue-400 text-2xl">
+                                {salesMetrics.days_of_data}
+                              </span>{" "}
+                              <span className="text-blue-600 dark:text-blue-400 text-base">
+                                Days
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Number of days in file
@@ -1219,13 +1231,22 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <TrendingUp className="absolute top-3 right-3 w-5 h-5 text-green-600 dark:text-green-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-1">
                               Monthly Projection
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {monthlyProjection !== null
-                                ? monthlyProjection.toLocaleString()
-                                : "-"}
+                              {monthlyProjection !== null ? (
+                                <span className="text-green-600 dark:text-green-400 text-2xl">
+                                  {monthlyProjection.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-green-600 dark:text-green-400 text-2xl">
+                                  -
+                                </span>
+                              )}{" "}
+                              <span className="text-green-600 dark:text-green-400 text-base">
+                                Units
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Estimated units / month (avg_daily × 30)
@@ -1234,13 +1255,22 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <BarChart3 className="absolute top-3 right-3 w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-purple-600 dark:text-purple-400 text-sm font-medium mb-1">
                               Monthly (from total)
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {monthlyFromTotal !== null
-                                ? monthlyFromTotal.toLocaleString()
-                                : "-"}
+                              {monthlyFromTotal !== null ? (
+                                <span className="text-purple-600 dark:text-purple-400 text-2xl">
+                                  {monthlyFromTotal.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-purple-600 dark:text-purple-400 text-2xl">
+                                  -
+                                </span>
+                              )}{" "}
+                              <span className="text-purple-600 dark:text-purple-400 text-base">
+                                Units
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Total quantity ÷ months in file
@@ -1249,13 +1279,18 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <Package className="absolute top-3 right-3 w-5 h-5 text-amber-600 dark:text-amber-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-amber-600 dark:text-amber-400 text-sm font-medium mb-1">
                               Total Quantity
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {Math.round(
-                                salesMetrics.total_quantity
-                              ).toLocaleString()}
+                              <span className="text-amber-600 dark:text-amber-400 text-2xl">
+                                {Math.round(
+                                  salesMetrics.total_quantity
+                                ).toLocaleString()}
+                              </span>{" "}
+                              <span className="text-amber-600 dark:text-amber-400 text-base">
+                                Units
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Units sold in file
@@ -1264,11 +1299,16 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <Activity className="absolute top-3 right-3 w-5 h-5 text-teal-600 dark:text-teal-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-teal-600 dark:text-teal-400 text-sm font-medium mb-1">
                               Average Daily
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {salesMetrics.average_daily.toFixed(2)}
+                              <span className="text-teal-600 dark:text-teal-400 text-2xl">
+                                {salesMetrics.average_daily.toFixed(2)}
+                              </span>{" "}
+                              <span className="text-teal-600 dark:text-teal-400 text-base">
+                                Units
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Avg units sold per day
@@ -1277,13 +1317,18 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
                           <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 relative">
                             <CalendarDays className="absolute top-3 right-3 w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                            <p className="text-slate-700 dark:text-gray-300 font-medium mb-1">
+                            <p className="text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-1">
                               Annual Demand
                             </p>
                             <p className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                              {Math.round(
-                                salesMetrics.annual_demand
-                              ).toLocaleString()}
+                              <span className="text-indigo-600 dark:text-indigo-400 text-2xl">
+                                {Math.round(
+                                  salesMetrics.annual_demand
+                                ).toLocaleString()}
+                              </span>{" "}
+                              <span className="text-indigo-600 dark:text-indigo-400 text-base">
+                                Units
+                              </span>
                             </p>
                             <p className="text-sm text-slate-500 dark:text-gray-400">
                               Projected annual demand
@@ -1360,100 +1405,129 @@ const EOQAnalyticsDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 mt-6 mb-6 gap-4">
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
                 <Calculator className="absolute top-4 right-4 w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
+                <p className="text-blue-600 dark:text-blue-400 text-base font-medium mb-1">
                   EOQ Quantity
                 </p>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {Math.round(eoqData.eoq_quantity).toLocaleString()}
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-blue-600 dark:text-blue-400 text-3xl">
+                    {Math.round(eoqData.eoq_quantity).toLocaleString()}
+                  </span>{" "}
+                  <span className="text-blue-600 dark:text-blue-400 text-lg">
+                    Units
+                  </span>
                 </p>
-                <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
+                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                   Suggested optimal units per order
                 </p>
               </div>
 
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
                 <RefreshCw className="absolute top-4 right-4 w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
+                <p className="text-yellow-600 dark:text-yellow-400 text-base font-medium mb-1">
                   Reorder Point
                 </p>
-                <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {Math.round(eoqData.reorder_point).toLocaleString()}
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-yellow-600 dark:text-yellow-400 text-3xl">
+                    {Math.round(eoqData.reorder_point).toLocaleString()}
+                  </span>{" "}
+                  <span className="text-yellow-600 dark:text-yellow-400 text-lg">
+                    Units
+                  </span>
                 </p>
-                <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
+                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                   Stock level to trigger reorder
                 </p>
               </div>
 
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
-                <Coins className="absolute top-4 right-4 w-6 h-6 text-green-600 dark:text-green-400" />
-                <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
-                  Annual Total Cost
+                <Shield className="absolute top-4 right-4 w-6 h-6 text-red-600 dark:text-red-400" />
+                <p className="text-red-600 dark:text-red-400 text-base font-medium mb-1">
+                  Safety Stock
                 </p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  PHP{" "}
-                  {Math.round(eoqData.total_annual_cost).toLocaleString(
-                    "en-US",
-                    { minimumFractionDigits: 2 }
-                  )}
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-red-600 dark:text-red-400 text-3xl">
+                    {Math.round(eoqData.safety_stock).toLocaleString()}
+                  </span>{" "}
+                  <span className="text-red-600 dark:text-red-400 text-lg">
+                    Units
+                  </span>
                 </p>
-                <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
-                  Estimated yearly holding + ordering
+                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
+                  Buffer to reduce stockouts
                 </p>
               </div>
 
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
-                <Shield className="absolute top-4 right-4 w-6 h-6 text-red-600 dark:text-red-400" />
-                <p className="text-slate-600 dark:text-gray-400 font-medium mb-1">
-                  Safety Stock
+                <Package className="absolute top-4 right-4 w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <p className="text-indigo-600 dark:text-indigo-400 text-base font-medium mb-1">
+                  Average Inventory
                 </p>
-                <p className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {Math.round(eoqData.safety_stock).toLocaleString()}
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-indigo-600 dark:text-indigo-400 text-3xl">
+                    {Math.round(eoqData.average_inventory)}
+                  </span>{" "}
+                  <span className="text-indigo-600 dark:text-indigo-400 text-lg">
+                    Units
+                  </span>
                 </p>
-                <p className="text-slate-500 dark:text-gray-500 text-sm mt-2">
-                  Buffer to reduce stockouts
+                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
+                  Expected average stock
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
-                <Coins className="absolute top-4 right-4 w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
-                  Annual Holding Cost
-                </h3>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  PHP{" "}
-                  {Math.round(eoqData.annual_holding_cost).toLocaleString(
-                    "en-US",
-                    { minimumFractionDigits: 2 }
-                  )}
-                </p>
-                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
-                  Cost to store inventory
-                </p>
-              </div>
-              <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
                 <TrendingUp className="absolute top-4 right-4 w-6 h-6 text-purple-600 dark:text-purple-400" />
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
+                <p className="text-purple-600 dark:text-purple-400 text-base font-medium mb-1">
                   Max Stock Level
-                </h3>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {Math.round(eoqData.max_stock_level)} units
+                </p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-purple-600 dark:text-purple-400 text-3xl">
+                    {Math.round(eoqData.max_stock_level)}
+                  </span>{" "}
+                  <span className="text-purple-600 dark:text-purple-400 text-lg">
+                    Units
+                  </span>
                 </p>
                 <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
                   Maximum inventory level
                 </p>
               </div>
               <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
-                <Package className="absolute top-4 right-4 w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-4 text-lg">
-                  Average Inventory
-                </h3>
-                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                  {Math.round(eoqData.average_inventory)} units
+                <Coins className="absolute top-4 right-4 w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <p className="text-blue-600 dark:text-blue-400 text-base font-medium mb-1">
+                  Annual Holding Cost
+                </p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-blue-600 dark:text-blue-400 text-3xl">
+                    PHP{" "}
+                    {Math.round(eoqData.annual_holding_cost).toLocaleString(
+                      "en-US",
+                      { minimumFractionDigits: 2 }
+                    )}
+                  </span>
                 </p>
                 <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
-                  Expected average stock
+                  Cost to store inventory
+                </p>
+              </div>
+              <div className="bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative">
+                <Coins className="absolute top-4 right-4 w-6 h-6 text-green-600 dark:text-green-400" />
+                <p className="text-green-600 dark:text-green-400 text-base font-medium mb-1">
+                  Annual Total Cost
+                </p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+                  <span className="text-green-600 dark:text-green-400 text-3xl">
+                    PHP{" "}
+                    {Math.round(eoqData.total_annual_cost).toLocaleString(
+                      "en-US",
+                      { minimumFractionDigits: 2 }
+                    )}
+                  </span>
+                </p>
+                <p className="text-slate-500 dark:text-gray-500 text-base mt-2">
+                  Estimated yearly holding + ordering
                 </p>
               </div>
             </div>
@@ -1592,7 +1666,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                     <Package className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Top Products — Sales vs. Avg Daily
+                    Top Products — Sold Units vs. Avg Daily
                   </h3>
                 </div>
                 <div className="mb-4 text-base text-slate-600 dark:text-gray-400">
@@ -1613,7 +1687,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
                     <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
                     <Tooltip
                       formatter={(value: any, name: any) => {
-                        if (name === "total_sold") return [value, "Total Sold"];
+                        if (name === "total_sold")
+                          return [value, "Total Sold "];
                         if (name === "monthly_estimate")
                           return [
                             Number(value).toLocaleString(),
@@ -1635,12 +1710,12 @@ const EOQAnalyticsDashboard: React.FC = () => {
                     <Bar
                       dataKey="total_sold"
                       fill="#3b82f6"
-                      name="Total Sold"
+                      name="Total Sold (Units)"
                     />
                     <Bar
                       dataKey="monthly_estimate"
                       fill="#f59e0b"
-                      name="Est / month"
+                      name="Daily (Avg.)"
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -1668,7 +1743,9 @@ const EOQAnalyticsDashboard: React.FC = () => {
                   />
                   <YAxis stroke={isDarkMode ? "#9ca3af" : "#6b7280"} />
                   <Tooltip
-                    formatter={(value: any) => `₱${Math.round(value)}`}
+                    formatter={(value: any) =>
+                      `PHP ${Number(value).toFixed(2)}`
+                    }
                     labelFormatter={(label: any) => `${label}`}
                     contentStyle={
                       isDarkMode
@@ -1681,7 +1758,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                     }
                   />
                   <Legend />
-                  <Bar dataKey="value" fill="#3b82f6" name="Cost (₱)" />
+                  <Bar dataKey="value" fill="#3b82f6" name="Cost" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1792,7 +1869,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                               Days until stockout:{" "}
                               {urgent.daysUntilStockout === Infinity
                                 ? "N/A"
-                                : urgent.daysUntilStockout}
+                                : urgent.daysUntilStockout}{" "}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1800,7 +1877,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                               Recommended Qty
                             </p>
                             <p className="text-3xl font-bold text-red-600 dark:text-red-400">
-                              {urgent.recommendedQty.toLocaleString()} units
+                              {urgent.recommendedQty.toLocaleString()} Units
                             </p>
                           </div>
                         </div>
@@ -1868,7 +1945,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                                       </p>
                                       <p className="font-semibold text-slate-900 dark:text-white text-lg">
                                         {rec.last_sold_qty.toLocaleString()}{" "}
-                                        units
+                                        Units
                                       </p>
                                     </div>
                                     <div>
@@ -1903,7 +1980,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
                                         : "text-amber-700 dark:text-amber-500"
                                     }`}
                                   >
-                                    {rec.recommendedQty.toLocaleString()} units
+                                    {rec.recommendedQty.toLocaleString()} Units
                                   </p>
                                   {urgent && (
                                     <p className="text-sm text-red-600 dark:text-red-400 mt-1">

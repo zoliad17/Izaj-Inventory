@@ -188,15 +188,21 @@ export default function PendingRequest() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
+    // Add period after abbreviated months like Dec, Jan, etc.
+    return formattedDate.replace(
+      /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/g,
+      "$1."
+    );
+  };
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -355,32 +361,28 @@ export default function PendingRequest() {
                                 </span>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400 dark:bg-gray-900/70">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-lg text-gray-600 dark:text-gray-400">
                                 <div className="flex items-center gap-2">
                                   <User className="h-6 w-6" />
-                                  <span>
-                                    <strong>From:</strong>{" "}
-                                    {request.requester.name}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    From: {request.requester.name}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <MapPin className="h-6 w-6" />
-                                  <span>
-                                    <strong>Branch:</strong>{" "}
-                                    {request.requester_branch}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    Branch: {request.requester_branch}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-6 w-6" />
-                                  <span>
-                                    <strong>Date:</strong>{" "}
-                                    {formatDate(request.created_at)}
+                                  <span className="inline-flex items-center px-3 py-1 rounded-full text-base font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-100">
+                                    Date: {formatDate(request.created_at)}
                                   </span>
                                 </div>
                               </div>
                             </div>
                           </div>
-
                           {/* Requested Items Table */}
                           <div className="mb-4 overflow-x-auto rounded-2xl shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),inset_-2px_-2px_5px_rgba(255,255,255,0.6)] dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.6),inset_-2px_-2px_5px_rgba(60,60,60,0.3)]">
                             <table className="min-w-full divide-y divide-gray-200 dark:bg-gray-900/70">
@@ -390,7 +392,7 @@ export default function PendingRequest() {
                                     "Product",
                                     "Category",
                                     "Requested",
-                                    "Available",
+                                    "Available ",
                                     "Price",
                                     "Total",
                                   ].map((col) => (
@@ -424,14 +426,15 @@ export default function PendingRequest() {
                                             : "text-red-700 dark:text-red-500 font-semibold"
                                         }`}
                                       >
-                                        {item.available_quantity}
+                                        {item.available_quantity} Units
                                       </span>
                                     </td>
                                     <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
-                                      ₱{item.price.toFixed(2)}
+                                      PHP {item.price.toFixed(2)}
                                     </td>
                                     <td className="px-5 py-4 text-base font-medium text-gray-900 dark:text-gray-100">
-                                      ₱{(item.price * item.quantity).toFixed(2)}
+                                      PHP{" "}
+                                      {(item.price * item.quantity).toFixed(2)}
                                     </td>
                                   </tr>
                                 ))}
