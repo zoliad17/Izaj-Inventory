@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IZAJ Inventory - Complete System Flowchart</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0c0f1a;
+            --bg-card: #151a2d;
+            --bg-elevated: #1c2340;
+            --cyan: #00e5ff;
+            --emerald: #00d68f;
+            --amber: #ffb300;
+            --rose: #ff4081;
+            --violet: #b388ff;
+            --blue: #448aff;
+            --text: #e8eaed;
+            --text-dim: #8b95a5;
+            --border: #2a3454;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: auto;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(179, 136, 255, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(0, 214, 143, 0.03) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--cyan), var(--violet), var(--emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-family: 'Fira Code', monospace;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+
+        /* Main flowchart container */
+        .flowchart-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 50px 30px;
+            overflow-x: auto;
+        }
+
+        .flowchart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 1200px;
+        }
+
+        /* Node styles */
+        .node {
+            position: relative;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .node:hover {
+            transform: scale(1.02);
+        }
+
+        .node-inner {
+            padding: 18px 28px;
+            border-radius: 14px;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border);
+            min-width: 180px;
+            max-width: 280px;
+        }
+
+        .node-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .node-desc {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* Node types */
+        .node-start .node-inner,
+        .node-end .node-inner {
+            border-radius: 50px;
+            background: linear-gradient(135deg, var(--emerald), #009966);
+            border-color: var(--emerald);
+        }
+
+        .node-end .node-inner {
+            background: linear-gradient(135deg, var(--rose), #cc3366);
+            border-color: var(--rose);
+        }
+
+        .node-process .node-inner {
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .node-decision {
+            margin: 10px 0;
+        }
+
+        .node-decision .node-inner {
+            background: var(--bg-elevated);
+            border-color: var(--amber);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            padding: 35px 25px;
+            min-width: 140px;
+        }
+
+        .node-database .node-inner {
+            border-color: var(--violet);
+            border-radius: 10px 10px 40% 40%;
+            padding-bottom: 25px;
+        }
+
+        .node-io .node-inner {
+            border-color: var(--emerald);
+            transform: skewX(-8deg);
+        }
+
+        .node-io .node-inner > * {
+            transform: skewX(8deg);
+        }
+
+        .node-subprocess .node-inner {
+            border-color: var(--blue);
+            border-left-width: 6px;
+        }
+
+        /* Connectors */
+        .connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 45px;
+        }
+
+        .connector-line {
+            width: 3px;
+            flex: 1;
+            background: linear-gradient(180deg, var(--cyan), var(--violet));
+            border-radius: 2px;
+        }
+
+        .connector-arrow {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 10px solid var(--violet);
+        }
+
+        /* Horizontal layout */
+        .h-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .h-connector {
+            display: flex;
+            align-items: center;
+            height: 3px;
+            width: 50px;
+            background: linear-gradient(90deg, var(--cyan), var(--violet));
+            border-radius: 2px;
+            margin: 0 -10px;
+            align-self: center;
+            position: relative;
+        }
+
+        .h-connector::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            border-left: 10px solid var(--violet);
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        /* Branch container */
+        .branch-container {
+            display: flex;
+            gap: 80px;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .branch-container::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            width: 60%;
+            height: 3px;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, transparent, var(--amber), transparent);
+        }
+
+        .branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .branch-label {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 5px 14px;
+            border-radius: 20px;
+            margin-bottom: 15px;
+        }
+
+        .branch-label.yes {
+            color: var(--emerald);
+            background: rgba(0, 214, 143, 0.15);
+            border: 1px solid rgba(0, 214, 143, 0.3);
+        }
+
+        .branch-label.no {
+            color: var(--rose);
+            background: rgba(255, 64, 129, 0.15);
+            border: 1px solid rgba(255, 64, 129, 0.3);
+        }
+
+        /* Section divider */
+        .section-divider {
+            width: 100%;
+            text-align: center;
+            padding: 30px 0;
+            position: relative;
+        }
+
+        .section-divider::before,
+        .section-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            height: 1px;
+            width: 35%;
+            background: linear-gradient(90deg, transparent, var(--border), var(--border));
+        }
+
+        .section-divider::before { left: 0; }
+        .section-divider::after { right: 0; transform: scaleX(-1); }
+
+        .section-title {
+            display: inline-block;
+            background: var(--bg-card);
+            padding: 10px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            border: 1px solid var(--border);
+            border-radius: 30px;
+        }
+
+        /* Role indicators */
+        .role-badge {
+            display: inline-block;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        .role-all { background: rgba(0, 229, 255, 0.2); color: var(--cyan); }
+        .role-super { background: rgba(255, 64, 129, 0.2); color: var(--rose); }
+        .role-manager { background: rgba(255, 179, 0, 0.2); color: var(--amber); }
+        .role-admin { background: rgba(68, 138, 255, 0.2); color: var(--blue); }
+
+        /* Merge connector */
+        .merge-point {
+            width: 16px;
+            height: 16px;
+            background: var(--violet);
+            border-radius: 50%;
+            margin: 20px 0;
+        }
+
+        /* Multi-branch visual */
+        .multi-branch {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .multi-branch .node {
+            flex: 1;
+            max-width: 280px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .legend-shape {
+            width: 28px;
+            height: 20px;
+            border: 2px solid;
+            border-radius: 6px;
+        }
+
+        .legend-shape.start { background: linear-gradient(135deg, var(--emerald), #009966); border-color: var(--emerald); border-radius: 20px; }
+        .legend-shape.process { border-color: var(--cyan); background: var(--bg-elevated); }
+        .legend-shape.decision { border-color: var(--amber); background: var(--bg-elevated); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); width: 24px; height: 24px; }
+        .legend-shape.database { border-color: var(--violet); background: var(--bg-elevated); border-radius: 4px 4px 40% 40%; }
+        .legend-shape.io { border-color: var(--emerald); background: var(--bg-elevated); transform: skewX(-10deg); }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .branch-container { gap: 40px; }
+            .multi-branch { flex-direction: column; align-items: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>IZAJ Inventory Management System</h1>
+            <p class="subtitle">// Complete System Flowchart</p>
+        </header>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-shape start"></div> Start/End</div>
+            <div class="legend-item"><div class="legend-shape process"></div> Process</div>
+            <div class="legend-item"><div class="legend-shape decision"></div> Decision</div>
+            <div class="legend-item"><div class="legend-shape database"></div> Database</div>
+            <div class="legend-item"><div class="legend-shape io"></div> Input/Output</div>
+        </div>
+
+        <div class="flowchart-wrapper">
+            <div class="flowchart">
+
+                <!-- ==================== START ==================== -->
+                <div class="node node-start">
+                    <div class="node-inner">
+                        <div class="node-title">🚀 SYSTEM START</div>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <!-- ==================== USER REGISTRATION SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">User Registration</span>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">New User?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container">
+                    <div class="branch">
+                        <span class="branch-label yes">YES - REGISTER</span>
+                        <div class="node node-subprocess">
+                            <div class="node-inner">
+                                <div class="node-title">Super Admin Creates User</div>
+                                <div class="node-desc">email, role, branch</div>
+                                <span class="role-badge role-super">Super Admin</span>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Save Pending User</div>
+                                <div class="node-desc">pending_users table</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-io">
+                            <div class="node-inner">
+                                <div class="node-title">Send Email</div>
+                                <div class="node-desc">Setup link with token</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-process">
+                            <div class="node-inner">
+                                <div class="node-title">User Sets Password</div>
+                                <div class="node-desc">Account activated</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label no">NO - LOGIN</span>
+                        <div class="node node-process">
+                            <div class="node-inner">
+                                <div class="node-title">Go to Login</div>
+                                <div class="node-desc">Existing user</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-point"></div>
+
+                <!-- ==================== AUTHENTICATION SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Authentication</span>
+                </div>
+
+                <div class="node node-io">
+                    <div class="node-inner">
+                        <div class="node-title">Enter Credentials</div>
+                        <div class="node-desc">email + password</div>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <div class="node node-subprocess">
+                    <div class="node-inner">
+                        <div class="node-title">POST /api/login</div>
+                        <div class="node-desc">Express Backend</div>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <div class="node node-database">
+                    <div class="node-inner">
+                        <div class="node-title">Verify User</div>
+                        <div class="node-desc">Check users table</div>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">Valid?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container">
+                    <div class="branch">
+                        <span class="branch-label no">INVALID</span>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--rose);">
+                                <div class="node-title">Show Error</div>
+                                <div class="node-desc">Return to login</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label yes">VALID</span>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Create Session</div>
+                                <div class="node-desc">24h expiry</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Log Audit</div>
+                                <div class="node-desc">USER_LOGIN event</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-process">
+                            <div class="node-inner">
+                                <div class="node-title">Save to AuthContext</div>
+                                <div class="node-desc">user, role, branchId</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-point"></div>
+
+                <!-- ==================== DASHBOARD SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Role-Based Dashboard</span>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">User Role?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container" style="gap: 40px;">
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(255, 64, 129, 0.15); color: var(--rose); border: 1px solid rgba(255, 64, 129, 0.3);">SUPER ADMIN</span>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--rose);">
+                                <div class="node-title">Full Dashboard</div>
+                                <div class="node-desc">All branches access</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(255, 179, 0, 0.15); color: var(--amber); border: 1px solid rgba(255, 179, 0, 0.3);">BRANCH MANAGER</span>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--amber);">
+                                <div class="node-title">Branch Dashboard</div>
+                                <div class="node-desc">Assigned branch only</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(68, 138, 255, 0.15); color: var(--blue); border: 1px solid rgba(68, 138, 255, 0.3);">ADMIN</span>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--blue);">
+                                <div class="node-title">Limited Dashboard</div>
+                                <div class="node-desc">View & request only</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-point"></div>
+
+                <!-- ==================== MAIN MENU SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Main Operations</span>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">Action?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container" style="gap: 30px;">
+                    <!-- Branch 1: View Products -->
+                    <div class="branch">
+                        <span class="branch-label yes">VIEW PRODUCTS</span>
+                        <div class="node node-subprocess">
+                            <div class="node-inner">
+                                <div class="node-title">GET /api/products</div>
+                                <div class="node-desc">Fetch by branch</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Query Products</div>
+                                <div class="node-desc">centralized_product</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-io">
+                            <div class="node-inner">
+                                <div class="node-title">Display List</div>
+                                <div class="node-desc">Stock table view</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Branch 2: Manage Products -->
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(179, 136, 255, 0.15); color: var(--violet); border: 1px solid rgba(179, 136, 255, 0.3);">MANAGE PRODUCTS</span>
+                        <div class="node node-decision">
+                            <div class="node-inner">
+                                <div class="node-title">CRUD?</div>
+                            </div>
+                        </div>
+                        <div class="multi-branch" style="margin-top: 20px;">
+                            <div class="node node-subprocess">
+                                <div class="node-inner" style="border-color: var(--emerald);">
+                                    <div class="node-title">CREATE</div>
+                                    <div class="node-desc">POST /api/products</div>
+                                    <span class="role-badge role-manager">Manager+</span>
+                                </div>
+                            </div>
+                            <div class="node node-subprocess">
+                                <div class="node-inner" style="border-color: var(--amber);">
+                                    <div class="node-title">UPDATE</div>
+                                    <div class="node-desc">PUT /api/products/:id</div>
+                                    <span class="role-badge role-manager">Manager+</span>
+                                </div>
+                            </div>
+                            <div class="node node-subprocess">
+                                <div class="node-inner" style="border-color: var(--rose);">
+                                    <div class="node-title">DELETE</div>
+                                    <div class="node-desc">DELETE /api/products/:id</div>
+                                    <span class="role-badge role-super">Super Only</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Log Audit Trail</div>
+                                <div class="node-desc">PRODUCT_* events</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Branch 3: Product Requests -->
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(0, 229, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 229, 255, 0.3);">PRODUCT REQUEST</span>
+                        <div class="node node-io">
+                            <div class="node-inner">
+                                <div class="node-title">Select Products</div>
+                                <div class="node-desc">Source → Destination</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-subprocess">
+                            <div class="node-inner">
+                                <div class="node-title">Validate Stock</div>
+                                <div class="node-desc">qty - reserved_qty</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Reserve Quantity</div>
+                                <div class="node-desc">reserved_qty += req_qty</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-io">
+                            <div class="node-inner">
+                                <div class="node-title">Email Notification</div>
+                                <div class="node-desc">To branch manager</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Branch 4: Analytics -->
+                    <div class="branch">
+                        <span class="branch-label" style="background: rgba(0, 214, 143, 0.15); color: var(--emerald); border: 1px solid rgba(0, 214, 143, 0.3);">ANALYTICS</span>
+                        <div class="node node-subprocess">
+                            <div class="node-inner">
+                                <div class="node-title">Flask Analytics API</div>
+                                <div class="node-desc">Port 5001</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="multi-branch">
+                            <div class="node node-process">
+                                <div class="node-inner">
+                                    <div class="node-title">EOQ Calculator</div>
+                                    <div class="node-desc">Optimal order qty</div>
+                                </div>
+                            </div>
+                            <div class="node node-process">
+                                <div class="node-inner">
+                                    <div class="node-title">Demand Forecast</div>
+                                    <div class="node-desc">Exponential smoothing</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-point"></div>
+
+                <!-- ==================== REQUEST REVIEW SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Request Review (Manager)</span>
+                </div>
+
+                <div class="node node-subprocess">
+                    <div class="node-inner">
+                        <div class="node-title">View Pending Requests</div>
+                        <div class="node-desc">GET /api/product-requests</div>
+                        <span class="role-badge role-manager">Manager+</span>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">Approve?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container">
+                    <div class="branch">
+                        <span class="branch-label no">DENY</span>
+                        <div class="node node-database">
+                            <div class="node-inner" style="border-color: var(--rose);">
+                                <div class="node-title">Release Reserve</div>
+                                <div class="node-desc">reserved_qty = 0</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--rose);">
+                                <div class="node-title">Status: DENIED</div>
+                                <div class="node-desc">Notify requester</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label yes">APPROVE</span>
+                        <div class="node node-database">
+                            <div class="node-inner" style="border-color: var(--emerald);">
+                                <div class="node-title">Deduct Source</div>
+                                <div class="node-desc">quantity -= reserved</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner" style="border-color: var(--emerald);">
+                                <div class="node-title">Add to Destination</div>
+                                <div class="node-desc">quantity += transferred</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner" style="border-color: var(--emerald);">
+                                <div class="node-title">Create Transfer Record</div>
+                                <div class="node-desc">product_transfers table</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-process">
+                            <div class="node-inner" style="border-color: var(--emerald);">
+                                <div class="node-title">Status: APPROVED</div>
+                                <div class="node-desc">Notify requester</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="merge-point"></div>
+
+                <div class="node node-database">
+                    <div class="node-inner">
+                        <div class="node-title">Log Audit Trail</div>
+                        <div class="node-desc">REQUEST_* events</div>
+                    </div>
+                </div>
+
+                <!-- ==================== AUDIT & MONITORING SECTION ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Audit & Monitoring</span>
+                </div>
+
+                <div class="h-row">
+                    <div class="node node-subprocess">
+                        <div class="node-inner">
+                            <div class="node-title">View Audit Logs</div>
+                            <div class="node-desc">GET /api/audit-logs</div>
+                            <span class="role-badge role-manager">Manager+</span>
+                        </div>
+                    </div>
+
+                    <div class="h-connector"></div>
+
+                    <div class="node node-database">
+                        <div class="node-inner">
+                            <div class="node-title">Query Logs</div>
+                            <div class="node-desc">Filter by user, action, date</div>
+                        </div>
+                    </div>
+
+                    <div class="h-connector"></div>
+
+                    <div class="node node-io">
+                        <div class="node-inner">
+                            <div class="node-title">Display Activity</div>
+                            <div class="node-desc">Timeline view</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="connector">
+                    <div class="connector-line"></div>
+                    <div class="connector-arrow"></div>
+                </div>
+
+                <!-- ==================== SESSION MANAGEMENT ==================== -->
+                <div class="section-divider">
+                    <span class="section-title">Session Management</span>
+                </div>
+
+                <div class="node node-decision">
+                    <div class="node-inner">
+                        <div class="node-title">Continue?</div>
+                    </div>
+                </div>
+
+                <div class="branch-container">
+                    <div class="branch">
+                        <span class="branch-label yes">YES</span>
+                        <div class="node node-process">
+                            <div class="node-inner">
+                                <div class="node-title">Return to Dashboard</div>
+                                <div class="node-desc">Session active</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label no">LOGOUT</span>
+                        <div class="node node-subprocess">
+                            <div class="node-inner">
+                                <div class="node-title">Clear Session</div>
+                                <div class="node-desc">AuthContext reset</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-database">
+                            <div class="node-inner">
+                                <div class="node-title">Log Audit</div>
+                                <div class="node-desc">USER_LOGOUT event</div>
+                            </div>
+                        </div>
+                        <div class="connector">
+                            <div class="connector-line"></div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="node node-end">
+                            <div class="node-inner">
+                                <div class="node-title">🔚 SESSION END</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer with system info -->
+        <div style="text-align: center; margin-top: 40px; color: var(--text-dim); font-family: 'Fira Code', monospace; font-size: 0.8rem;">
+            <p>IZAJ Inventory Management System v1.0</p>
+            <p style="margin-top: 8px;">React + Tauri • Node.js Express • Python Flask • Supabase PostgreSQL</p>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -13,8 +13,26 @@ try:
 except ImportError:
     from eoq_calculator import EOQCalculator, EOQInput, DemandForecaster, InventoryAnalytics
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from multiple locations
+# Try: analytics/.env, repo root .env, analytics/.env.local, repo root .env.local
+import pathlib
+
+# Get the analytics directory (where this file is located)
+analytics_dir = pathlib.Path(__file__).parent.absolute()
+# Get the repo root (parent of analytics directory)
+repo_root = analytics_dir.parent.absolute()
+
+# Load .env files in order of precedence (later files override earlier ones)
+env_files = [
+    analytics_dir / '.env',           # analytics/.env
+    repo_root / '.env',                # repo root .env
+    analytics_dir / '.env.local',      # analytics/.env.local
+    repo_root / '.env.local',          # repo root .env.local (highest priority)
+]
+
+for env_file in env_files:
+    if env_file.exists():
+        load_dotenv(env_file, override=True)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

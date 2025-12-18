@@ -324,7 +324,30 @@ const EOQAnalyticsDashboard: React.FC = () => {
             message: "Refreshing analytics...",
           }));
 
+          // Update progress to 70% when calculating EOQ
+          setModal({
+            isOpen: true,
+            status: "loading",
+            message: "Calculating EOQ with imported data...",
+            progress: 70,
+          });
+
+          // Calculate EOQ first (await it to ensure data is set before refreshing from DB)
+          try {
+            await calculateEOQWithData(result.metrics.annual_demand);
+          } catch (err) {
+            console.error("EOQ calculation error:", err);
+          }
+
+          // Update progress to 80% when refreshing from database
+          setModal((prev) => ({
+            ...prev,
+            progress: 80,
+            message: "Refreshing analytics from database...",
+          }));
+
           // Refresh persisted sales summary and EOQ calculations from backend
+          // This will update with database data if available, but won't clear calculated data if DB is empty
           try {
             await fetchSalesSummaryFromServer();
             await fetchEOQCalculationsFromServer();
@@ -335,16 +358,6 @@ const EOQAnalyticsDashboard: React.FC = () => {
             );
           }
 
-          // Update progress to 90% when calculating EOQ
-          setModal({
-            isOpen: true,
-            status: "loading",
-            message: "Calculating EOQ with imported data...",
-            progress: 90,
-          });
-
-          await new Promise((resolve) => setTimeout(resolve, 300));
-
           // Complete progress - show completion message
           // This will stay open until user clicks Close button
           setModal({
@@ -353,13 +366,8 @@ const EOQAnalyticsDashboard: React.FC = () => {
             message: "Sales data imported successfully!",
             details: `Imported ${
               result.metrics?.total_sales || 0
-            } sales records. Click Close to view EOQ calculations.`,
+            } sales records. EOQ calculations complete.`,
             progress: 100,
-          });
-
-          // Calculate EOQ in the background (don't await, let it complete)
-          calculateEOQWithData(result.metrics.annual_demand).catch((err) => {
-            console.error("EOQ calculation error:", err);
           });
         } else {
           // Check if this is a negative stock error
@@ -487,8 +495,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
           console.log("Setting EOQ data from database:", mapped[0]);
           setEOQData(mapped[0]);
         } else {
+          // Database is empty, but don't clear existing eoqData if it was calculated from import
+          // Only log a warning - preserve any existing calculated EOQ data
           console.warn(
-            "No EOQ calculations found in database. Dashboard will not display until data is available."
+            "No EOQ calculations found in database. Using calculated EOQ data if available."
           );
         }
       } else {
@@ -535,8 +545,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
         if (result.success) {
           setEOQData(result.data);
+          setLoadingEOQ(false); // Ensure loading is false so dashboard can display
           // Refresh the persisted calculations from database to ensure consistency
           // This ensures the data is available on page refresh
+          // Note: This won't clear eoqData if database is empty (see fetchEOQCalculationsFromServer)
           try {
             await fetchEOQCalculationsFromServer();
           } catch (err) {
@@ -586,6 +598,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
         }
       } catch (error) {
         console.error("EOQ calculation error:", error);
+        setLoadingEOQ(false); // Ensure loading is false even on error
         setModal({
           isOpen: true,
           status: "error",

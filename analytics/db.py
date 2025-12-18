@@ -15,15 +15,31 @@ except Exception:
     create_client = None
 
 # Load environment variables. Attempt `.env` first, then `.env.local` for overrides.
-load_dotenv()
-# If a `.env.local` file exists at the repo root, load it to allow local overrides.
-try:
-    load_dotenv('.env.local', override=True)
-except Exception:
-    # best-effort; don't fail if file not present
-    pass
+# Try multiple locations: current directory, analytics directory, and repo root
+import pathlib
 
+# Get the analytics directory (where this file is located)
+analytics_dir = pathlib.Path(__file__).parent.absolute()
+# Get the repo root (parent of analytics directory)
+repo_root = analytics_dir.parent.absolute()
+
+# Load .env files in order of precedence (later files override earlier ones)
+env_files = [
+    analytics_dir / '.env',           # analytics/.env
+    repo_root / '.env',                # repo root .env
+    analytics_dir / '.env.local',      # analytics/.env.local
+    repo_root / '.env.local',          # repo root .env.local (highest priority)
+]
+
+# Initialize logger first (before using it)
 logger = logging.getLogger(__name__)
+
+for env_file in env_files:
+    if env_file.exists():
+        logger.info(f'Loading environment from: {env_file}')
+        load_dotenv(env_file, override=True)
+    else:
+        logger.debug(f'Environment file not found: {env_file}')
 
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 # Prefer SERVICE key for server-side writes; fall back to anon if only anon present
@@ -561,9 +577,10 @@ def fetch_eoq_calculations(limit: int = 100, branch_id: int | None = None):
                 logger.error('Supabase fetch eoq error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
             return getattr(resp, 'data', []) or []
-        except Exception:
-            logger.exception('Failed to fetch EOQ calculations from Supabase')
-            raise
+        except Exception as e:
+            logger.exception('Failed to fetch EOQ calculations from Supabase: %s', str(e))
+            # Fall through to psycopg2 path if Supabase fails
+            logger.info('Falling back to psycopg2 connection')
 
     conn = None
     cur = None
@@ -578,9 +595,15 @@ def fetch_eoq_calculations(limit: int = 100, branch_id: int | None = None):
         rows = cur.fetchall()
         results = [dict(zip(cols, r)) for r in rows]
         return results
-    except Exception:
-        logger.exception('Failed to fetch EOQ calculations')
-        raise
+    except (RuntimeError, Exception) as e:
+        # Catch all database errors (connection failures, configuration errors, etc.)
+        error_msg = str(e)
+        if 'Database configuration incomplete' in error_msg:
+            logger.warning('Database not configured, returning empty EOQ calculations list')
+        else:
+            logger.warning('Database connection failed (%s), returning empty EOQ calculations list', error_msg)
+        # Return empty list to prevent frontend crash
+        return []
     finally:
         if cur:
             cur.close()
@@ -640,9 +663,10 @@ def fetch_sales_summary(days: int = 30, branch_id: int | None = None):
                 'days_of_data': days,
                 'date_range': {'start': min_date, 'end': max_date},
             }
-        except Exception:
-            logger.exception('Failed to fetch sales summary from Supabase')
-            raise
+        except Exception as e:
+            logger.exception('Failed to fetch sales summary from Supabase: %s', str(e))
+            # Fall through to psycopg2 path if Supabase fails
+            logger.info('Falling back to psycopg2 connection')
 
     # psycopg2 fallback
     conn = None
@@ -668,9 +692,15 @@ def fetch_sales_summary(days: int = 30, branch_id: int | None = None):
             'days_of_data': days_of_data,
             'date_range': {'start': start, 'end': end},
         }
-    except Exception:
-        logger.exception('Failed to fetch sales summary')
-        raise
+    except (RuntimeError, Exception) as e:
+        # Catch all database errors (connection failures, configuration errors, etc.)
+        error_msg = str(e)
+        if 'Database configuration incomplete' in error_msg:
+            logger.warning('Database not configured, returning empty sales summary')
+        else:
+            logger.warning('Database connection failed (%s), returning empty sales summary', error_msg)
+        # Return empty summary to prevent frontend crash
+        return {'total_quantity': 0.0, 'records': 0, 'average_daily': 0.0, 'days_of_data': days, 'date_range': {'start': None, 'end': None}}
     finally:
         if cur:
             cur.close()
@@ -1113,9 +1143,10 @@ def fetch_inventory_analytics(days: int = 30, limit: int = 100, branch_id: int |
                 logger.error('Supabase fetch inventory_analytics error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
             return getattr(resp, 'data', []) or []
-        except Exception:
-            logger.exception('Failed to fetch inventory_analytics from Supabase')
-            raise
+        except Exception as e:
+            logger.exception('Failed to fetch inventory_analytics from Supabase: %s', str(e))
+            # Fall through to psycopg2 path if Supabase fails
+            logger.info('Falling back to psycopg2 connection')
 
     conn = None
     cur = None
@@ -1130,9 +1161,15 @@ def fetch_inventory_analytics(days: int = 30, limit: int = 100, branch_id: int |
         rows = cur.fetchall()
         results = [dict(zip(cols, r)) for r in rows]
         return results
-    except Exception:
-        logger.exception('Failed to fetch inventory_analytics')
-        raise
+    except (RuntimeError, Exception) as e:
+        # Catch all database errors (connection failures, configuration errors, etc.)
+        error_msg = str(e)
+        if 'Database configuration incomplete' in error_msg:
+            logger.warning('Database not configured, returning empty inventory analytics list')
+        else:
+            logger.warning('Database connection failed (%s), returning empty inventory analytics list', error_msg)
+        # Return empty list to prevent frontend crash
+        return []
     finally:
         if cur:
             cur.close()
@@ -1148,6 +1185,7 @@ def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = 
     """
     from datetime import datetime, timedelta
     from_date = (datetime.utcnow() - timedelta(days=days)).date().isoformat()
+    logger.info(f'Fetching top products: days={days}, branch_id={branch_id}, from_date={from_date}')
 
     if _supabase_client:
         try:
@@ -1162,7 +1200,14 @@ def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = 
                 raise RuntimeError(str(getattr(resp, 'error', None)))
             rows = getattr(resp, 'data', []) or []
             if not rows:
+                logger.info('No product_demand_history rows found for the specified date range')
                 return []
+            
+            # Log date range of fetched rows for debugging
+            if rows:
+                period_dates = [r.get('period_date') for r in rows if r.get('period_date')]
+                if period_dates:
+                    logger.info(f'Fetched {len(rows)} product_demand_history rows with period dates from {min(period_dates)} to {max(period_dates)}')
 
             # aggregate by product_id
             agg = {}
@@ -1198,9 +1243,10 @@ def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = 
                     'transaction_count': int(records)
                 })
             return results
-        except Exception:
-            logger.exception('Failed to fetch top products from Supabase')
-            raise
+        except Exception as e:
+            logger.exception('Failed to fetch top products from Supabase: %s', str(e))
+            # Fall through to psycopg2 path if Supabase fails
+            logger.info('Falling back to psycopg2 connection')
 
     # psycopg2 path
     conn = None
@@ -1223,9 +1269,15 @@ def fetch_top_products(days: int = 30, limit: int = 10, branch_id: int | None = 
             avg_daily = total / max(1, days)
             results.append({'product_id': pid, 'product_name': id_to_name.get(pid) if pid in id_to_name else str(pid), 'total_sold': total, 'avg_daily': round(avg_daily,2), 'transaction_count': records})
         return results
-    except Exception:
-        logger.exception('Failed to fetch top products')
-        raise
+    except (RuntimeError, Exception) as e:
+        # Catch all database errors (connection failures, configuration errors, etc.)
+        error_msg = str(e)
+        if 'Database configuration incomplete' in error_msg:
+            logger.warning('Database not configured, returning empty top products list')
+        else:
+            logger.warning('Database connection failed (%s), returning empty top products list', error_msg)
+        # Return empty list to prevent frontend crash
+        return []
     finally:
         if cur:
             cur.close()
@@ -1317,9 +1369,10 @@ def fetch_restock_recommendations(days: int = 30, branch_id: int | None = None, 
                 logger.error('Supabase fetch restock_recommendations error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
             return getattr(resp, 'data', []) or []
-        except Exception:
-            logger.exception('Failed to fetch restock recommendations from Supabase')
-            raise
+        except Exception as e:
+            logger.exception('Failed to fetch restock recommendations from Supabase: %s', str(e))
+            # Fall through to psycopg2 path if Supabase fails
+            logger.info('Falling back to psycopg2 connection')
 
     conn = None
     cur = None
@@ -1346,9 +1399,15 @@ def fetch_restock_recommendations(days: int = 30, branch_id: int | None = None, 
         rows = cur.fetchall()
         results = [dict(zip(cols, r)) for r in rows]
         return results
-    except Exception:
-        logger.exception('Failed to fetch restock recommendations')
-        raise
+    except (RuntimeError, Exception) as e:
+        # Catch all database errors (connection failures, configuration errors, etc.)
+        error_msg = str(e)
+        if 'Database configuration incomplete' in error_msg:
+            logger.warning('Database not configured, returning empty restock recommendations list')
+        else:
+            logger.warning('Database connection failed (%s), returning empty restock recommendations list', error_msg)
+        # Return empty list to prevent frontend crash
+        return []
     finally:
         if cur:
             cur.close()
