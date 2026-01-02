@@ -206,7 +206,7 @@ function NotificationsPage() {
         >
           <ArrowLeft className="w-5 h-5 mr-1" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           Notifications
         </h1>
       </div>
@@ -249,14 +249,14 @@ function NotificationsPage() {
 
       {/* Results Info & Mark All Read Button */}
       <div className="mb-4 flex items-center justify-between">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-base text-gray-600 dark:text-gray-400">
           Showing {paginatedNotifications.length} of{" "}
           {filteredNotifications.length} notifications
         </div>
         {filteredNotifications.some((n) => !n.read) && (
           <button
             onClick={handleMarkAllAsRead}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            className="text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
           >
             Mark all as read
           </button>
@@ -310,23 +310,23 @@ function NotificationsPage() {
                   <div className="ml-2 flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {notification.title}
                           {isUnread && (
                             <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
                           )}
                         </h3>
                         {notification.message && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
                             {notification.message}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
                           {formatTime(notification.created_at)}
                         </p>
                       </div>
                       <span
-                        className={`text-xs px-2 py-1 rounded-full font-medium capitalize whitespace-nowrap ml-2 ${getTypeBadgeClass(
+                        className={`text-sm px-2 py-1 rounded-full font-medium capitalize whitespace-nowrap ml-2 ${getTypeBadgeClass(
                           notification.type
                         )}`}
                       >
@@ -335,7 +335,7 @@ function NotificationsPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-3 flex gap-2 text-xs">
+                    <div className="mt-3 flex gap-2 text-sm">
                       {isUnread && (
                         <button
                           onClick={() => handleMarkAsRead(notification.id)}
@@ -347,7 +347,7 @@ function NotificationsPage() {
                       {notification.link && (
                         <button
                           onClick={() => navigate(notification.link || "/")}
-                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium cursor-pointer"
                         >
                           View
                         </button>
@@ -356,9 +356,9 @@ function NotificationsPage() {
                         onClick={() =>
                           handleDeleteNotification(notification.id)
                         }
-                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium ml-auto flex items-center gap-1"
+                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium ml-auto cursor-pointer flex items-center gap-1"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                         Delete
                       </button>
                     </div>
@@ -369,7 +369,7 @@ function NotificationsPage() {
           })
         ) : (
           <div className="p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-lg text-gray-500 dark:text-gray-400">
               No notifications found matching your criteria
             </p>
           </div>
@@ -379,14 +379,14 @@ function NotificationsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
-          <div className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="text-base text-gray-700 dark:text-gray-300">
             Page {currentPage} of {totalPages}
           </div>
           <div className="flex space-x-2">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className={`px-4 py-2 text-sm rounded-lg ${
+              className={`px-4 py-2 text-base rounded-lg ${
                 currentPage === 1
                   ? "bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
                   : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -399,7 +399,7 @@ function NotificationsPage() {
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
               disabled={currentPage === totalPages}
-              className={`px-4 py-2 text-sm rounded-lg ${
+              className={`px-4 py-2 text-base rounded-lg ${
                 currentPage === totalPages
                   ? "bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
                   : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"

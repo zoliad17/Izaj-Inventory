@@ -84,7 +84,10 @@ const Transferred = memo(() => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ link: "/transferred", user_id: currentUser.user_id }),
+          body: JSON.stringify({
+            link: "/transferred",
+            user_id: currentUser.user_id,
+          }),
         });
       } catch (err) {
         console.error("Failed to mark transferred notifications as read:", err);
@@ -240,12 +243,12 @@ const Transferred = memo(() => {
         "Product ID": product.id,
         "Product Name": product.product_name,
         Category: product.category_name,
-        Price: `₱${product.price.toLocaleString("en-PH", {
+        Price: `PHP ${product.price.toLocaleString("en-PH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
         Quantity: product.quantity,
-        "Total Value": `₱${product.total_value.toLocaleString("en-PH", {
+        "Total Value": `PHP ${product.total_value.toLocaleString("en-PH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}`,
@@ -434,7 +437,7 @@ const Transferred = memo(() => {
                   </span>
                 </div>
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ₱
+                  PHP{" "}
                   {products
                     .reduce((sum, product) => sum + product.total_value, 0)
                     .toLocaleString("en-PH", {
@@ -591,9 +594,9 @@ const Transferred = memo(() => {
                     <th className="px-2 py-2 text-left text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300">
                       Transferred At
                     </th>
-                    <th className="px-2 py-2 text-left text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300">
+                    {/* <th className="px-2 py-2 text-left text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300">
                       Transfer Status
-                    </th>
+                    </th> */}
                   </tr>
                 </thead>
                 <tbody>
@@ -632,7 +635,7 @@ const Transferred = memo(() => {
                           {product.category_name}
                         </td>
                         <td className="px-2 py-2 break-words">
-                          ₱
+                          PHP{" "}
                           {product.price.toLocaleString("en-PH", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
@@ -656,7 +659,7 @@ const Transferred = memo(() => {
                           {product.transferred_from}
                         </td>
                         <td className="px-2 py-2 font-semibold break-words">
-                          ₱
+                          PHP{" "}
                           {product.total_value.toLocaleString("en-PH", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
@@ -670,7 +673,7 @@ const Transferred = memo(() => {
                             product.transferred_at
                           ).toLocaleDateString()}
                         </td>
-                        <td
+                        {/* <td
                           className={`px-2 py-2 font-semibold break-words ${
                             product.transfer_status === "Completed"
                               ? "text-green-600 dark:text-green-400"
@@ -680,7 +683,7 @@ const Transferred = memo(() => {
                           }`}
                         >
                           {product.transfer_status}
-                        </td>
+                        </td> */}
                       </tr>
                     ))
                   ) : (
