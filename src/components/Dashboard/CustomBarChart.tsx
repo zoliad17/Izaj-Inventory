@@ -144,6 +144,7 @@ export function CustomBarChart({ topProducts }: CustomBarChartProps) {
                 fill: "hsl(120, 100%, 30%)",
                 textShadow: "1px 1px 2px hsla(0, 0%, 0%, 0.5)",
               }}
+              formatter={(value: number) => `${value} Units`}
             />
             {/* <LabelList
               dataKey="sales"
