@@ -55,10 +55,6 @@ interface Branch {
 // shadcn
 import * as React from "react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
   Radar,
   RadarChart,
   PolarGrid,
@@ -72,13 +68,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "../ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 import {
   Select,
   SelectContent,
@@ -1081,119 +1071,21 @@ function Dashboard() {
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-        {/* Line Chart Card */}
-        <Card className="lg:col-span-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+        {/* bar Chart Card */}
+        <Card className="lg:col-span-8 bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-1 sm:flex-row">
             <div className="grid flex-1 gap-1">
-              <CardTitle>Top Products Sales Trends</CardTitle>
-              <CardDescription>
-                {isSuperAdmin()
-                  ? selectedBranch
-                    ? `Showing sales trends for selected branch`
-                    : "Showing sales trends across all branches"
-                  : "Showing sales trends for your branch"}
-              </CardDescription>
+              <CardTitle>Top 5 Products</CardTitle>
+              <CardDescription>Best selling products</CardDescription>
             </div>
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger
-                className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-                aria-label="Select a value"
-              >
-                <SelectValue placeholder="Last 3 months" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                <SelectItem value="90d" className="rounded-lg">
-                  Last 3 months
-                </SelectItem>
-                <SelectItem value="30d" className="rounded-lg">
-                  Last 30 days
-                </SelectItem>
-                <SelectItem value="7d" className="rounded-lg">
-                  Last 7 days
-                </SelectItem>
-              </SelectContent>
-            </Select>
           </CardHeader>
-          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-            <ChartContainer
-              config={dynamicChartConfig}
-              className="aspect-auto h-[250px] w-full"
-            >
-              <AreaChart data={chartData}>
-                <defs>
-                  {topProducts.slice(0, 5).map((_, idx) => {
-                    const colors = [
-                      ["hsl(12, 76%, 61%)", "hsl(12, 76%, 85%)"], // red-orange
-                      ["hsl(173, 58%, 39%)", "hsl(173, 58%, 70%)"], // teal
-                      ["hsl(217, 91%, 60%)", "hsl(217, 91%, 85%)"], // blue
-                      ["hsl(280, 85%, 67%)", "hsl(280, 85%, 90%)"], // purple
-                      ["hsl(48, 96%, 53%)", "hsl(48, 96%, 80%)"], // yellow
-                    ];
-                    const [mainColor] = colors[idx];
-                    const id = `fill${idx}`;
-                    return (
-                      <linearGradient
-                        key={id}
-                        id={id}
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor={mainColor}
-                          stopOpacity={0.8}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor={mainColor}
-                          stopOpacity={0.1}
-                        />
-                      </linearGradient>
-                    );
-                  })}
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="day"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent indicator="dot" />}
-                />
-                {topProducts.slice(0, 5).map((_, idx) => {
-                  const colors = [
-                    "hsl(12, 76%, 61%)", // red-orange
-                    "hsl(173, 58%, 39%)", // teal
-                    "hsl(217, 91%, 60%)", // blue
-                    "hsl(280, 85%, 67%)", // purple
-                    "hsl(48, 96%, 53%)", // yellow
-                  ];
-                  return (
-                    <Area
-                      key={`product_${idx}`}
-                      dataKey={`product_${idx}`}
-                      type="natural"
-                      fill={`url(#fill${idx})`}
-                      stroke={colors[idx]}
-                      stackId="a"
-                    />
-                  );
-                })}
-                <ChartLegend content={<ChartLegendContent />} />
-              </AreaChart>
-            </ChartContainer>
+          <CardContent className="p-1">
+            <CustomBarChart topProducts={topProducts.slice(0, 5)} />
           </CardContent>
         </Card>
-
         {/* Radar Chart Card */}
-        <Card className="lg:col-span-4 bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+        <Card className="lg:col-span-4 bg-white/80 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl shadow-[6px_6px_12px_rgba(0,0,0,0.08),-6px_-6px_12px_rgba(255,255,255,0.6)] dark:shadow-[6px_6px_12px_rgba(0,0,0,0.6),-6px_-6px_12px_rgba(255,255,255,0.05)] border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <CardHeader className="flex items-center gap-2 space-y-0 border-b py-1 sm:flex-row">
             <div className="grid flex-1 gap-1">
               <CardTitle>Product Category Performance</CardTitle>
               <CardDescription>
@@ -1201,7 +1093,7 @@ function Dashboard() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+          <CardContent className="px-3 pt-3 pb-2">
             <ChartContainer
               config={{
                 ...dynamicChartConfig,
@@ -1242,11 +1134,6 @@ function Dashboard() {
             </ChartContainer>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Bar Chart Section */}
-      <div className="mt-6">
-        <CustomBarChart topProducts={topProducts.slice(0, 5)} />
       </div>
 
       {/* Bottom Row - Products Table */}
