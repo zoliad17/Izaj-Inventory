@@ -861,6 +861,76 @@ CREATE INDEX IF NOT EXISTS idx_product_demand_history_period_date ON public.prod
 CREATE INDEX IF NOT EXISTS idx_product_demand_history_composite ON public.product_demand_history(product_id, branch_id, period_date);
 
 -- =============================================
+-- ANALYTICS SCHEMA ENHANCEMENTS (Plan Implementation)
+-- =============================================
+
+-- Add import_batch_id to sales table for transaction-based tracking
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'sales' 
+        AND column_name = 'import_batch_id'
+    ) THEN
+        ALTER TABLE public.sales ADD COLUMN import_batch_id UUID;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_sales_import_batch_id 
+ON public.sales(import_batch_id);
+
+-- Add unique constraint to eoq_calculations (MANDATORY for UPSERT)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'eoq_calculations_product_branch_unique'
+    ) THEN
+        ALTER TABLE public.eoq_calculations
+        ADD CONSTRAINT eoq_calculations_product_branch_unique 
+        UNIQUE (product_id, branch_id);
+    END IF;
+END $$;
+
+-- Add status and reason columns to eoq_calculations for invalid input tracking
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'eoq_calculations' 
+        AND column_name = 'status'
+    ) THEN
+        ALTER TABLE public.eoq_calculations
+        ADD COLUMN status VARCHAR(50) DEFAULT 'valid';
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'eoq_calculations' 
+        AND column_name = 'reason'
+    ) THEN
+        ALTER TABLE public.eoq_calculations
+        ADD COLUMN reason TEXT;
+    END IF;
+END $$;
+
+-- Add unique constraint to inventory_analytics (MANDATORY for UPSERT)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'inventory_analytics_product_branch_date_unique'
+    ) THEN
+        ALTER TABLE public.inventory_analytics
+        ADD CONSTRAINT inventory_analytics_product_branch_date_unique 
+        UNIQUE (product_id, branch_id, analysis_date);
+    END IF;
+END $$;
+
+-- =============================================
 -- ANALYTICS VIEWS
 -- =============================================
 

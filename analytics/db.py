@@ -175,8 +175,9 @@ def deduct_stock_from_sales(tuples: list, conn):
 def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bool = True):
     """Insert multiple sales rows into `public.sales`.
 
-    rows: iterable of tuples matching (product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at)
+    rows: iterable of tuples matching (product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at, import_batch_id)
           or iterable of dicts matching column names when using Supabase client.
+          import_batch_id is optional (can be None for backward compatibility).
     """
     rows_list = list(rows)
     if not rows_list:
@@ -191,7 +192,7 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                 if isinstance(r, dict):
                     payload.append(r)
                 else:
-                    # expected tuple order: product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at
+                    # expected tuple order: product_id, branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at, import_batch_id (optional)
                     # Map our in-code field names to the DB schema: use `quantity_sold` and `transaction_date` as in schema.sql
                     # Coerce numeric types to match DB column types (bigint for ids/quantity)
                     prod = r[0]
@@ -202,6 +203,7 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                     tamount = r[5]
                     pmethod = r[6]
                     created = r[7]
+                    import_batch_id = r[8] if len(r) > 8 else None
 
                     # try to coerce product_id and branch_id to int when possible
                     try:
@@ -228,15 +230,34 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                         logger.warning('Skipping sales row due to missing product_id or quantity: %s', r)
                         continue
 
+                    # unit_price and total_amount are NOT NULL - provide defaults
+                    unit_price_val = 0.0
+                    total_amount_val = 0.0
+                    try:
+                        if uprice is not None:
+                            unit_price_val = float(uprice)
+                    except (ValueError, TypeError):
+                        unit_price_val = 0.0
+                    try:
+                        if tamount is not None:
+                            total_amount_val = float(tamount)
+                    except (ValueError, TypeError):
+                        total_amount_val = 0.0
+                    
+                    # If total_amount is 0, calculate from unit_price * quantity
+                    if total_amount_val == 0.0 and unit_price_val > 0:
+                        total_amount_val = unit_price_val * quantity_val
+                    
                     payload.append({
                         'product_id': product_id_val,
                         'branch_id': branch_id_val,
                         'quantity_sold': quantity_val,
                         'transaction_date': tdate.isoformat() if hasattr(tdate, 'isoformat') else tdate,
-                        'unit_price': float(uprice) if uprice is not None else None,
-                        'total_amount': float(tamount) if tamount is not None else None,
+                        'unit_price': unit_price_val,
+                        'total_amount': total_amount_val,
                         'payment_method': pmethod,
-                        'created_at': created.isoformat() if hasattr(created, 'isoformat') else created
+                        'created_at': created.isoformat() if hasattr(created, 'isoformat') else created,
+                        'import_batch_id': import_batch_id
                     })
 
             if not payload:
@@ -352,7 +373,7 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
     # Fallback to psycopg2 bulk insert
     insert_sql = '''
     INSERT INTO public.sales (
-        product_id, branch_id, quantity_sold, transaction_date, unit_price, total_amount, payment_method, created_at
+        product_id, branch_id, quantity_sold, transaction_date, unit_price, total_amount, payment_method, created_at, import_batch_id
     ) VALUES %s
     RETURNING id
     '''
@@ -386,19 +407,43 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                     skipped += 1
                     logger.warning('Skipping sales dict row due to missing product_id or quantity: %s', r)
                     continue
+                # unit_price and total_amount are NOT NULL - provide defaults
+                unit_price_val = 0.0
+                total_amount_val = 0.0
+                try:
+                    if r.get('unit_price') is not None:
+                        unit_price_val = float(r.get('unit_price'))
+                except (ValueError, TypeError):
+                    unit_price_val = 0.0
+                try:
+                    if r.get('total_amount') is not None:
+                        total_amount_val = float(r.get('total_amount'))
+                except (ValueError, TypeError):
+                    total_amount_val = 0.0
+                
+                # If total_amount is 0, calculate from unit_price * quantity
+                if total_amount_val == 0.0 and unit_price_val > 0:
+                    total_amount_val = unit_price_val * quantity_val
+                
                 tuples.append((
                     product_id_val,
                     branch_id_val,
                     quantity_val,
                     r.get('transaction_date'),
-                    float(r.get('unit_price')) if r.get('unit_price') is not None else None,
-                    float(r.get('total_amount')) if r.get('total_amount') is not None else None,
+                    unit_price_val,
+                    total_amount_val,
                     r.get('payment_method'),
-                    r.get('created_at')
+                    r.get('created_at'),
+                    r.get('import_batch_id')
                 ))
             else:
                 # tuple path: coerce elements similarly
-                prod, br, qty, tdate, uprice, tamount, pmethod, created = r
+                # Handle both old format (8 elements) and new format (9 elements with import_batch_id)
+                if len(r) >= 9:
+                    prod, br, qty, tdate, uprice, tamount, pmethod, created, import_batch_id = r[:9]
+                else:
+                    prod, br, qty, tdate, uprice, tamount, pmethod, created = r[:8]
+                    import_batch_id = None
                 try:
                     product_id_val = int(prod) if prod is not None else None
                 except Exception:
@@ -415,7 +460,7 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
                     skipped += 1
                     logger.warning('Skipping sales tuple row due to missing product_id or quantity: %s', r)
                     continue
-                tuples.append((product_id_val, branch_id_val, quantity_val, tdate, float(uprice) if uprice is not None else None, float(tamount) if tamount is not None else None, pmethod, created))
+                tuples.append((product_id_val, branch_id_val, quantity_val, tdate, float(uprice) if uprice is not None else None, float(tamount) if tamount is not None else None, pmethod, created, import_batch_id))
 
         if not tuples:
             logger.info('No valid sales rows to insert (psycopg2) after coercion; skipped %d rows', skipped)
@@ -450,64 +495,94 @@ def insert_sales_rows(rows: Iterable[Sequence[Any]] | Iterable[dict], commit: bo
 
 
 def insert_eoq_calculation(product_id: int, branch_id: int, result: dict):
-    """Persist EOQ calculation into `public.eoq_calculations`.
+    """Persist EOQ calculation into `public.eoq_calculations` using UPSERT.
 
     result: dictionary containing EOQ values produced by EOQCalculator
+           Must include: annual_demand, holding_cost, ordering_cost, unit_cost,
+                        eoq_quantity, reorder_point, safety_stock, etc.
+           Optional: status (defaults to 'valid'), reason (for invalid inputs)
     
     Validates that product exists in centralized_product before inserting.
+    Uses ON CONFLICT to update existing records based on (product_id, branch_id).
     """
-    # First, validate that the product exists in centralized_product
+    # Note: We attempt to save EOQ even if product doesn't exist in centralized_product
+    # The foreign key constraint will handle validation. This allows EOQ to be saved
+    # for products that may be added later or for forecasting purposes.
+    product_exists = False
     if _supabase_client:
         try:
-            # Check if product exists
+            # Check if product exists (for logging only, don't block insertion)
             resp = _supabase_client.table('centralized_product').select('id').eq('id', product_id).eq('branch_id', branch_id).execute()
-            if not getattr(resp, 'data', None):
-                logger.warning('Product %s branch %s not found in centralized_product. Skipping EOQ insertion.', product_id, branch_id)
-                return
+            product_exists = bool(getattr(resp, 'data', None))
+            if not product_exists:
+                logger.warning('Product %s branch %s not found in centralized_product. Will attempt EOQ insertion anyway (FK constraint will validate).', product_id, branch_id)
         except Exception as e:
-            logger.warning('Could not validate product existence: %s. Skipping EOQ insertion.', str(e))
-            return
+            logger.warning('Could not validate product existence: %s. Will attempt EOQ insertion anyway.', str(e))
     else:
-        # For psycopg2, validate product exists
+        # For psycopg2, check product exists (for logging only)
         try:
             conn = get_conn()
             cur = conn.cursor()
             cur.execute('SELECT id FROM centralized_product WHERE id = %s AND branch_id = %s LIMIT 1', (product_id, branch_id))
-            if not cur.fetchone():
-                logger.warning('Product %s branch %s not found in centralized_product. Skipping EOQ insertion.', product_id, branch_id)
-                cur.close()
-                conn.close()
-                return
+            product_exists = bool(cur.fetchone())
+            if not product_exists:
+                logger.warning('Product %s branch %s not found in centralized_product. Will attempt EOQ insertion anyway (FK constraint will validate).', product_id, branch_id)
             cur.close()
             conn.close()
         except Exception as e:
-            logger.warning('Could not validate product existence: %s. Skipping EOQ insertion.', str(e))
-            return
+            logger.warning('Could not validate product existence: %s. Will attempt EOQ insertion anyway.', str(e))
     
+    # Use UPSERT with ON CONFLICT to update existing records
     sql = '''
     INSERT INTO public.eoq_calculations (
         product_id, branch_id, annual_demand, holding_cost, ordering_cost, unit_cost,
-        eoq_quantity, reorder_point, safety_stock, lead_time_days, confidence_level, calculated_at, valid_until
-    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        eoq_quantity, reorder_point, safety_stock, lead_time_days, confidence_level, 
+        calculated_at, valid_until, status, reason
+    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    ON CONFLICT (product_id, branch_id) 
+    DO UPDATE SET
+        annual_demand = EXCLUDED.annual_demand,
+        holding_cost = EXCLUDED.holding_cost,
+        ordering_cost = EXCLUDED.ordering_cost,
+        unit_cost = EXCLUDED.unit_cost,
+        eoq_quantity = EXCLUDED.eoq_quantity,
+        reorder_point = EXCLUDED.reorder_point,
+        safety_stock = EXCLUDED.safety_stock,
+        lead_time_days = EXCLUDED.lead_time_days,
+        confidence_level = EXCLUDED.confidence_level,
+        calculated_at = EXCLUDED.calculated_at,
+        valid_until = EXCLUDED.valid_until,
+        status = EXCLUDED.status,
+        reason = EXCLUDED.reason
     '''
 
     now = datetime.utcnow()
     valid_until = now.replace(year=now.year + 1)
+    
+    # Extract values with defaults
+    annual_demand = result.get('annual_demand') or 0
+    holding_cost = result.get('holding_cost') or result.get('annual_holding_cost') or 50
+    ordering_cost = result.get('ordering_cost') or result.get('annual_ordering_cost') or 100
+    unit_cost = result.get('unit_cost') or 0
+    status = result.get('status', 'valid')
+    reason = result.get('reason')
 
     params = (
         product_id,
         branch_id,
-        result.get('annual_demand') or 0,
-        result.get('holding_cost') or result.get('annual_holding_cost') or 50,
-        result.get('ordering_cost') or result.get('annual_ordering_cost') or 100,
-        result.get('unit_cost') or 0,
+        annual_demand,
+        holding_cost,
+        ordering_cost,
+        unit_cost,
         result.get('eoq_quantity'),
         result.get('reorder_point'),
         result.get('safety_stock'),
         result.get('lead_time_days') or 7,
         result.get('confidence_level') or 0.95,
         now,
-        valid_until
+        valid_until,
+        status,
+        reason
     )
 
     # If Supabase is configured, use it
@@ -519,19 +594,25 @@ def insert_eoq_calculation(product_id: int, branch_id: int, result: dict):
                     payload = {
                         'product_id': product_id,
                         'branch_id': branch_id,
-                        'annual_demand': result.get('annual_demand') or result.get('annualDemand') or 0,
-                        'holding_cost': result.get('holding_cost') or result.get('annual_holding_cost') or result.get('holdingCost') or 50,
-                        'ordering_cost': result.get('ordering_cost') or result.get('annual_ordering_cost') or result.get('orderingCost') or 100,
-                        'unit_cost': result.get('unit_cost') or result.get('unit_cost_estimate') or result.get('unitCost') or 0,
+                        'annual_demand': annual_demand,
+                        'holding_cost': holding_cost,
+                        'ordering_cost': ordering_cost,
+                        'unit_cost': unit_cost,
                         'eoq_quantity': result.get('eoq_quantity'),
                         'reorder_point': result.get('reorder_point'),
                         'safety_stock': result.get('safety_stock'),
                         'lead_time_days': result.get('lead_time_days') or result.get('lead_time') or 7,
                         'confidence_level': result.get('confidence_level') or 0.95,
                         'calculated_at': now.isoformat(),
-                        'valid_until': valid_until.isoformat()
+                        'valid_until': valid_until.isoformat(),
+                        'status': status,
+                        'reason': reason
                     }
-                    resp = _supabase_client.table('eoq_calculations').insert(payload).execute()
+                    # Use upsert for Supabase (insert with on_conflict)
+                    resp = _supabase_client.table('eoq_calculations').upsert(
+                        payload,
+                        on_conflict='product_id,branch_id'
+                    ).execute()
                     if getattr(resp, 'error', None):
                         logger.error('Supabase EOQ insert error: %s', getattr(resp, 'error', None))
                         raise RuntimeError(str(getattr(resp, 'error', None)))
@@ -719,11 +800,30 @@ def insert_product_demand_history(entries: Iterable[dict]):
 
     if _supabase_client:
         try:
-            resp = _supabase_client.table('product_demand_history').insert(rows).execute()
+            # Clean rows: replace NaN values with 0 or None for JSON compatibility
+            import math
+            cleaned_rows = []
+            for row in rows:
+                cleaned = {}
+                for key, value in row.items():
+                    if isinstance(value, float):
+                        if math.isnan(value):
+                            cleaned[key] = 0.0 if key in ['revenue', 'avg_price'] else None
+                        else:
+                            cleaned[key] = value
+                    else:
+                        cleaned[key] = value
+                cleaned_rows.append(cleaned)
+            
+            # Use UPSERT with ON CONFLICT for product_demand_history
+            resp = _supabase_client.table('product_demand_history').upsert(
+                cleaned_rows,
+                on_conflict='product_id,branch_id,period_date'
+            ).execute()
             if getattr(resp, 'error', None):
-                logger.error('Supabase insert product_demand_history error: %s', getattr(resp, 'error', None))
+                logger.error('Supabase upsert product_demand_history error: %s', getattr(resp, 'error', None))
                 raise RuntimeError(str(getattr(resp, 'error', None)))
-            return len(getattr(resp, 'data', []) or rows)
+            return len(getattr(resp, 'data', []) or cleaned_rows)
         except Exception:
             logger.exception('Failed to insert product_demand_history to Supabase')
             raise
@@ -734,20 +834,53 @@ def insert_product_demand_history(entries: Iterable[dict]):
     try:
         conn = get_conn()
         cur = conn.cursor()
+        # Clean rows: replace NaN values with 0 or None
+        import math
+        cleaned_rows = []
+        for row in rows:
+            cleaned = []
+            for i, value in enumerate(row):
+                if isinstance(value, float) and math.isnan(value):
+                    # revenue and avg_price should be 0.0, others can be None
+                    if i in [3, 4]:  # revenue, avg_price positions
+                        cleaned.append(0.0)
+                    else:
+                        cleaned.append(None)
+                else:
+                    cleaned.append(value)
+            cleaned_rows.append(tuple(cleaned))
+        
         insert_sql = '''
         INSERT INTO public.product_demand_history (product_id, branch_id, period_date, quantity_sold, revenue, avg_price, source, created_at)
         VALUES %s
         ON CONFLICT (product_id, branch_id, period_date) DO UPDATE SET quantity_sold = EXCLUDED.quantity_sold, revenue = EXCLUDED.revenue, avg_price = EXCLUDED.avg_price, created_at = EXCLUDED.created_at
         '''
         tuples = []
+        import math
         for e in rows:
+            # Clean NaN values
+            revenue = e.get('revenue', 0.0)
+            avg_price = e.get('avg_price', 0.0)
+            if isinstance(revenue, float) and math.isnan(revenue):
+                revenue = 0.0
+            if isinstance(avg_price, float) and math.isnan(avg_price):
+                avg_price = 0.0
+            
+            period_date = e.get('period_date')
+            if isinstance(period_date, str):
+                # Already a string, use as-is
+                pass
+            elif hasattr(period_date, 'isoformat'):
+                period_date = period_date.isoformat()
+            else:
+                period_date = str(period_date)
             tuples.append((
                 int(e.get('product_id')),
                 int(e.get('branch_id')),
-                e.get('period_date'),
+                period_date,
                 int(float(e.get('quantity_sold') or 0)),
-                float(e.get('revenue') or 0.0),
-                float(e.get('avg_price') or 0.0),
+                float(revenue),
+                float(avg_price),
                 e.get('source') or 'bitpos_import',
                 datetime.utcnow()
             ))
@@ -848,13 +981,20 @@ def insert_inventory_analytics(entries: Iterable[dict]):
                         normalized['current_stock'] = int(current_stock_val)
                     except (ValueError, TypeError):
                         normalized['current_stock'] = 0
+                # Replace NaN values with 0 for JSON compatibility
+                for key, value in normalized.items():
+                    if isinstance(value, float) and (pd.isna(value) if 'pd' in globals() else (value != value)):
+                        normalized[key] = 0.0
                 normalized_rows.append(normalized)
             
-            # Try insert with current_stock first
+            # Use UPSERT with ON CONFLICT for inventory_analytics
             try:
-                resp = _supabase_client.table('inventory_analytics').insert(normalized_rows).execute()
+                resp = _supabase_client.table('inventory_analytics').upsert(
+                    normalized_rows,
+                    on_conflict='product_id,branch_id,analysis_date'
+                ).execute()
                 if getattr(resp, 'error', None):
-                    logger.error('Supabase insert inventory_analytics error: %s', getattr(resp, 'error', None))
+                    logger.error('Supabase upsert inventory_analytics error: %s', getattr(resp, 'error', None))
                     raise RuntimeError(str(getattr(resp, 'error', None)))
                 return len(getattr(resp, 'data', []) or normalized_rows)
             except Exception as e:
@@ -880,6 +1020,14 @@ def insert_inventory_analytics(entries: Iterable[dict]):
         insert_sql = '''
         INSERT INTO public.inventory_analytics (product_id, branch_id, analysis_date, current_stock, avg_daily_usage, stock_adequacy_days, turnover_ratio, carrying_cost, stockout_risk_percentage, recommendation, created_at)
         VALUES %s
+        ON CONFLICT (product_id, branch_id, analysis_date) DO UPDATE SET
+            avg_daily_usage = EXCLUDED.avg_daily_usage,
+            stock_adequacy_days = EXCLUDED.stock_adequacy_days,
+            turnover_ratio = EXCLUDED.turnover_ratio,
+            carrying_cost = EXCLUDED.carrying_cost,
+            stockout_risk_percentage = EXCLUDED.stockout_risk_percentage,
+            recommendation = EXCLUDED.recommendation,
+            updated_at = EXCLUDED.updated_at
         '''
         tuples = []
         for e in rows:
@@ -1044,6 +1192,75 @@ def get_product_id_by_name(product_name: str, branch_id: int = None):
     except Exception as e:
         logger.exception('Failed to fetch product_id by name from Postgres: %s', str(e))
         return None
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def validate_products_exist(product_ids: Iterable[int], branch_ids: Iterable[int] = None):
+    """Return a set of (product_id, branch_id) tuples that exist in centralized_product.
+    
+    Used to filter sales data to only include products that exist in the database.
+    Returns set of (product_id, branch_id) tuples.
+    """
+    ids = list(set(int(x) for x in product_ids if x is not None))
+    if not ids:
+        return set()
+    
+    branch_filter = None
+    if branch_ids:
+        branch_filter = list(set(int(x) for x in branch_ids if x is not None))
+        if not branch_filter:
+            return set()
+
+    # Supabase path
+    if _supabase_client:
+        try:
+            query = _supabase_client.table('centralized_product').select('id, branch_id')
+            query = query.in_('id', ids)
+            if branch_filter:
+                query = query.in_('branch_id', branch_filter)
+            resp = query.execute()
+            if getattr(resp, 'error', None):
+                logger.error('Supabase fetch centralized_product validation error: %s', getattr(resp, 'error', None))
+                raise RuntimeError(str(getattr(resp, 'error', None)))
+            rows = getattr(resp, 'data', []) or []
+            valid_products = set()
+            for r in rows:
+                pid = int(r.get('id'))
+                bid = int(r.get('branch_id'))
+                valid_products.add((pid, bid))
+            return valid_products
+        except Exception:
+            logger.exception('Failed to validate products from Supabase')
+            # fall through to SQL path
+
+    # psycopg2 path
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        if branch_filter:
+            cur.execute(
+                "SELECT id, branch_id FROM public.centralized_product WHERE id = ANY(%s) AND branch_id = ANY(%s)",
+                (ids, branch_filter)
+            )
+        else:
+            cur.execute(
+                "SELECT id, branch_id FROM public.centralized_product WHERE id = ANY(%s)",
+                (ids,)
+            )
+        rows = cur.fetchall()
+        valid_products = set()
+        for row in rows:
+            valid_products.add((int(row[0]), int(row[1])))
+        return valid_products
+    except Exception:
+        logger.exception('Failed to validate products from database')
+        return set()
     finally:
         if cur:
             cur.close()
@@ -1407,6 +1624,137 @@ def fetch_restock_recommendations(days: int = 30, branch_id: int | None = None, 
         else:
             logger.warning('Database connection failed (%s), returning empty restock recommendations list', error_msg)
         # Return empty list to prevent frontend crash
+        return []
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def get_stock_deductions_by_batch(import_batch_id: str):
+    """Get stock deduction details for a specific import batch.
+    
+    Returns list of dicts with product_id, product_name, branch_id, quantity_deducted, 
+    previous_quantity, updated_quantity.
+    """
+    if not import_batch_id:
+        return []
+    
+    if _supabase_client:
+        try:
+            # Query sales for this batch, grouped by product
+            resp = _supabase_client.table('sales').select(
+                'product_id, branch_id, quantity_sold'
+            ).eq('import_batch_id', import_batch_id).execute()
+            
+            if getattr(resp, 'error', None):
+                logger.error('Supabase fetch stock deductions error: %s', getattr(resp, 'error', None))
+                return []
+            
+            if not resp.data:
+                return []
+            
+            # Group by product_id and branch_id
+            deductions = {}
+            for sale in resp.data:
+                product_id = sale.get('product_id')
+                branch_id = sale.get('branch_id')
+                quantity = sale.get('quantity_sold', 0)
+                
+                if product_id is None:
+                    continue
+                
+                key = (product_id, branch_id)
+                if key not in deductions:
+                    deductions[key] = {
+                        'product_id': product_id,
+                        'branch_id': branch_id,
+                        'quantity_deducted': 0
+                    }
+                deductions[key]['quantity_deducted'] += quantity
+            
+            # Get product names and current stock
+            product_ids = list(set([d['product_id'] for d in deductions.values()]))
+            branch_ids = list(set([d['branch_id'] for d in deductions.values()]))
+            
+            # Get product names
+            product_names = {}
+            try:
+                prod_resp = _supabase_client.table('centralized_product').select(
+                    'id, product_name, branch_id, quantity'
+                ).in_('id', product_ids).in_('branch_id', branch_ids).execute()
+                
+                if prod_resp.data:
+                    for prod in prod_resp.data:
+                        key = (prod['id'], prod['branch_id'])
+                        product_names[key] = {
+                            'name': prod.get('product_name', f"Product {prod['id']}"),
+                            'current_quantity': prod.get('quantity', 0)
+                        }
+            except Exception as e:
+                logger.warning(f'Failed to fetch product names: {str(e)}')
+            
+            # Build result list
+            result = []
+            for key, ded in deductions.items():
+                product_id, branch_id = key
+                product_info = product_names.get(key, {})
+                current_qty = product_info.get('current_quantity', 0)
+                quantity_deducted = ded['quantity_deducted']
+                
+                result.append({
+                    'product_id': product_id,
+                    'product_name': product_info.get('name', f"Product {product_id}"),
+                    'branch_id': branch_id,
+                    'quantity_deducted': quantity_deducted,
+                    'previous_quantity': current_qty + quantity_deducted,  # Before deduction
+                    'updated_quantity': current_qty  # After deduction
+                })
+            
+            return result
+        except Exception as e:
+            logger.error(f'Error fetching stock deductions by batch: {str(e)}')
+            return []
+    
+    # psycopg2 fallback
+    conn = None
+    cur = None
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        
+        # Query sales grouped by product
+        cur.execute('''
+            SELECT 
+                s.product_id,
+                s.branch_id,
+                SUM(s.quantity_sold) as quantity_deducted,
+                cp.product_name,
+                cp.quantity as current_quantity
+            FROM public.sales s
+            LEFT JOIN public.centralized_product cp 
+                ON s.product_id = cp.id AND s.branch_id = cp.branch_id
+            WHERE s.import_batch_id = %s
+            GROUP BY s.product_id, s.branch_id, cp.product_name, cp.quantity
+        ''', (import_batch_id,))
+        
+        rows = cur.fetchall()
+        result = []
+        for row in rows:
+            product_id, branch_id, quantity_deducted, product_name, current_quantity = row
+            result.append({
+                'product_id': product_id,
+                'product_name': product_name or f"Product {product_id}",
+                'branch_id': branch_id,
+                'quantity_deducted': int(quantity_deducted) if quantity_deducted else 0,
+                'previous_quantity': (current_quantity or 0) + (quantity_deducted or 0),
+                'updated_quantity': current_quantity or 0
+            })
+        
+        return result
+    except Exception as e:
+        logger.error(f'Error fetching stock deductions by batch: {str(e)}')
         return []
     finally:
         if cur:

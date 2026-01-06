@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 from io import BytesIO
+import uuid
 
 # Handle both relative and absolute imports
 try:
@@ -487,9 +488,17 @@ def import_sales_data():
         logger.info(f'Sales data imported: {len(df)} records, annual demand: {annual_demand}')
         logger.info(f'DataFrame still has {len(df)} rows at this point (valid_row_count was {valid_row_count})')
 
+        # Generate import_batch_id for transaction-based tracking
+        import_batch_id = str(uuid.uuid4())
+        logger.info(f'Generated import_batch_id: {import_batch_id}')
+
+        # Track affected products (product_id, branch_id pairs) for targeted EOQ recalculation
+        affected_products = set()
+
         # Persist raw sales rows into Postgres if DB configured
         inserted_count = 0
         db_warning = None
+        stock_deduction_summary = []
         try:
             # Read JSON payload safely (may be multipart/form-data for file uploads)
             json_payload = request.get_json(silent=True)
@@ -529,27 +538,85 @@ def import_sales_data():
 
                 quantity = float(r['quantity'])
                 transaction_date = r['date'].to_pydatetime() if hasattr(r['date'], 'to_pydatetime') else r['date']
-                unit_price = None
-                total_amount = None
+                
+                # unit_price and total_amount are NOT NULL in schema - provide defaults
+                unit_price = 0.0
+                total_amount = 0.0
                 payment_method = None
 
                 if 'unit_price' in df.columns:
-                    unit_price = r.get('unit_price')
-                if 'price' in df.columns and unit_price is None:
-                    unit_price = r.get('price')
+                    try:
+                        unit_price = float(r.get('unit_price')) if pd.notna(r.get('unit_price')) else 0.0
+                    except (ValueError, TypeError):
+                        unit_price = 0.0
+                if 'price' in df.columns and unit_price == 0.0:
+                    try:
+                        unit_price = float(r.get('price')) if pd.notna(r.get('price')) else 0.0
+                    except (ValueError, TypeError):
+                        unit_price = 0.0
                 if 'total_amount' in df.columns:
-                    total_amount = r.get('total_amount')
-                if 'amount' in df.columns and total_amount is None:
-                    total_amount = r.get('amount')
+                    try:
+                        total_amount = float(r.get('total_amount')) if pd.notna(r.get('total_amount')) else 0.0
+                    except (ValueError, TypeError):
+                        total_amount = 0.0
+                if 'amount' in df.columns and total_amount == 0.0:
+                    try:
+                        total_amount = float(r.get('amount')) if pd.notna(r.get('amount')) else 0.0
+                    except (ValueError, TypeError):
+                        total_amount = 0.0
+                
+                # If total_amount is still 0, calculate from unit_price * quantity
+                if total_amount == 0.0 and unit_price > 0:
+                    total_amount = unit_price * quantity
+                
                 if 'payment_method' in df.columns:
                     payment_method = r.get('payment_method')
 
                 created_at = now_iso
 
-                rows.append((product_id, row_branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at))
+                # Track affected products for targeted EOQ recalculation
+                if product_id is not None:
+                    affected_products.add((product_id, row_branch_id))
+
+                rows.append((product_id, row_branch_id, quantity, transaction_date, unit_price, total_amount, payment_method, created_at, import_batch_id))
+
+            # Validate products exist before attempting insertion
+            if rows:
+                # Extract unique (product_id, branch_id) pairs from rows
+                product_branch_pairs = set()
+                for row in rows:
+                    if row[0] is not None:  # product_id
+                        product_branch_pairs.add((row[0], row[1]))  # (product_id, branch_id)
+                
+                if product_branch_pairs:
+                    valid_products = db_module.validate_products_exist(
+                        [pid for pid, _ in product_branch_pairs],
+                        [bid for _, bid in product_branch_pairs]
+                    )
+                    
+                    # Filter rows to only include valid products
+                    filtered_rows = []
+                    invalid_products = set()
+                    for row in rows:
+                        product_id = row[0]
+                        branch_id = row[1]
+                        if product_id is not None and (product_id, branch_id) in valid_products:
+                            filtered_rows.append(row)
+                        elif product_id is not None:
+                            invalid_products.add((product_id, branch_id))
+                    
+                    if invalid_products:
+                        invalid_list = ', '.join([f'product_id={pid} branch_id={bid}' for pid, bid in sorted(invalid_products)])
+                        logger.warning(f'Skipping {len(invalid_products)} sales rows for products that do not exist in centralized_product: {invalid_list}')
+                        db_warning = f'{len(invalid_products)} products not found in centralized_product: {invalid_list[:200]}'
+                    
+                    rows = filtered_rows
+                    
+                    # Update affected_products to only include valid ones
+                    affected_products = affected_products.intersection(valid_products)
 
             try:
-                inserted_count = db_module.insert_sales_rows(rows)
+                inserted_count = db_module.insert_sales_rows(rows) if rows else 0
             except ValueError as e:
                 # Negative stock validation error - check if it's the specific error we're looking for
                 error_msg = str(e)
@@ -608,14 +675,52 @@ def import_sales_data():
                         else:
                             fm = date(today.year, today.month + 1, 1)
 
+                        # Filter grouped data to only include products that exist in centralized_product
+                        # This prevents FK constraint violations in product_demand_history, sales_forecast, etc.
+                        if grouped is not None and not grouped.empty:
+                            # Get unique product-branch pairs from grouped data
+                            grouped_products = set()
+                            for _, g in grouped.iterrows():
+                                pid = int(g['product_id'])
+                                bid = int(g['branch_id'])
+                                grouped_products.add((pid, bid))
+                            
+                            if grouped_products:
+                                valid_grouped_products = db_module.validate_products_exist(
+                                    [pid for pid, _ in grouped_products],
+                                    [bid for _, bid in grouped_products]
+                                )
+                                
+                                # Filter grouped dataframe to only include valid products
+                                valid_mask = grouped.apply(
+                                    lambda row: (int(row['product_id']), int(row['branch_id'])) in valid_grouped_products,
+                                    axis=1
+                                )
+                                grouped = grouped[valid_mask].copy()
+                                
+                                if not valid_mask.all():
+                                    invalid_count = (~valid_mask).sum()
+                                    logger.warning(f'Filtered out {invalid_count} grouped entries for products that do not exist in centralized_product')
+
                         for _, g in grouped.iterrows():
                             try:
                                 pid = int(g['product_id'])
                                 bid = int(g['branch_id'])
                                 period = g['period_date']
                                 qty = int(float(g['quantity'] or 0))
-                                revenue = float(g['total_amount'] or 0.0) if g['total_amount'] is not None else 0.0
-                                avg_price = float(g['unit_price'] or 0.0) if g['unit_price'] is not None else 0.0
+                                # Replace NaN values with 0.0 for JSON compatibility
+                                revenue = 0.0
+                                avg_price = 0.0
+                                try:
+                                    if g['total_amount'] is not None and pd.notna(g['total_amount']):
+                                        revenue = float(g['total_amount'])
+                                except (ValueError, TypeError):
+                                    revenue = 0.0
+                                try:
+                                    if g['unit_price'] is not None and pd.notna(g['unit_price']):
+                                        avg_price = float(g['unit_price'])
+                                except (ValueError, TypeError):
+                                    avg_price = 0.0
 
                                 demand_entries.append({
                                     'product_id': pid,
@@ -720,35 +825,83 @@ def import_sales_data():
 
                         try:
                             if inventory_entries:
-                                inserted_inv = db_module.insert_inventory_analytics(inventory_entries)
+                                # Deduplicate inventory_entries by (product_id, branch_id, analysis_date) before insertion
+                                seen = set()
+                                deduplicated_entries = []
+                                for entry in inventory_entries:
+                                    key = (entry.get('product_id'), entry.get('branch_id'), entry.get('analysis_date'))
+                                    if key not in seen:
+                                        seen.add(key)
+                                        deduplicated_entries.append(entry)
+                                
+                                if len(deduplicated_entries) < len(inventory_entries):
+                                    logger.warning(f'Removed {len(inventory_entries) - len(deduplicated_entries)} duplicate inventory_analytics entries before insertion')
+                                
+                                inserted_inv = db_module.insert_inventory_analytics(deduplicated_entries)
                                 logger.info('Inserted %s inventory_analytics rows', inserted_inv)
                         except Exception:
                             logger.exception('Failed to persist inventory analytics')
             except Exception:
                 logger.exception('Failed to persist aggregated analytics after import')
 
-            # For each product in file, run EOQ calculation and persist
+            # Targeted EOQ recalculation: Only recalculate for affected products
             try:
-                if 'product' in df.columns or 'product_name' in df.columns or 'product_id' in df.columns:
-                    # group by product and compute annual demand
-                    prod_col = 'product' if 'product' in df.columns else ('product_name' if 'product_name' in df.columns else 'product_id')
-                    # Include branch_id in grouping if present
-                    group_cols = [prod_col]
-                    if 'branch_id' in df.columns:
-                        group_cols.append('branch_id')
-                    grouped = df.groupby(group_cols)['quantity'].agg(['sum']).reset_index()
-                    for _, prod in grouped.iterrows():
+                # Only recalculate EOQ for products that were affected by this import
+                if affected_products:
+                    logger.info(f'Recalculating EOQ for {len(affected_products)} affected products')
+                    
+                    for product_id, prod_branch_id in affected_products:
                         try:
-                            product_identifier = prod[prod_col]
-                            # Get branch_id from grouped row if present, otherwise use default
-                            prod_branch_id = int(prod.get('branch_id', branch_id)) if 'branch_id' in prod else branch_id
-                            product_annual_demand = float((prod['sum'] / days_of_data) * 365) if days_of_data > 0 else 0
+                            # Get sales data for this product from the imported dataframe
+                            product_sales = df[df['product_id'] == product_id] if 'product_id' in df.columns else pd.DataFrame()
+                            if product_sales.empty:
+                                # Try to get from product_demand_history if available
+                                product_annual_demand = 0
+                            else:
+                                # Calculate annual demand from imported data
+                                product_total = product_sales['quantity'].sum()
+                                product_annual_demand = float((product_total / days_of_data) * 365) if days_of_data > 0 else 0
+                            
                             # prepare EOQ input using defaults or provided overrides
                             holding_cost = float(request.form.get('holding_cost') or (json_payload.get('holding_cost') if json_payload else None) or 50)
                             ordering_cost = float(request.form.get('ordering_cost') or (json_payload.get('ordering_cost') if json_payload else None) or 100)
                             unit_cost = float(request.form.get('unit_cost') or (json_payload.get('unit_cost') if json_payload else None) or 25)
                             lead_time_days = int(request.form.get('lead_time_days') or (json_payload.get('lead_time_days') if json_payload else None) or 7)
                             confidence_level = float(request.form.get('confidence_level') or (json_payload.get('confidence_level') if json_payload else None) or 0.95)
+
+                            # INPUT VALIDATION: Prevent invalid EOQ calculations
+                            validation_errors = []
+                            if product_annual_demand <= 0:
+                                validation_errors.append('Annual demand must be greater than 0')
+                            if holding_cost <= 0:
+                                validation_errors.append('Holding cost must be greater than 0')
+                            if ordering_cost <= 0:
+                                validation_errors.append('Ordering cost must be greater than 0')
+                            
+                            if validation_errors:
+                                # Store invalid EOQ with status and reason
+                                invalid_result = {
+                                    'annual_demand': product_annual_demand,
+                                    'holding_cost': holding_cost,
+                                    'ordering_cost': ordering_cost,
+                                    'unit_cost': unit_cost,
+                                    'eoq_quantity': 0,
+                                    'reorder_point': 0,
+                                    'safety_stock': 0,
+                                    'annual_holding_cost': 0,
+                                    'annual_ordering_cost': 0,
+                                    'total_annual_cost': 0,
+                                    'max_stock_level': 0,
+                                    'min_stock_level': 0,
+                                    'average_inventory': 0,
+                                    'lead_time_days': lead_time_days,
+                                    'confidence_level': confidence_level,
+                                    'status': 'invalid_inputs',
+                                    'reason': '; '.join(validation_errors)
+                                }
+                                db_module.insert_eoq_calculation(product_id, prod_branch_id, invalid_result)
+                                logger.warning(f'EOQ calculation skipped for product {product_id} branch {prod_branch_id}: {"; ".join(validation_errors)}')
+                                continue
 
                             eoq_input = EOQInput(
                                 annual_demand=product_annual_demand,
@@ -777,40 +930,21 @@ def import_sales_data():
                                 'total_annual_cost': result_obj.total_annual_cost,
                                 'max_stock_level': result_obj.max_stock_level,
                                 'min_stock_level': result_obj.min_stock_level,
-                                'average_inventory': result_obj.average_inventory
+                                'average_inventory': result_obj.average_inventory,
+                                'status': 'valid',  # Mark as valid since validation passed
+                                'reason': None
                             }
 
-                            # Persist EOQ calculation - try to get product_id
+                            # Persist EOQ calculation using product_id from affected_products
                             try:
-                                pid = None
-                                if prod_col == 'product_id':
-                                    try:
-                                        pid = int(product_identifier)
-                                    except Exception:
-                                        pid = None
-                                else:
-                                    # If product column is a name, try to look up product_id by name
-                                    try:
-                                        pid = db_module.get_product_id_by_name(str(product_identifier), prod_branch_id)
-                                        if pid:
-                                            logger.info(f'Found product_id {pid} for product name "{product_identifier}"')
-                                        else:
-                                            logger.warning(f'Could not find product_id for product name "{product_identifier}" - EOQ will not be persisted')
-                                    except Exception as e:
-                                        logger.warning(f'Failed to look up product_id for "{product_identifier}": {str(e)}')
-                                
-                                # Persist to database if we have a product_id
-                                if pid:
-                                    db_module.insert_eoq_calculation(pid, prod_branch_id, result_dict)
-                                    logger.info(f'EOQ persisted to database for product {pid} (name: "{product_identifier}"), branch {prod_branch_id} from file upload')
-                                else:
-                                    # fall back to storing in mock DB for non-numeric product identifiers
-                                    logger.warning(f'EOQ stored in mock DB only (no product_id found) for product "{product_identifier}"')
-                                    db.store_eoq(product_identifier, prod_branch_id, result_obj)
+                                db_module.insert_eoq_calculation(product_id, prod_branch_id, result_dict)
+                                logger.info(f'EOQ persisted to database for product {product_id}, branch {prod_branch_id} (targeted recalculation)')
                             except Exception:
-                                logger.exception('Failed to persist EOQ for product %s', product_identifier)
+                                logger.exception('Failed to persist EOQ for product %s branch %s', product_id, prod_branch_id)
                         except Exception:
-                            logger.exception('EOQ calc failed for a product group')
+                            logger.exception('EOQ calc failed for product %s branch %s', product_id, prod_branch_id)
+                else:
+                    logger.info('No product_id column found in import data, skipping EOQ recalculation')
             except Exception:
                 logger.exception('EOQ persistence step failed')
 
@@ -858,9 +992,28 @@ def import_sales_data():
         final_row_count = len(df) if 'df' in locals() and df is not None else 0
         logger.info(f'Final row count for response: {final_row_count} (valid_row_count was: {valid_row_count})')
 
+        # Get stock deduction details for this import batch
+        # Note: This will be empty if sales insertion failed, but we still return the import_batch_id
+        stock_deduction_summary = []
+        if inserted_count > 0 and import_batch_id:
+            try:
+                stock_deduction_summary = db_module.get_stock_deductions_by_batch(import_batch_id)
+                logger.info(f'Fetched {len(stock_deduction_summary)} stock deduction records for import_batch_id {import_batch_id}')
+            except Exception as e:
+                logger.warning(f'Failed to fetch stock deduction details: {str(e)}')
+        elif inserted_count == 0 and import_batch_id:
+            logger.warning(f'No sales were inserted (inserted_count=0), so stock_deduction_summary will be empty for import_batch_id {import_batch_id}')
+
+        # Determine actual success - if no records were inserted, it's a failure
+        actual_inserted = int(inserted_count) if inserted_count else 0
+        is_success = actual_inserted > 0 and not db_warning
+        
         response = {
-            'success': True,
-            'message': f'Imported {final_row_count} sales records',
+            'success': is_success,
+            'message': f'Imported {actual_inserted} sales records' if actual_inserted > 0 else f'Processed {final_row_count} sales records (none saved to database)',
+            'records_imported': actual_inserted,
+            'records_processed': final_row_count,
+            'import_batch_id': import_batch_id,
             'metrics': {
                 'total_quantity': float(total_quantity),
                 'average_daily': round(float(average_daily), 2),
@@ -872,15 +1025,19 @@ def import_sales_data():
                 }
             },
             'top_products': top_products,
-            'restock_recommendations': restock_recommendations
+            'restock_recommendations': restock_recommendations,
+            'stock_deductions': stock_deduction_summary,
+            'affected_products': [{'product_id': pid, 'branch_id': bid} for pid, bid in affected_products]
         }
 
         if inserted_count:
             response['db_inserted'] = int(inserted_count)
         if db_warning:
             response['db_warning'] = db_warning
+            response['success'] = False  # Mark as failure if there's a warning
+            is_success = False  # Also update is_success for HTTP status code consistency
 
-        return jsonify(response), 200
+        return jsonify(response), 200 if is_success else 207  # 207 = Multi-Status (partial success)
     
     except Exception as e:
         logger.error(f'Error importing sales data: {str(e)}')
@@ -1078,20 +1235,42 @@ def calculate_ordering_cost():
 
 @analytics_bp.route('/stock-deductions', methods=['GET'])
 def get_stock_deductions():
-    """Get recent stock deductions from sales imports.
+    """Get stock deduction details for sales imports.
     
     Query Parameters:
-    - branch_id: Filter by branch (required)
+    - branch_id: Filter by branch (required if import_batch_id not provided)
+    - import_batch_id: Filter by import batch UUID (preferred, transaction-based)
     - limit: Maximum number of results (default: 50)
-    - days: Days back to look (default: 1)
+    - days: Days back to look (default: 1, used as fallback if import_batch_id not provided)
     """
     try:
         branch_id = request.args.get('branch_id', type=int)
+        import_batch_id = request.args.get('import_batch_id', type=str)
         limit = request.args.get('limit', default=50, type=int)
         days = request.args.get('days', default=1, type=int)
         
+        # If import_batch_id is provided, use it (transaction-based, preferred)
+        if import_batch_id:
+            try:
+                deductions = db_module.get_stock_deductions_by_batch(import_batch_id)
+                # Filter by branch_id if provided
+                if branch_id:
+                    deductions = [d for d in deductions if d.get('branch_id') == branch_id]
+                # Apply limit
+                deductions = deductions[:limit]
+                return jsonify({
+                    'success': True,
+                    'data': deductions,
+                    'count': len(deductions),
+                    'import_batch_id': import_batch_id
+                }), 200
+            except Exception as e:
+                logger.error(f'Error fetching stock deductions by batch: {str(e)}')
+                return jsonify({'success': False, 'error': f'Failed to fetch stock deductions: {str(e)}'}), 500
+        
+        # Fallback to time-based query (for backward compatibility)
         if not branch_id:
-            return jsonify({'success': False, 'error': 'branch_id is required'}), 400
+            return jsonify({'success': False, 'error': 'branch_id is required when import_batch_id is not provided'}), 400
         
         # Fetch recent sales grouped by product to show deductions
         if db_module._supabase_client:

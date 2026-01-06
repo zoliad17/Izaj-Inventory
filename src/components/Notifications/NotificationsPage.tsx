@@ -158,6 +158,24 @@ function NotificationsPage() {
     );
   };
 
+  // Handle notification card click
+  const handleNotificationClick = async (notification: NotificationItem, e?: React.MouseEvent) => {
+    // Prevent navigation if clicking on action buttons
+    if (e && (e.target as HTMLElement).closest('button')) {
+      return;
+    }
+
+    // Mark as read if unread
+    if (!notification.read) {
+      await handleMarkAsRead(notification.id);
+    }
+
+    // Navigate if link exists
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
+
   // Handle mark all as read
   const handleMarkAllAsRead = async () => {
     await markAllRead();
@@ -277,7 +295,10 @@ function NotificationsPage() {
             return (
               <div
                 key={notification.id}
+                onClick={(e) => handleNotificationClick(notification, e)}
                 className={`p-5 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
+                  notification.link ? "cursor-pointer" : ""
+                } ${
                   isUnread
                     ? "bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20"
                     : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -335,7 +356,7 @@ function NotificationsPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-3 flex gap-2 text-sm">
+                    <div className="mt-3 flex gap-2 text-sm" onClick={(e) => e.stopPropagation()}>
                       {isUnread && (
                         <button
                           onClick={() => handleMarkAsRead(notification.id)}
@@ -346,16 +367,20 @@ function NotificationsPage() {
                       )}
                       {notification.link && (
                         <button
-                          onClick={() => navigate(notification.link || "/")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(notification.link || "/");
+                          }}
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium cursor-pointer"
                         >
                           View
                         </button>
                       )}
                       <button
-                        onClick={() =>
-                          handleDeleteNotification(notification.id)
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNotification(notification.id);
+                        }}
                         className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 font-medium ml-auto cursor-pointer flex items-center gap-1"
                       >
                         <Trash2 className="w-4 h-4" />

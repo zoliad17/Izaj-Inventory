@@ -133,6 +133,7 @@ const EOQAnalyticsDashboard: React.FC = () => {
     });
   const [isSalesMetricsExpanded, setIsSalesMetricsExpanded] = useState(true); // Default to expanded
   const [currentPage, setCurrentPage] = useState(1);
+  const [dataIntegrityWarning, setDataIntegrityWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Normalize a top-product entry from backend/import to ensure product_name exists
@@ -312,9 +313,10 @@ const EOQAnalyticsDashboard: React.FC = () => {
             message: "Updating inventory...",
           }));
 
-          // Fetch and display stock deduction details
+          // Fetch and display stock deduction details using import_batch_id
           if (user?.branch_id) {
-            await fetchStockDeductionDetails(user.branch_id);
+            const importBatchId = result.import_batch_id;
+            await fetchStockDeductionDetails(user.branch_id, importBatchId);
           }
 
           // Update progress to 80% when refreshing analytics
@@ -360,15 +362,17 @@ const EOQAnalyticsDashboard: React.FC = () => {
 
           // Complete progress - show completion message
           // This will stay open until user clicks Close button
+          const recordsImported = result.records_imported || result.db_inserted || 0;
           setModal({
             isOpen: true,
             status: "success",
             message: "Sales data imported successfully!",
-            details: `Imported ${
-              result.metrics?.total_sales || 0
-            } sales records. EOQ calculations complete.`,
+            details: `Imported ${recordsImported} sales records. EOQ calculations complete.`,
             progress: 100,
           });
+          
+          // Store import_batch_id for stock deduction modal
+          const importBatchId = result.import_batch_id;
         } else {
           // Check if this is a negative stock error
           const isNegativeStockError =
@@ -513,10 +517,14 @@ const EOQAnalyticsDashboard: React.FC = () => {
       if (err instanceof Error) {
         console.error("Error details:", err.message, err.stack);
       }
+      // Set warning if not already set
+      if (!dataIntegrityWarning) {
+        setDataIntegrityWarning("⚠️ Unable to load persisted EOQ analytics data. Displayed values may not be saved.");
+      }
     } finally {
       setLoadingEOQ(false);
     }
-  }, [user?.branch_id]);
+  }, [user?.branch_id, dataIntegrityWarning]);
 
   const calculateEOQWithData = useCallback(
     async (demandValue: number) => {
@@ -737,9 +745,12 @@ const EOQAnalyticsDashboard: React.FC = () => {
         }
       } catch (err) {
         console.warn("Error fetching sales summary", err);
+        if (!dataIntegrityWarning) {
+          setDataIntegrityWarning("⚠️ Unable to load persisted sales analytics data. Displayed values may not be saved.");
+        }
       }
     },
-    [user?.branch_id]
+    [user?.branch_id, dataIntegrityWarning]
   );
 
   // Fetch persisted data on mount and when branch changes
@@ -1132,6 +1143,33 @@ const EOQAnalyticsDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Data Integrity Warning Banner */}
+        {dataIntegrityWarning && (
+          <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 rounded-r-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-3" />
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  {dataIntegrityWarning}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setDataIntegrityWarning(null);
+                  // Retry fetch
+                  if (user) {
+                    fetchSalesSummaryFromServer();
+                    fetchEOQCalculationsFromServer();
+                  }
+                }}
+                className="ml-4 text-sm font-medium text-yellow-800 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100 underline"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-slate-200 dark:border-gray-700 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
